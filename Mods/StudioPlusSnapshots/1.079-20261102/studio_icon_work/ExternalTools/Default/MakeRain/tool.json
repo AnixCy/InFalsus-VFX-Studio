@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "id": "MakeRain",
+  "name": "紫条雨",
+  "nameEn": "Make Rain",
+  "order": 10,
+  "script": "MakeRain.ps1",
+  "output": "blackline",
+  "capture": false,
+  "description": "按输入的时间和 X 范围生成直线雨；单条时长大于 0 ms。每次执行会追加一批，Ctrl+Z 撤销，Ctrl+S 保存。",
+  "descriptionEn": "Generate straight rain in the exact time/X bounds, with positive durations. Run appends one undoable batch; Ctrl+S saves.",
+  "fields": [
+    {
+      "key": "start",
+      "label": "开始时间 / ms",
+      "labelEn": "Start / ms",
+      "type": "time",
+      "defaultValue": "0",
+      "options": []
+    },
+    {
+      "key": "end",
+      "label": "结束时间 / ms",
+      "labelEn": "End / ms",
+      "type": "time",
+      "defaultValue": "1000",
+      "options": []
+    },
+    {
+      "key": "count",
+      "label": "数量",
+      "labelEn": "Count",
+      "type": "integer",
+      "defaultValue": "200",
+      "options": []
+    },
+    {
+      "key": "intervalMin",
+      "label": "单条最短 / ms",
+      "labelEn": "Min streak / ms",
+      "type": "integer",
+      "defaultValue": "50",
+      "options": []
+    },
+    {
+      "key": "intervalMax",
+      "label": "单条最长 / ms",
+      "labelEn": "Max streak / ms",
+      "type": "integer",
+      "defaultValue": "150",
+      "options": []
+    },
+    {
+      "key": "xMin",
+      "label": "X 最小值",
+      "labelEn": "X min",
+      "type": "number",
+      "defaultValue": "-0.5",
+      "options": []
+    },
+    {
+      "key": "xMax",
+      "label": "X 最大值",
+      "labelEn": "X max",
+      "type": "number",
+      "defaultValue": "1.5",
+      "options": []
+    }
+  ]
+}

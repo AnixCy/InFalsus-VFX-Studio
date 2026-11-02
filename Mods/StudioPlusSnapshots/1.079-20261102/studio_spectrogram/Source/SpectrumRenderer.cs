@@ -1,0 +1,31 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+namespace InFalsusStudio.Spectrogram {
+ internal sealed class SpectrumRenderer:IDisposable {
+  internal sealed class Part {internal GameObject Object;internal Mesh Mesh;internal Material Material;internal Texture2D Texture;internal int Page,Rows,Bins,Size;internal long Used;}
+  internal readonly Dictionary<long,Part> Parts=new Dictionary<long,Part>();AssetBundle bundle;Shader shader;readonly Transform parent;readonly int layer;long serial;int requiredFirst,requiredLast,requiredBins,lastSize;const long Limit=64L*1024*1024;
+  internal int LastMissing,DisplayedBins;internal bool Complete;internal double UploadMilliseconds;
+  internal SpectrumRenderer(string file,Transform owner,int stageLayer){bundle=AssetBundle.LoadFromFile(file);if(!bundle)throw new InvalidOperationException("Spectrogram shader bundle is missing.");shader=bundle.LoadAsset<Shader>("infstudio/spectrogram");if(!shader||!shader.isSupported)throw new InvalidOperationException("Spectrogram shader is unsupported.");parent=owner;layer=stageLayer;}
+  internal void Hide(){foreach(var p in Parts.Values)if(p.Object)p.Object.SetActive(false);}
+  bool Have(SpectrumAnalysis a,int bins,int first,int last,int size=0){for(int page=first;page<=last;page++)if(!Parts.ContainsKey(a.LayerKey(bins,page,size)))return false;return true;}
+  void Upload(SpectrumAnalysis a,int bins,int first,int last,System.Diagnostics.Stopwatch watch,bool unlimited){
+   for(int page=first;page<=last;page++){long key=a.LayerKey(bins,page);if(Parts.ContainsKey(key))continue;var tile=a.Get(bins,page);if(tile==null)continue;if(!unlimited&&watch.Elapsed.TotalMilliseconds>=1)break;
+    var p=new Part{Object=new GameObject("Spectrogram "+bins+" page "+page),Mesh=new Mesh(),Material=new Material(shader),Page=page,Rows=tile.Rows,Bins=bins,Size=tile.Size,Used=++serial};p.Object.SetActive(false);p.Object.transform.SetParent(parent,false);p.Object.layer=layer;p.Mesh.name="Continuous central spectrogram unit plane";p.Mesh.vertices=new[]{new Vector3(-1,0,0),new Vector3(1,0,0),new Vector3(1,0,1),new Vector3(-1,0,1)};p.Mesh.uv=new[]{new Vector2(0,0),new Vector2(1,0),new Vector2(1,1),new Vector2(0,1)};p.Mesh.triangles=new[]{0,2,1,0,3,2};p.Mesh.RecalculateBounds();p.Object.AddComponent<MeshFilter>().sharedMesh=p.Mesh;var renderer=p.Object.AddComponent<MeshRenderer>();renderer.sharedMaterial=p.Material;renderer.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;renderer.receiveShadows=false;renderer.lightProbeUsage=UnityEngine.Rendering.LightProbeUsage.Off;p.Texture=new Texture2D(bins,tile.Rows,TextureFormat.R8,false,true);p.Texture.name="Spectral intensity "+bins+"/"+page;p.Texture.wrapMode=TextureWrapMode.Clamp;p.Texture.filterMode=FilterMode.Point;p.Texture.LoadRawTextureData(tile.Data);p.Texture.Apply(false,true);p.Material.SetTexture("_MainTex",p.Texture);p.Material.renderQueue=2905;Parts.Add(key,p);
+   }
+  }
+  internal void Draw(SpectrumAnalysis a,double now,double offset,InFalsusStudio.StudioProfile profile,int opacity,bool mirror){
+   Hide();Complete=false;LastMissing=0;if(opacity<=0)return;double unit=profile.UnitsPerMs;if(unit<=0)return;double startAudio=Math.Max(0,now+offset),endAudio=Math.Min(a.Frames*1000d/a.Rate,now+offset+profile.stageFar/unit);if(endAudio<=startAudio){Complete=true;a.ViewReady=true;return;}
+   int first=Math.Max(0,(int)Math.Floor(startAudio/a.PageMilliseconds)),last=Math.Min(a.TotalPages-1,(int)Math.Floor((endAudio-.000001)/a.PageMilliseconds));requiredFirst=first;requiredLast=last;requiredBins=a.Bins;bool exporting=StudioBridge.Exporting;if(exporting&&!Have(a,a.Bins,first,last))a.EnsureRange(first,last);
+   var watch=System.Diagnostics.Stopwatch.StartNew();if(!exporting)Upload(a,256,first,last,watch,false);Upload(a,a.Bins,first,last,watch,exporting);if(!exporting){int ahead=Math.Min(a.TotalPages-1,last+(int)Math.Ceiling(Math.Max(8000,(last-first+1)*a.PageMilliseconds*2)/a.PageMilliseconds));Upload(a,256,last+1,ahead,watch,false);Upload(a,a.Bins,last+1,ahead,watch,false);}UploadMilliseconds=Math.Max(UploadMilliseconds,watch.Elapsed.TotalMilliseconds);
+   int bins=Have(a,a.Bins,first,last)?a.Bins:!exporting&&Have(a,256,first,last)?256:0;int displaySize=a.Size;if(bins==0&&lastSize>0&&Have(a,a.Bins,first,last,lastSize)){bins=a.Bins;displaySize=lastSize;}DisplayedBins=bins;if(bins==0){for(int page=first;page<=last;page++)if(!Parts.ContainsKey(a.LayerKey(256,page)))LastMissing++;a.ViewReady=false;Trim();return;}
+   for(int page=first;page<=last;page++){var p=Parts[a.LayerKey(bins,page,displaySize)];double a0=page*a.PageMilliseconds,b0=Math.Min(a.Frames*1000d/a.Rate,a0+Math.Min(256,p.Rows)*a.Hop*1000d/a.Rate),begin=Math.Max(a0,startAudio),end=Math.Min(b0,endAudio);if(end<=begin)continue;float z0=(float)SpectrumMath.AudioToZ(begin,offset,now,unit),z1=(float)SpectrumMath.AudioToZ(end,offset,now,unit),half=profile.centralHalfWidth;
+    p.Object.transform.localPosition=new Vector3(0,.004f*half/2,z0);p.Object.transform.localScale=new Vector3(half,1,z1-z0);p.Material.SetVector("_TimeUv",new Vector4((float)(((begin-a0)*a.Rate/(1000*a.Hop)+.5)/p.Rows),(float)(((end-a0)*a.Rate/(1000*a.Hop)+.5)/p.Rows),0,0));p.Material.SetFloat("_Opacity",opacity/255f);p.Material.SetFloat("_Mirror",mirror?1:0);p.Used=++serial;p.Object.SetActive(true);
+   }lastSize=displaySize;Complete=true;a.ViewReady=true;Trim();
+  }
+  void Trim(){long bytes=Parts.Values.Sum(p=>(long)p.Bins*p.Rows);while(bytes>Limit){var victim=Parts.Where(p=>!p.Value.Object.activeSelf&&!(p.Value.Page>=requiredFirst&&p.Value.Page<=requiredLast&&(p.Value.Bins==256||p.Value.Bins==requiredBins))).OrderBy(p=>p.Value.Used).FirstOrDefault();if(victim.Value==null)break;bytes-=(long)victim.Value.Bins*victim.Value.Rows;Release(victim.Value);Parts.Remove(victim.Key);}}
+  static void Release(Part p){if(p.Object)UnityEngine.Object.Destroy(p.Object);if(p.Mesh)UnityEngine.Object.Destroy(p.Mesh);if(p.Material)UnityEngine.Object.Destroy(p.Material);if(p.Texture)UnityEngine.Object.Destroy(p.Texture);}
+  public void Dispose(){foreach(var p in Parts.Values)Release(p);Parts.Clear();if(bundle)bundle.Unload(false);bundle=null;shader=null;}
+ }
+}

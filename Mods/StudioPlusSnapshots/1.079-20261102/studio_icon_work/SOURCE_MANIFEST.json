@@ -1,0 +1,648 @@
+{
+  "displayVersion": "1.0.7",
+  "assemblyVersion": "1.0.7.0",
+  "sourceFiles": 160,
+  "files": [
+    {
+      "path": "Gameplay/Audio/Fmod/fmod.cs",
+      "sha256": "4705A0EAEEF096E57D44D9DAAD11D09B1700CA0203AB5B8B149715BD5874833E"
+    },
+    {
+      "path": "Gameplay/Audio/Fmod/fmod_dsp.cs",
+      "sha256": "07B58F6B05342712E9257E4027ABDBFFAAECFB002FE02992E0487B99236A6862"
+    },
+    {
+      "path": "Gameplay/Audio/FmodGameplayBackend.cs",
+      "sha256": "62A2E92CC5A114A267082AA5DE5316466B03182F7D40A4411F704FD14CDD1759"
+    },
+    {
+      "path": "Gameplay/Audio/GameplayAudioHost.cs",
+      "sha256": "80A5118A94F59D57C92E3D25621E399728F211D058C87CB916332B44BFA3F224"
+    },
+    {
+      "path": "Gameplay/Audio/GameplayAudioScheduler.cs",
+      "sha256": "24EC361729CB7922E439ADA1A0BD5AB4494A57E267DD10B0A978E362238DB3BD"
+    },
+    {
+      "path": "Gameplay/Audio/GameplayClockBridge.cs",
+      "sha256": "C6BF64680837E2F0A5F114FDCE08D4A0DC29AE9DDE9C5D6D288701EC053B15CA"
+    },
+    {
+      "path": "Gameplay/Audio/GameplayMusicPcm.cs",
+      "sha256": "C9EDE46D755921AC417DD34133CA5675D03244C82F038A0510E982C3C7E9A1D5"
+    },
+    {
+      "path": "Gameplay/GameplayInputSampler.cs",
+      "sha256": "DB8A958BB5DC9ED295F2B5B6D09C5057C078AF53628865EE5676778EC06052F6"
+    },
+    {
+      "path": "Gameplay/GameplayInputTimeline.cs",
+      "sha256": "0E456A038454D303C53675F50D7329F8865E2EFDB16891AAC6AC567A4651054B"
+    },
+    {
+      "path": "Gameplay/GameplayOptions.cs",
+      "sha256": "80C2C34C19E7D00FB2C6B4B97996E5617F423E16EEA260F05C43E00E65A06839"
+    },
+    {
+      "path": "Gameplay/GameplayPresentationAdapter.cs",
+      "sha256": "BE611DCD0DFF53F8ED1A76C372CC5232DFB06A2107899DAB1A2EDFF22050C7E7"
+    },
+    {
+      "path": "Gameplay/GameplayPresentationBridge.cs",
+      "sha256": "C9034E7821690B078841947AF87E011114EE8C1B0F0192CACEC8AE52F2A948D7"
+    },
+    {
+      "path": "Gameplay/GameplaySession.cs",
+      "sha256": "C4B2AA796F7820B307B40D2873CDAE696447B236BDEC97548AD1B2DB103ECD29"
+    },
+    {
+      "path": "Gameplay/GameplaySoundController.cs",
+      "sha256": "A859B22C0661754ED4D4AD291A0990C63647E4A25E7A0875E2CDC2DC7820A36B"
+    },
+    {
+      "path": "Gameplay/NativeJudgeEngine.cs",
+      "sha256": "EFE8B9795B0D7A6F391E98C4FEDE08700FC6B0CC103A960AE48A0666F0A59972"
+    },
+    {
+      "path": "Gameplay/SkyGroupJudge.cs",
+      "sha256": "EDE3CCC1E826BDAF3C38E360BACD9E174E24B7F7E3D1022098B7B59642BA2396"
+    },
+    {
+      "path": "Native/DisplayAntialiasing.cs",
+      "sha256": "373F0EBD251DD1B58995A0FEA186D00B2CF9DF1AC3CD6F42EF16287FE65ECC4E"
+    },
+    {
+      "path": "Native/NativeComboBlend.cs",
+      "sha256": "61EFBE7C7AFBB4BF3817D4A17BB5B7E6C0B9781B5B53F9984D4235542DEEA01F"
+    },
+    {
+      "path": "Native/NativeEffectSettings.cs",
+      "sha256": "E8D14EE309C25F4C1D98B69457739995257F973FEF5E954536A2911A77A9E7B8"
+    },
+    {
+      "path": "Native/NativeGaugeTransition.cs",
+      "sha256": "4B60AD02324B9CBF0E9357E590AF99F6FBC77BA15D5249731C83988BCC098AF8"
+    },
+    {
+      "path": "Native/NativeGroundProjection.cs",
+      "sha256": "F820F989DE407E9A1BBDF700FFE82EC9890E431D4DEE8C60FF85D1D59F45E1D8"
+    },
+    {
+      "path": "Native/NativeHudControls.cs",
+      "sha256": "5B7F2496CDDE0A3B36B3F1150A18CF82A9488D88973AE90FA8262E4185733F53"
+    },
+    {
+      "path": "Native/NativeJudgementPresentation.cs",
+      "sha256": "7FD37A10E126F991D6B791E536391AFAD30B1392B175CA506B5D51419B1CAB7E"
+    },
+    {
+      "path": "Native/NativeKeyLabels.cs",
+      "sha256": "9710982782D9D7DB4ABA38D7F3110E21E66593839DD9D13211335AFAA7E3BBB0"
+    },
+    {
+      "path": "Native/NativeProgress.cs",
+      "sha256": "BE8459AD677BCA663B6DF01AB6014F91296A7208DE8550ABE0A2DE7A8CAA166D"
+    },
+    {
+      "path": "Native/NativeReadability.cs",
+      "sha256": "67F6B3EC9FD4B5AB9322C60271D9C3807378E03672C1DF5CE086F3EDED50E6B9"
+    },
+    {
+      "path": "Native/NativeSideGuides.cs",
+      "sha256": "294455724CE4A1EA2D2EF4425DE06650EAFBA05D4219A8708ACE6DB76A99638B"
+    },
+    {
+      "path": "Native/NativeSkyFeedback.cs",
+      "sha256": "CD336E79507455577A6B84B8F404A5B714BF8E8F8E5A4530EFA5372000B6E830"
+    },
+    {
+      "path": "Native/NativeTrackLines.cs",
+      "sha256": "9831689BA7B1067D7EE24254742BFBC05D0BA58595DF6814D6F8A419EE2C44E9"
+    },
+    {
+      "path": "Native/NativeVisualAir.cs",
+      "sha256": "1B8F632E9D121444C22E9F091210131095E13FCC16011A1A4119A02616DB6325"
+    },
+    {
+      "path": "Native/NativeVisualCenter.cs",
+      "sha256": "0272BD210E41EBBA6C51501347151A5D35ED8148F3EE019473550F24CF782868"
+    },
+    {
+      "path": "Native/NativeVisualHitEffects.cs",
+      "sha256": "151BEB12C33D4EC1A46F0BD1591A45FB5552412968A5C4FD5C19BC29407EE979"
+    },
+    {
+      "path": "Native/NativeVisualPlugin.cs",
+      "sha256": "ACB9D8B1899ECED40B8CB513A948281977569C4EB146C90402F456EB65C9A2EE"
+    },
+    {
+      "path": "Native/NativeVisualPresentation.cs",
+      "sha256": "093FEEFDE3016FAB9F85A7B0E0D93719E203569D0C69E24D4032C6392230DF3D"
+    },
+    {
+      "path": "Native/NativeVisualTests.cs",
+      "sha256": "70D96B599B13D54C6B5D9E81C82FC5DF891D46C3F8FC455911F4FC837F6D7553"
+    },
+    {
+      "path": "Native/NativeVisualTrack.cs",
+      "sha256": "F902347FBFDB0E651469CF3499DDB13A70D96143F7D60BAE62D70CAAC0A38055"
+    },
+    {
+      "path": "Performance/AltHandleLayout.cs",
+      "sha256": "AE570524C63FA54FDFD91E35410768896E2B92D84C5750EB111D828854AE8C19"
+    },
+    {
+      "path": "Performance/BatchEditing.cs",
+      "sha256": "4FE4F0D00E043BA06FE682BCEA366EC2A1660F410FCF32AA2DBEF7F95BC4C88A"
+    },
+    {
+      "path": "Performance/ClipboardGroups.cs",
+      "sha256": "0CCA89C4BFFB1ABF5C4CF6D016542152CDF652F99C99CCA456680FE9715E7007"
+    },
+    {
+      "path": "Performance/CommitRefresh.cs",
+      "sha256": "0810C8597699910C28F462B0B5A05F2F02C6501CCA176F79C385ADC4522CBF27"
+    },
+    {
+      "path": "Performance/CommitValidation.cs",
+      "sha256": "62EB18BAD93818D86EEC0D86D3FE41F9862ED8A8467E25A89D2B14D434ADC3BD"
+    },
+    {
+      "path": "Performance/CompactOverlayPopup.cs",
+      "sha256": "E97DB817443DB11C33617EE27D459775CE820CA372BE7AA4320BE3BFB4CC4F2D"
+    },
+    {
+      "path": "Performance/CompatibleFieldWrites.cs",
+      "sha256": "BFA0FC7D343A2D98CB6BBE3A20C6BA74FAF129F13237012F565A7EC3A4F16BA2"
+    },
+    {
+      "path": "Performance/CountPartCache.cs",
+      "sha256": "0B2CF0A147397C4461E349B43DDAD5A8E5CD42846836F82036A6626DB18A1C87"
+    },
+    {
+      "path": "Performance/DocumentAcceleration.cs",
+      "sha256": "F049A11B92553C38BE47E92B08BC36D08972A4103403769892D703DBC9EC7CDD"
+    },
+    {
+      "path": "Performance/DragDirtyState.cs",
+      "sha256": "D6491458CCD5DD585CA9C210F24D429DB2309D7BB1CE5BFB63BB155BAD8FF8DE"
+    },
+    {
+      "path": "Performance/DragInput.cs",
+      "sha256": "35F9F7A3EC8FA544F309DB7FB3D5A66D90DEAC62464FB102059EB6123CB74CE4"
+    },
+    {
+      "path": "Performance/DragNormalization.cs",
+      "sha256": "576EF3E021C2A6245A3A99F9BFC3D135B510B3F57911F70E08927D8F823E0DF9"
+    },
+    {
+      "path": "Performance/DragPreview.cs",
+      "sha256": "FD21C07EC3A14B0B593E9FA4283C61264485F2C79B9F5B5753B001270C12504B"
+    },
+    {
+      "path": "Performance/EditBenchmarkProbe.cs",
+      "sha256": "F3F65B3D5B2DFB83A47FFB41583A5644F47A3B0606D1582A1D0FDBEFD12A4F91"
+    },
+    {
+      "path": "Performance/EditingGridStrokes.cs",
+      "sha256": "852323614880D766802442FFF13BEE74A9AA005EA28B9F9CDFDFAAF73EC1B33E"
+    },
+    {
+      "path": "Performance/EndpointDragMode.cs",
+      "sha256": "949A2FFDA4D60DDC0F04017FE497754FF2C2851F5A08086E8D29C8C462A10A86"
+    },
+    {
+      "path": "Performance/FastScroll.cs",
+      "sha256": "7C53C979B98C8AB3AABC1F7576BCBE8548C6A51D934CAF6275D728C9827F199D"
+    },
+    {
+      "path": "Performance/HandleOptimization.cs",
+      "sha256": "603B2765606F11F6E9D3B41A417BF14008785AE13A1A7AB2B459549C83AF3C89"
+    },
+    {
+      "path": "Performance/NativePointerMessages.cs",
+      "sha256": "E9129B4AA03D6C3D637252CDE88D81E2B286E49119B9925A6F08FFB40EE80BCA"
+    },
+    {
+      "path": "Performance/NoteTokenEdits.cs",
+      "sha256": "354E9695C2DCA1B103A0FB67B0626AD005890A8D67F0823A8E24F404EFA36C8B"
+    },
+    {
+      "path": "Performance/OverlayAnnotationLayout.cs",
+      "sha256": "44E68049419BA06DA545ABA481312D54C4E2BE38AE6AA735CB9CF6C0F52CF957"
+    },
+    {
+      "path": "Performance/P1PlayerAcceptance.cs",
+      "sha256": "90E1CD46961FC2C2FE93E195D77257178E84F9293194EE47C491501FE432E6E4"
+    },
+    {
+      "path": "Performance/P1PlayerProbe.cs",
+      "sha256": "3A7E4583125858FC00A6370788B5254A1BFA56A60ED1923EF064F6DA8473F613"
+    },
+    {
+      "path": "Performance/P1Profiler.cs",
+      "sha256": "4531636B725FCF25F7CF1C01710775C1B6F6A294CF3E8192E350E8759C79425E"
+    },
+    {
+      "path": "Performance/PausedBatchUploads.cs",
+      "sha256": "1E5A2D929E77A1A22A3F56B7306ED761D00F148514A9323140A2C7BC6E4B4506"
+    },
+    {
+      "path": "Performance/PausedNoteMeshes.cs",
+      "sha256": "E41028A9016B89600CCDB47A72BCB94EC3EA78C1B8A3B870833D53276F14C200"
+    },
+    {
+      "path": "Performance/PlaybackGcBudget.cs",
+      "sha256": "C3CAE1E05A0A350080374BC715639F71303C686C772B43B8DE7549059869B5C2"
+    },
+    {
+      "path": "Performance/PreviewBatchUploads.cs",
+      "sha256": "1170FF7262FFF9AE7EEAC687A7EA94FA1F3361251E0200804222468FC0B345D7"
+    },
+    {
+      "path": "Performance/PreviewFlickBody.cs",
+      "sha256": "27A3ABC1D6C540949F486514E0E16B8303FB49CE61ED7A85B25130A99C934DF1"
+    },
+    {
+      "path": "Performance/PreviewFrustum.cs",
+      "sha256": "A542AAC12E588D04ED6607C5224711D7DE96807A99457C2F4A26FCD9E8A0E2B3"
+    },
+    {
+      "path": "Performance/PreviewGuiSnapshots.cs",
+      "sha256": "7B3B278F7D2E3DE62CFD2DE7465286A84EC8DB5D3B3566AD7B0501267954FDF0"
+    },
+    {
+      "path": "Performance/PreviewMeshClip.cs",
+      "sha256": "879E6EB9338F97DB674676C7279AB7C11A68B585C2005CEDCA406EA97C5B2E01"
+    },
+    {
+      "path": "Performance/PreviewMeshUpload.cs",
+      "sha256": "69350A50B8AE30FE672BBB58EEEC7294C44B74609BD99DE70483E7AE2CE31F4C"
+    },
+    {
+      "path": "Performance/PreviewSkyBody.cs",
+      "sha256": "83FEE39CD4139E7AAA9CD4E6E4156ED0EB4374CC29512856E504DB82E3CE2AAE"
+    },
+    {
+      "path": "Performance/PreviewTapMeshes.cs",
+      "sha256": "EB55A0447D042E4BA795D1389EB181D78D604C1EA3B5D06F5E2FBAC94B49D034"
+    },
+    {
+      "path": "Performance/RendererAccess.cs",
+      "sha256": "C3651CE38221C31D2684A9E1CC944619FF091C904C068F1018BC7BEC70D352F6"
+    },
+    {
+      "path": "Performance/RenderIndex.cs",
+      "sha256": "7F8246B1E3BA5E1FA8D7E6ED30AFBC2D16EF4C38524B7060E18C9C428696456D"
+    },
+    {
+      "path": "Performance/SkyMeshCache.cs",
+      "sha256": "FF2F1E34A959C6F181F22E4EF9336E7645AF5123243EB6B6E2CC5F45C9E2CFC6"
+    },
+    {
+      "path": "Performance/StaticBeatMeshes.cs",
+      "sha256": "F1BB2F02722C6D0E557A608FEACDA5899D25A999587BE22CC62F2EA97FD8BF55"
+    },
+    {
+      "path": "Performance/WindowFocusRecovery.cs",
+      "sha256": "59B68AD2E1912B4C7B02E9215C22F035651FAAE31BC4BE49B67AA95CAB2DCE64"
+    },
+    {
+      "path": "Render/FFmpegPipeProcess.cs",
+      "sha256": "1A79104CEB4F63592926E902A11DC07BB0B1AC73B3CCA0539C7DB9597A812E0F"
+    },
+    {
+      "path": "Render/OfflineAudioSynthesizer.cs",
+      "sha256": "08AC1803B1ED2AD32D4E0FD22E84A5C62780CE6114BA187F1BA3A76E54125441"
+    },
+    {
+      "path": "Render/OfflineFrameStepper.cs",
+      "sha256": "1B40C61E7B70EF9DA23C8BA2E29A4122D29DFA2E1BFB4965C4197FBD15012C29"
+    },
+    {
+      "path": "Render/VideoRenderPanel.cs",
+      "sha256": "3D51AC89BF548EFCCF910990F88DE852D7B249BD1D250BF55AD7EEE77C62AC63"
+    },
+    {
+      "path": "Render/VideoRenderPreferences.cs",
+      "sha256": "E45FF81B2E54788E655A87E3CF162DBAC6A013DE00D916FA101DD53599FC7A4D"
+    },
+    {
+      "path": "TimeGroups/GroupDataPatches.cs",
+      "sha256": "1DB9A5C41B9E7F38B22F0490A9208B677F71A3FCAEE17D08D2F9406FF6D6E4DF"
+    },
+    {
+      "path": "TimeGroups/GroupMeasureLines.cs",
+      "sha256": "95789E3F059EB5B72A41FE3C4E4F5C26816E7253CC589F40BA3273419C35BDBF"
+    },
+    {
+      "path": "TimeGroups/GroupProperties.cs",
+      "sha256": "34D555BE0D6DBF63FF4038066C8A026BE202EF1E3F1FC79B45F3561D67EC416E"
+    },
+    {
+      "path": "TimeGroups/GroupRuntime.cs",
+      "sha256": "07C3508268D381EF6D8BF0A83D8710F30471CD5532B1C91AF51F8B3314B0A8C8"
+    },
+    {
+      "path": "TimeGroups/GroupSourceSnapshot.cs",
+      "sha256": "1B41E4AC2D5F9F7A190C0949E89D9F3A0E01BCA21E58CF1454A89A0C0BEB0B94"
+    },
+    {
+      "path": "TimeGroups/TimingGroups.cs",
+      "sha256": "AF2333B09BEECDE1D92EF79DBF30C40380E8453818409313BF5A932415E3ED10"
+    },
+    {
+      "path": "TimeGroups/TimingStatements.cs",
+      "sha256": "AEF90E2A8DE1DE05E3AB0DC9791CC10949CDD3CBF426430A6F9F499530CBF5B1"
+    },
+    {
+      "path": "UI/AirGridRange.cs",
+      "sha256": "AD59B695761A56F803CCB6C67C545D7A0F42B6B1267D69AF1BCB36BB72B89856"
+    },
+    {
+      "path": "UI/AirOverflowSettings.cs",
+      "sha256": "54DA5B9E87948D9DA6CDC5064C5803F906B2F42B4B5E75F9F83398C012AC12D7"
+    },
+    {
+      "path": "UI/BoundedLruCache.cs",
+      "sha256": "CB2616EB109C964E1BB38BE709FD90794D096E53787A1740EE36F1A60C97A3F8"
+    },
+    {
+      "path": "UI/ButtonFeedback.cs",
+      "sha256": "C2397779525A46A1F3E8FB5C0A3FE3B0588A8982086BE67053B9513E4648D5EC"
+    },
+    {
+      "path": "UI/DisplayPrecision.cs",
+      "sha256": "9235D76264F31F9CF6041205BA8756E04B3D8C2EF613031D85ED6558E24C9618"
+    },
+    {
+      "path": "UI/EditHandleHotkey.cs",
+      "sha256": "C91D1D54E92C3A8543FBDD4AA1FDAAC1D5DA2D516389B06D3A28F8933A58F550"
+    },
+    {
+      "path": "UI/EndpointDragModeUI.cs",
+      "sha256": "B0383D6C3E34364AF6C1EB4279112171CC42367338F848746BADF2CB0CE1C1A3"
+    },
+    {
+      "path": "UI/ExternalSpcOutput.cs",
+      "sha256": "E4F414E5A435993B0D54795CE4498AF4D54B8D5021EA0595EA1542BB7B9FF849"
+    },
+    {
+      "path": "UI/ExternalTimingEdit.cs",
+      "sha256": "731167705C486383085715ED8C38C8448D01B80D23AB48010AF5996AE9B42FF3"
+    },
+    {
+      "path": "UI/ExternalTimingSplit.cs",
+      "sha256": "0BA2E9D57E073FB1D4A77B34AE5AC1A364984155FEDD58F40331883A5B5C17EB"
+    },
+    {
+      "path": "UI/ExternalToolJson.cs",
+      "sha256": "E55DE882043C4479DEED6C2DF1D7DE9DA3B39978C687886B8ACBF9DD61729D6B"
+    },
+    {
+      "path": "UI/FramePacingSample.cs",
+      "sha256": "6BC813CD5DE257A66DB7CED3E33E1BB87E173F6FB1275FBE8E61971AA931A0FC"
+    },
+    {
+      "path": "UI/FrameRateDisplay.cs",
+      "sha256": "7BB541F9451E594AF27203E4F3AD614701103836F66FF3457DD185AD710499E4"
+    },
+    {
+      "path": "UI/HoldSpacePreview.cs",
+      "sha256": "AA4EE6F6C09F92FDE62DFFE9F5C04B40D61C02DD3B69A47A0FEDA3BB22B30C9B"
+    },
+    {
+      "path": "UI/HotkeySettings.cs",
+      "sha256": "0DAF7E45B394A0B8ABF1A9DF45D101443022DFF7953AB9A07E8B3ECE092E8133"
+    },
+    {
+      "path": "UI/InputStyleCache.cs",
+      "sha256": "75E72009584FE512CDF222B7DEE8B7A9132EB4DFF049B30D6D79288DD136D5AA"
+    },
+    {
+      "path": "UI/InputTextSelection.cs",
+      "sha256": "8AD0BAD5846028A2D126A04FBEDCEC443BE7FFCB86792ED4BEE0EAA9F7983397"
+    },
+    {
+      "path": "UI/IntegratedReleaseNotes.cs",
+      "sha256": "76B82F65B26B935C0DE07119AF3A9851BC24D6A593C6B46DC6E5C2E3FB093F42"
+    },
+    {
+      "path": "UI/MiddleHandleDrag.cs",
+      "sha256": "5D18738FD025E7C3B746B4514FE4D63B9CE08353855FC03EEC51894E5A1937D6"
+    },
+    {
+      "path": "UI/NativeEditorUIAntialiasing.cs",
+      "sha256": "A3F87C6941F51A0A578B0E45E52178F822541EE93E0E6A1092A395AF7D9C8D1E"
+    },
+    {
+      "path": "UI/NativeEditorUIDocked.cs",
+      "sha256": "2C28D75D3846E87388B898477BFBAE220D424DE4C192ECEBBBF9582D344513C9"
+    },
+    {
+      "path": "UI/NativeEditorUIEffects.cs",
+      "sha256": "02200239578E628ED12D2362997EC1662B1F0C7BFF9D38B70FF288D4A68786FB"
+    },
+    {
+      "path": "UI/NativeEditorUIFilters.cs",
+      "sha256": "A357CF03B323C8E5963F58B3392C7E3F50514B8DF704BD3ED15DEFA0527579A3"
+    },
+    {
+      "path": "UI/NativeEditorUIHudInput.cs",
+      "sha256": "BD0B7102ECB790B025B41E4A1D2A74A9EBACB7B1C36ED744E1D7EFB63352D463"
+    },
+    {
+      "path": "UI/NativeEditorUIInputDrawing.cs",
+      "sha256": "DE1C10A61EE3DE8A2F2B7420952CF468C01F05311F3B2E2830934C979E7267C1"
+    },
+    {
+      "path": "UI/NativeEditorUIInteraction.cs",
+      "sha256": "39B6AF2925E43F9D87AC6180C2BF0F70DCD1111C485E640C1D6E23AD9B6B1F64"
+    },
+    {
+      "path": "UI/NativeEditorUILayoutFixes.cs",
+      "sha256": "2949E04B09A5E7784EA7098EDD409FD894868FA71FADD1358EEC956B52580F59"
+    },
+    {
+      "path": "UI/NativeEditorUILegacy.cs",
+      "sha256": "13BBFEDB44EB6A3C7CF63F70C4BA1612E0D9F96D0360761242F29403A0A3FD5E"
+    },
+    {
+      "path": "UI/NativeEditorUILocalization.cs",
+      "sha256": "4354346626D5BDDE137C423B605C0CC2867C8B43AD29F510098841D95A858238"
+    },
+    {
+      "path": "UI/NativeEditorUIMatched.cs",
+      "sha256": "7F31503D9C38154795E8E67E6DC8156EC6370C96EE67E7904696AB46FACCC152"
+    },
+    {
+      "path": "UI/NativeEditorUINoteTimingGroup.cs",
+      "sha256": "2C4E28047051C4305DB947F0AB1D60C09B847F662F966647EFCCE10CB9B92E89"
+    },
+    {
+      "path": "UI/NativeEditorUIPanels.cs",
+      "sha256": "09F3F87D543DE4E489738C7EB9F2984337E157DBEEE2831F90DD1535163AF7F8"
+    },
+    {
+      "path": "UI/NativeEditorUIPlugin.cs",
+      "sha256": "78FA4DF112B358FCD1E072EF3008A475E744079A75716C0A6323668D882433CA"
+    },
+    {
+      "path": "UI/NativeEditorUIPopup.cs",
+      "sha256": "75EA5FCAC74F87D95FAFC143D51B810FCB1A9B04B29A179095E69FC27285B1C5"
+    },
+    {
+      "path": "UI/NativeEditorUIPopupInput.cs",
+      "sha256": "8D39C41E2DA7B162206D98B4CF6F16CA11E2E5060EC94764AA52597579746B92"
+    },
+    {
+      "path": "UI/NativeEditorUIProgress.cs",
+      "sha256": "8A56A20E0743A9C8A633944C8D1744021811AF98A6D47395BEF2E424F8866198"
+    },
+    {
+      "path": "UI/NativeEditorUIRadial.cs",
+      "sha256": "F242829B2790B9174484E7341233B5EF7D5CFF97998961A9B7090C7EB96EBE2E"
+    },
+    {
+      "path": "UI/NativeEditorUIRefinements.cs",
+      "sha256": "0B7122D3B94F182933FD7777034E89CA291D0CF47B5DC12450498545FAF13FD0"
+    },
+    {
+      "path": "UI/NativeEditorUISecondary.cs",
+      "sha256": "33ED2E3A8C39C8FAACEA2BE7CA40017A6FE067C6D135C9752E05D6E64B2B8D6B"
+    },
+    {
+      "path": "UI/NativeEditorUIText.cs",
+      "sha256": "7E443CD97013BF052459BA28771DAE526F4385AD432CF2A111A8C2B80A62A015"
+    },
+    {
+      "path": "UI/NativeEditorUITimingEditor.cs",
+      "sha256": "1C25DB650F27692704B4449A0431693FDC4B4067C7B704CEF28BA67CCCF981AB"
+    },
+    {
+      "path": "UI/NativeEditorUITimingGroups.cs",
+      "sha256": "B271432D750DA8653D3EB241E10058E32BDE6271A6513D4D3FAD64C72422236D"
+    },
+    {
+      "path": "UI/NativeEditorUIUsability.cs",
+      "sha256": "09AE8523096B076C689F8FE332F8401834C9FB81C5DA4284805A74C67822C26B"
+    },
+    {
+      "path": "UI/NativeExternalToolDefinitions.cs",
+      "sha256": "054F0316A26B173B3A9C76333621236CA1434D9057876D69B7DA34C7F7BA89C7"
+    },
+    {
+      "path": "UI/NativeExternalToolPanel.cs",
+      "sha256": "1CD9CB299AF0C03486603B8D4FE9AD31BA9DE8F3CF92682E3038C04A76BD080A"
+    },
+    {
+      "path": "UI/NativeExternalToolRunner.cs",
+      "sha256": "815D54A473CEFA043300AD6439C1F072BCA3F0B1453313603D391CB8449D8A19"
+    },
+    {
+      "path": "UI/NativePreviewNavigation.cs",
+      "sha256": "AF7CC168DA4BA4EAD79463A0352E9C8106441510F6C5B3DAA92F0A41126DDB7E"
+    },
+    {
+      "path": "UI/NumericSelectionGesture.cs",
+      "sha256": "8009026C712EE6BD1AF5966EF78A45530EA09AC44473B66FC091D5DFF46DBDD9"
+    },
+    {
+      "path": "UI/OffsetAudioExport.cs",
+      "sha256": "03D62DEA732BE21D3B4B4A4F620F6467C2B71BB72AF8FED871A17FAB48CD63AC"
+    },
+    {
+      "path": "UI/OperationPreferences.cs",
+      "sha256": "9B3486E6C4A92A16861EA02E9E77EC3AE4D11952343752581B6A9C30E2EB80D2"
+    },
+    {
+      "path": "UI/OverlapPickCycle.cs",
+      "sha256": "C78E665C4E6A113D247047EE2EBF8AA40FAD35E3C3D3844F760AB8F3E6EDCC94"
+    },
+    {
+      "path": "UI/OverlapWidthFix.cs",
+      "sha256": "EED035ADA75DF8C8C6D6647BD277D43A5B330DED0769170EA3E4481F2A1BF681"
+    },
+    {
+      "path": "UI/PlaybackPresentationClock.cs",
+      "sha256": "114714DB3B0C9926517FB9EC8C0BC08E88DAAC37D9CCF9AD9FB3BD2DFD5D1F67"
+    },
+    {
+      "path": "UI/ProductBrand.cs",
+      "sha256": "CD7028B12FD991C7958EF65627EB0920BBB56437B9A28E98342AA4A28D99DAE7"
+    },
+    {
+      "path": "UI/QuickPlaceGuides.cs",
+      "sha256": "5671897DBABB962BABCE47094D9CD63C2625AC76C91B5B84B3445B2825ABA35B"
+    },
+    {
+      "path": "UI/QuickSkyTools.cs",
+      "sha256": "B4ABA150FFC4336A5B174951BDD814B6475AB54A0981E0300EB274B1AB1F7C46"
+    },
+    {
+      "path": "UI/QuickTimingTools.cs",
+      "sha256": "1A65A449247C0C6791470289A6D74E443D54DE24C5C5EE333E81276300CD299D"
+    },
+    {
+      "path": "UI/SettingsBrandLineArt.cs",
+      "sha256": "212C2365158BDDE2E81C291F3B72260F715F84C0102EE5348629393379C438E0"
+    },
+    {
+      "path": "UI/SharedPreferences.cs",
+      "sha256": "81D72B57C444CDB085B25821FA11431B7E3A728FF44974D590CF9D9F43D8FE9D"
+    },
+    {
+      "path": "UI/SkyNodeEditing.cs",
+      "sha256": "C5FC3B96114C903A63F0852E5E782B4E547E67F6946E12C6DF9A5DD913E857AD"
+    },
+    {
+      "path": "UI/StudioHotkeys.cs",
+      "sha256": "80CA185EDFD6986B40E11D8869DEBDA6C09482166996322FB182A6AF8C868724"
+    },
+    {
+      "path": "UI/TargetFrameRate.cs",
+      "sha256": "26D64B9B6EE0DBC527FEF20D311A54F973A800E8E840E2D83C9FCD416DDB6778"
+    },
+    {
+      "path": "UI/TimingPanelPaint.cs",
+      "sha256": "179629C9687B2CC0CA9AC57C83619CE5D18A167E8A8E2ED20F47634C58E452DA"
+    },
+    {
+      "path": "UI/TimingPanelViewport.cs",
+      "sha256": "D5B0751557BA99D0116D61CAAA29448A3EEA4BEE717F1856FEE041A74CA71F26"
+    },
+    {
+      "path": "UI/TrackViewPreset.cs",
+      "sha256": "229F6A380C1356290265E4E17E406491FF4E0511A38017A12AD88ABC5B031015"
+    },
+    {
+      "path": "UI/UiFontRaster.cs",
+      "sha256": "2456D7A570BF8439B82E5C6A715FD494A9DDA38EDE22D5A5048AB31E5D87119B"
+    },
+    {
+      "path": "UI/UILocalizationExtras.cs",
+      "sha256": "1B9C6566C1EAE348F4DF98581027340B436675128E173FE36D53A7DDF75A90A2"
+    },
+    {
+      "path": "UI/UiStaticTextRuns.cs",
+      "sha256": "A38AAECA18E7F88588F9F9F30575F50F54ACCA87A9D6E4C6B2C0720B23404F99"
+    },
+    {
+      "path": "UI/UiTextLayout.cs",
+      "sha256": "90ECBB250A4F9E7BDD584D2260465454BEE4780DB6F1F65A3D0B5B421E519BC0"
+    },
+    {
+      "path": "UI/UiWholeLineRaster.cs",
+      "sha256": "437AB4E668CB5545A140C6DDE8AB25ECE808B6EFE864B48A6E92966149556F9E"
+    },
+    {
+      "path": "UI/UngroupedSkyGrouping.cs",
+      "sha256": "3492743AA70F018BF0679C42B0CC93E2C49543A41D9D58C0D6BD7713D1D26A9D"
+    },
+    {
+      "path": "VisualUIPlugin.cs",
+      "sha256": "92CFBB16DEE764E71D61BCDCF132535BF2AD286A59DBE22F1F2CEC62E13A145D"
+    }
+  ],
+  "internalVersion": "1.079"
+}

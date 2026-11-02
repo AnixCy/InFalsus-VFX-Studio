@@ -1,0 +1,60 @@
+{
+  "name": "InfStudioSpectrogram",
+  "version": "1.0.0",
+  "hostInternalVersion": "1.075",
+  "hostDisplayVersion": "1.0.7",
+  "sourceFiles": 7,
+  "mainPluginModifiedForSpectrogram": false,
+  "coverage": "continuous central four lanes including all black gaps",
+  "files": [
+    {
+      "path": "Source/SpectrogramPlugin.cs",
+      "sha256": "58019CBC4111BDE42AC731AB88A2BEEBC8830D85366E8B5991CC0AA1F7E6E6D3"
+    },
+    {
+      "path": "Source/SpectrumAnalysis.cs",
+      "sha256": "B6C92628CC4B7F01F261B9039B484C58D739B252CFD0BA8CC91664A02C96EBEF"
+    },
+    {
+      "path": "Source/SpectrumCache.cs",
+      "sha256": "0FD16711F1CAAAFAF290A15EE9574F1C6B5612DF755B91AB5BE0149F4CF5F4B6"
+    },
+    {
+      "path": "Source/SpectrumMath.cs",
+      "sha256": "7EB06639E63E274512A8D1B7A2DD2582D3C626201C44A69E0AB744D6AC67CB27"
+    },
+    {
+      "path": "Source/SpectrumPcm.cs",
+      "sha256": "89DF2AD81B6841D6AB9D3B71D893F8B60ACA67D556960219761131CDACD511DD"
+    },
+    {
+      "path": "Source/SpectrumRenderer.cs",
+      "sha256": "1E44C95D4981B975BD724EE275FBD66952B16E8137FE639CDAFFB74E05D181BA"
+    },
+    {
+      "path": "Source/StudioBridge.cs",
+      "sha256": "5E1EDE43593027042BCE4EE09CC876E4F8938B26698E0D9DE05C8B2675EC6A69"
+    },
+    {
+      "path": "Spectrogram.shader",
+      "sha256": "22C9F8E3760FA258E9C8784A47EA8BE81E6E16B152E88D788CFB115BBED18995"
+    }
+  ],
+  "payload": {
+    "InfStudioVisualUI.dll": "6A4B910B730DDB34E08A8F8A474407F169B57BC95B42EF4820CAE985562809E7",
+    "InfStudioSpectrogram.dll": "AE53BAD0EFE15F317CDFF662356CDBD9D783251B10D9AE7240D0302AE1DE23A7",
+    "spectrogram.bundle": "56087F75C1581DBF03D81B24B988C7065EDA28733121FEFE6C15AF6CC0560A2B"
+  },
+  "frequencyAxis": "linear 20Hz..min(20kHz,Nyquist)",
+  "outputFrequencyCounts": "powers of two, 2..2048",
+  "defaultOutputFrequencyCount": 256,
+  "hopAt48k": 128,
+  "rowsPerPage": 256,
+  "cacheFormatVersion": 5,
+  "textureSampling": "single nearest-cell sample; no custom AA",
+  "displayAlpha": "monotone Hermite above 0.4; full alpha only at 1.0",
+  "deploymentState": "installed",
+  "analysisWindowMs": "numeric input: 0.1..1000, quantized to FFT window",
+  "newConfigurationWindowMs": 20,
+  "legacyConfiguration": "preserve effective window on first audio load"
+}

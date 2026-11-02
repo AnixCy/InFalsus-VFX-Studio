@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "values": [
+    {
+      "key": "start",
+      "value": "0"
+    },
+    {
+      "key": "end",
+      "value": "1000"
+    },
+    {
+      "key": "eventType",
+      "value": "track"
+    },
+    {
+      "key": "startValue",
+      "value": "0"
+    },
+    {
+      "key": "endValue",
+      "value": "1"
+    },
+    {
+      "key": "unit",
+      "value": "multiplier"
+    },
+    {
+      "key": "referenceBpm",
+      "value": "138"
+    },
+    {
+      "key": "sampling",
+      "value": "beat"
+    },
+    {
+      "key": "subdivision",
+      "value": "24"
+    },
+    {
+      "key": "splitCount",
+      "value": "32"
+    },
+    {
+      "key": "easing",
+      "value": "Linear"
+    },
+    {
+      "key": "replace",
+      "value": "true"
+    }
+  ]
+}

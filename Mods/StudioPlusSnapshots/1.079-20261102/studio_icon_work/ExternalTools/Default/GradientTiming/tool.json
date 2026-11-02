@@ -1,0 +1,225 @@
+{
+  "version": 1,
+  "id": "GradientTiming",
+  "name": "渐变 Timing",
+  "nameEn": "Gradient Timing",
+  "order": 20,
+  "script": "Tool.ps1",
+  "output": "timing",
+  "capture": false,
+  "description": "流速用 track；等效 BPM 会除以参考 BPM 转为倍率。节拍 BPM 另选 bpm。包含精确终值；只在当前时间组内替换所选种类的区间事件。",
+  "descriptionEn": "Use track for scroll, with effective BPM divided by reference BPM. Choose bpm for beat timing. Includes the exact end value; replacement affects only this event kind in the current timinggroup.",
+  "fields": [
+    {
+      "key": "start",
+      "label": "开始时间 / ms",
+      "labelEn": "Start / ms",
+      "type": "time",
+      "defaultValue": "0",
+      "options": []
+    },
+    {
+      "key": "end",
+      "label": "结束时间 / ms",
+      "labelEn": "End / ms",
+      "type": "time",
+      "defaultValue": "1000",
+      "options": []
+    },
+    {
+      "key": "eventType",
+      "label": "事件种类",
+      "labelEn": "Event kind",
+      "type": "choice",
+      "defaultValue": "track",
+      "options": [
+        {
+          "value": "track",
+          "label": "track · 流速",
+          "labelEn": "track · scroll"
+        },
+        {
+          "value": "bpm",
+          "label": "bpm · 节拍",
+          "labelEn": "bpm · beats"
+        }
+      ]
+    },
+    {
+      "key": "startValue",
+      "label": "起始值",
+      "labelEn": "Start value",
+      "type": "number",
+      "defaultValue": "0",
+      "options": []
+    },
+    {
+      "key": "endValue",
+      "label": "结束值",
+      "labelEn": "End value",
+      "type": "number",
+      "defaultValue": "1",
+      "options": []
+    },
+    {
+      "key": "unit",
+      "label": "track 数值单位",
+      "labelEn": "Track value unit",
+      "type": "choice",
+      "defaultValue": "multiplier",
+      "options": [
+        {
+          "value": "multiplier",
+          "label": "倍率",
+          "labelEn": "Multiplier"
+        },
+        {
+          "value": "effectiveBpm",
+          "label": "等效 BPM",
+          "labelEn": "Effective BPM"
+        }
+      ]
+    },
+    {
+      "key": "referenceBpm",
+      "label": "等效 BPM 换算基准",
+      "labelEn": "Effective BPM conversion reference",
+      "type": "number",
+      "defaultValue": "138",
+      "options": []
+    },
+    {
+      "key": "sampling",
+      "label": "采样方式",
+      "labelEn": "Sampling",
+      "type": "choice",
+      "defaultValue": "beat",
+      "options": [
+        {
+          "value": "beat",
+          "label": "节拍细分",
+          "labelEn": "Beat grid"
+        },
+        {
+          "value": "count",
+          "label": "分割数量",
+          "labelEn": "Split count"
+        }
+      ]
+    },
+    {
+      "key": "subdivision",
+      "label": "节拍细分 1/N",
+      "labelEn": "Beat grid 1/N",
+      "type": "integer",
+      "defaultValue": "24",
+      "options": []
+    },
+    {
+      "key": "splitCount",
+      "label": "分割数量",
+      "labelEn": "Split count",
+      "type": "integer",
+      "defaultValue": "32",
+      "options": []
+    },
+    {
+      "key": "easing",
+      "label": "缓动",
+      "labelEn": "Easing",
+      "type": "choice",
+      "defaultValue": "Linear",
+      "options": [
+        {
+          "value": "Linear",
+          "label": "Linear",
+          "labelEn": "Linear"
+        },
+        {
+          "value": "SineIn",
+          "label": "SineIn",
+          "labelEn": "SineIn"
+        },
+        {
+          "value": "SineOut",
+          "label": "SineOut",
+          "labelEn": "SineOut"
+        },
+        {
+          "value": "SineInOut",
+          "label": "SineInOut",
+          "labelEn": "SineInOut"
+        },
+        {
+          "value": "QuadIn",
+          "label": "QuadIn",
+          "labelEn": "QuadIn"
+        },
+        {
+          "value": "QuadOut",
+          "label": "QuadOut",
+          "labelEn": "QuadOut"
+        },
+        {
+          "value": "QuadInOut",
+          "label": "QuadInOut",
+          "labelEn": "QuadInOut"
+        },
+        {
+          "value": "CubicIn",
+          "label": "CubicIn",
+          "labelEn": "CubicIn"
+        },
+        {
+          "value": "CubicOut",
+          "label": "CubicOut",
+          "labelEn": "CubicOut"
+        },
+        {
+          "value": "CubicInOut",
+          "label": "CubicInOut",
+          "labelEn": "CubicInOut"
+        },
+        {
+          "value": "QuartIn",
+          "label": "QuartIn",
+          "labelEn": "QuartIn"
+        },
+        {
+          "value": "QuartOut",
+          "label": "QuartOut",
+          "labelEn": "QuartOut"
+        },
+        {
+          "value": "QuartInOut",
+          "label": "QuartInOut",
+          "labelEn": "QuartInOut"
+        },
+        {
+          "value": "ExpoIn",
+          "label": "ExpoIn",
+          "labelEn": "ExpoIn"
+        },
+        {
+          "value": "ExpoOut",
+          "label": "ExpoOut",
+          "labelEn": "ExpoOut"
+        },
+        {
+          "value": "ExpoInOut",
+          "label": "ExpoInOut",
+          "labelEn": "ExpoInOut"
+        }
+      ]
+    },
+    {
+      "key": "replace",
+      "label": "替换区间内同类事件",
+      "labelEn": "Replace this event kind in range",
+      "type": "bool",
+      "defaultValue": "true",
+      "options": []
+    }
+  ],
+  "gridField": "subdivision"
+}

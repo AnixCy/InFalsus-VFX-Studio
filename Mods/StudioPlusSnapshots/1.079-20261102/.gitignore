@@ -1,0 +1,10 @@
+*.dll
+*.pdb
+*.log
+**/__pycache__/
+**/Library/
+**/Temp/
+**/Logs/
+**/UserSettings/
+**/bin/
+**/obj/

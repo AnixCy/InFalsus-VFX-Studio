@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "order": 60,
+  "id": "TimingSplit",
+  "name": "按时序切分 SkyArea",
+  "nameEn": "Split SkyArea by Timing",
+  "script": "Tool.ps1",
+  "output": "split",
+  "capture": false,
+  "description": "选中一根或多根 SkyArea，总时间范围取最早起点至最晚终点。每根只在自身持续时间内按所属时间组有效 track/BPM 切分，分别采样原左右缓动，子段线性连接。沿用原 groupid，未分组的每根分配独立空闲 ID；无内部切点保持原样。保留时间组，禁止0ms，整批一次撤销，手动保存。",
+  "descriptionEn": "Select one or more SkyAreas; the overall range runs from the earliest start to the latest end. Split each only within its own duration at effective track/BPM events in its timinggroup. Sample its original eased edges and connect cuts linearly. Keep existing groupids; allocate a separate unused ID per ungrouped source. Notes without internal cuts stay untouched. Keep timinggroups, reject zero duration, one Undo for the batch; Save manually.",
+  "fields": [
+    {
+      "key": "splitKind",
+      "label": "切分事件",
+      "labelEn": "Cut at",
+      "type": "choice",
+      "defaultValue": "both",
+      "options": [
+        {
+          "value": "both",
+          "label": "track + BPM",
+          "labelEn": "track + BPM"
+        },
+        {
+          "value": "track",
+          "label": "仅 track",
+          "labelEn": "track only"
+        },
+        {
+          "value": "bpm",
+          "label": "仅 BPM",
+          "labelEn": "BPM only"
+        }
+      ]
+    }
+  ]
+}

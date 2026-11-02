@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "createGroup": false,
+  "values": [
+    {
+      "key": "splitKind",
+      "value": "both"
+    }
+  ]
+}

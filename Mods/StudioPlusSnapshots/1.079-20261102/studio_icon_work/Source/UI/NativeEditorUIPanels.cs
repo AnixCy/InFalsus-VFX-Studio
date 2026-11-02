@@ -1,0 +1,43 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using UnityEngine;
+using InFalsusStudio;
+using InFalsusStudio.Core;
+namespace InFalsusStudio.NativeEditorUI {
+ public sealed partial class NativeEditorUIPlugin {
+  void DrawPanel(){if(panel=="时序"){LegacyPanel("DrawTimingBrowser");return;}if(panel=="工具"&&toolsLegacy){LegacyPanel("DrawAuthoringTools");return;}if(panel=="检查"){LegacyPanel("DrawChartCheck");return;}if(panel=="工程"){LegacyPanel("DrawSongPanel");return;}if(panel=="帮助"){LegacyPanel("DrawHelp07");return;}if(panel=="设置"&&settingsTab=="相机"){LegacyPanel("DrawCalibration");return;}if(panel=="参数"&&advancedNote){Set(boot,"guiNoteSourceExpanded",true);Set(boot,"noteSourceExpanded",true);LegacyPanel("DrawNotePanel");return;}
+   FrameBox(panelRect);GUILayout.BeginArea(panelRect,GUI.skin.box);try{GUILayout.BeginHorizontal();GUILayout.Label(panel=="设置"?"设置 / "+settingsTab:panel,heading);if(GUILayout.Button("×",GUILayout.Width(40*scale)))Open(panel);GUILayout.EndHorizontal();GUILayout.Space(10*scale);panelScroll=GUILayout.BeginScrollView(panelScroll);try{if(panel=="设置")Settings();else if(panel=="参数")Notes();else if(panel=="编辑")Editing();else if(panel=="循环")Call(boot,"DrawLoopControls");else if(panel=="放置")PlacementDefaults();else if(panel=="网格")GridOptions();else if(panel=="组浏览")GroupBrowser();else if(panel=="波形")WaveOptions();else if(panel=="工具")ToolsHome();}finally{GUILayout.EndScrollView();}GUILayout.Space(8*scale);GUILayout.Label("数值：Enter / 失焦应用　·　保存后写入文件",caption);}finally{GUILayout.EndArea();}
+  }
+  void LegacyPanel(string name){var old=GUI.skin;try{legacy=true;GUI.skin=skin;Call(boot,name);}finally{legacy=false;GUI.skin=old;} // The original commands, validation, source editor and report remain authoritative.
+   if(GUI.Button(new Rect(panelRect.x+8*scale,panelRect.y+3*scale,32*scale,28*scale),"‹",button)){if(panel=="参数")Queue(delegate{advancedNote=false;});else if(panel=="设置"&&(settingsTab=="相机"||settingsTab=="相机参数"))Queue(delegate{settingsTab="显示";});else Open(panel);}}
+  void Section(string name){GUILayout.Space(17*scale);GUILayout.Label(name,heading);GUILayout.Space(5*scale);}
+  void Help(string text){GUILayout.Label(text,caption);}
+  void Row(string name,string key,string value,Action<string> commit,bool empty){Call(boot,"CommittedRow",name,key,value,commit,empty);}
+  void Flag(string name,string fieldName){bool current=Val<bool>(boot,fieldName);bool result=GUILayout.Toggle(current,name);if(result!=current)Queue(delegate{Set(boot,fieldName,result);});}
+  void Settings(){if(settingsTab=="游玩模式"){DrawGameplaySettings();return;}GUILayout.BeginHorizontal();foreach(string name in new[]{"显示","音频","相机","操作"}){string tab=name;if(GUILayout.Button((settingsTab==name?"● ":"")+name))Queue(delegate{settingsTab=tab;panelScroll=Vector2.zero;});}GUILayout.EndHorizontal();
+   if(settingsTab=="显示"){
+    Section("轨道与物件");Flag("显示音符","showNotes");Flag("裁去已播放的音符","hidePast");Flag("空域地面投影","showAirShadows");Flag("轨道连击数字（预计）","showCenterCombo");Flag("打击光效 / 粒子","showFeedback");
+    Section("网格与时间");bool grid=Val<bool>(boot,"showGrid");bool next=GUILayout.Toggle(grid,"节拍网格与时间吸附");if(next!=grid)Command("SetBeatGrid",next);Flag("小节线","showMeasureLines");bool linear=Val<bool>(boot,"linearTimeLayout");bool nextLinear=GUILayout.Toggle(linear,"统一流速");if(nextLinear!=linear)Queue(delegate{Call(boot,"CancelGesture");Set(boot,"linearTimeLayout",nextLinear);});
+    Section("背景与窗口");if(GUILayout.Button("展开已有背景 / 窗口选项"))Queue(delegate{settingsTab="背景";panelScroll=Vector2.zero;});Help("这里整理选项入口；现有视觉参数保持原值。");
+   }else if(settingsTab=="音频"){
+    Section("音乐");GUILayout.Label("音乐音量　"+Num(Transport.Volume*100)+"%");float v=GUILayout.HorizontalSlider(Transport.Volume,0,1);if(v!=Transport.Volume)Queue(delegate{Transport.Volume=v;});Call(boot,"DrawKeySoundOptions");
+   }else if(settingsTab=="操作"){
+    if(GUILayout.Button(T("内置游玩模式")))Queue(delegate{settingsTab="游玩模式";panelScroll=Vector2.zero;});
+    bool overflow=GUILayout.Toggle(AirOverflow.Enabled,"允许天空物件超界");if(overflow!=AirOverflow.Enabled)SetAirOverflow(overflow);Section("滚轮与定位");Call(boot,"DrawNavigationOptions");Section("语言与快捷键");Help("Ctrl + S 保存　·　Ctrl 多选　·　Alt 手柄　·　Alt+T 切换时间/位置拖动\n鼠标右键：点立得菜单　·　F11 恢复窗口");Section("播放方式");Help("空格预览保留边栏。点击播放进入正式播放，编辑层淡出。Esc 返回编辑。");if(GUILayout.Button("打开完整操作帮助"))Open("帮助");if(GUILayout.Button("更新公告"))Command("OpenReleaseNotes");
+   }else if(settingsTab=="背景"){if(GUILayout.Button("‹ 返回显示设置"))Queue(delegate{settingsTab="显示";panelScroll=Vector2.zero;});Call(boot,"DrawPresentationOptions");}
+  }
+  void Live(string key,string caption){Call(boot,"LiveRow",key,caption);} void Choices(string key,string caption,string[] labels,string[] vals){Call(boot,"LiveChoices",key,caption,labels,vals);}
+  void LivePair(string k1,string c1,string k2,string c2){GUILayout.BeginHorizontal();GUILayout.BeginVertical(GUILayout.Width((panelRect.width-60*scale)/2));Live(k1,c1);GUILayout.EndVertical();GUILayout.Space(12*scale);GUILayout.BeginVertical();Live(k2,c2);GUILayout.EndVertical();GUILayout.EndHorizontal();}
+  void Notes(){var form=Get(boot,"guiNoteForm") as NoteProperties;int[] ids=Get(boot,"batchIds") as int[];if(form==null||ids==null||ids.Length==0){Help("选中物件后显示对应参数。\n按 Ctrl 可多选；Alt 调整手柄。");return;}GUILayout.Label(form.Kind+"　"+(ids.Length==1?"单个物件":"批量 × "+ids.Length),heading);if(ids.Length>1)Help("混合值留空，只修改主动编辑的字段。");bool oldEnabled=GUI.enabled;GUI.enabled=oldEnabled&&!Transport.Playing;
+   try{Section("时间");if(form.Kind==EventKind.Hold||form.Kind==EventKind.SkyArea)LivePair("start","开始时间 / ms","end","结束时间 / ms");else Live("start","时间 / ms");
+    if(form.Kind==EventKind.Tap||form.Kind==EventKind.Hold){Section("轨道与宽度");Call(boot,"LiveGround");}
+    else if(form.Kind==EventKind.Flick){Section("空域几何");LivePair("x","中心 X / %","width","宽度 / %");Section("方向");Choices("direction","Flick 方向",new[]{"左 · 黄","右 · 绿"},new[]{"16","4"});}
+    else if(form.Kind==EventKind.SkyArea){Section("首尾位置与宽度");LivePair("sx","起点 X / %","ex","终点 X / %");LivePair("sw","起点宽度 / %","ew","终点宽度 / %");Live("bothWidths","统一首尾宽度 / %");Section("边缘缓动");Choices("leftEase","左边缘",new[]{"线性","SineOut","SineIn"},new[]{"0","1","2"});Choices("rightEase","右边缘",new[]{"线性","SineOut","SineIn"},new[]{"0","1","2"});Section("分组");Live("group","Group ID（留空 = 未指定）");Help("0 也是有效组号。打开面板不会修改分组或物件顺序。");if(GUILayout.Button("移除组号指定"))Call(boot,"QueueBatchField","group","");}
+    Section("物件操作");GUILayout.BeginHorizontal();if(GUILayout.Button("跳至起点")){var e=Get(boot,"guiPrimary") as SpcEvent;if(e!=null){double t=e.TimeMs;Queue(delegate{Transport.Pause();Transport.Seek(t);});}}if(GUILayout.Button("复制"))Command("CopySelection",false);if(GUILayout.Button("删除"))Command("DeleteSelected");GUILayout.EndHorizontal();if(GUILayout.Button("高级：原始语句与诊断"))Queue(delegate{advancedNote=true;});
+   }finally{GUI.enabled=oldEnabled;}
+  }
+  void Editing(){Section("选取范围");int pick=Val<int>(boot,"pickFilter");int result=GUILayout.SelectionGrid(pick,new[]{"全部","地面","空域"},3);if(result!=pick)Queue(delegate{Set(boot,"pickFilter",result);});int count=Val<HashSet<int>>(boot,"selection").Count;GUILayout.Label("当前选择："+count+" 个物件");Section("编辑操作");GUILayout.BeginHorizontal();if(GUILayout.Button("复制"))Command("CopySelection",false);if(GUILayout.Button("粘贴"))Command("PasteSelection",false);GUILayout.EndHorizontal();GUILayout.BeginHorizontal();if(GUILayout.Button("复制副本"))Command("PasteSelection",true);if(GUILayout.Button("镜像"))Command("MirrorSelection");GUILayout.EndHorizontal();if(GUILayout.Button("删除选中物件"))Command("DeleteSelected");if(GUILayout.Button("按时间选择段落"))Command("BeginRangeSelection");if(GUILayout.Button("对齐选中物件到网格"))Command("AlignSelection");Section("工程");GUILayout.BeginHorizontal();if(GUILayout.Button("新建"))Command("NewChart");if(GUILayout.Button("加载 SPC"))Command("ChooseChart");GUILayout.EndHorizontal();if(GUILayout.Button("另存为"))Command("ChooseSave");if(GUILayout.Button("选择音频"))Command("ChooseAudio");if(GUILayout.Button("打开歌曲文件夹"))Command("ChooseSongFolder");if(GUILayout.Button("退出制谱器"))Command("RequestExit07");Help(Convert.ToString(Get(boot,"status")));}
+  void Placement(){Section("放置默认值");Row("新建 SkyArea 宽度 / %","field_sky_new_width",Num(Val<double>(boot,"skyWidthPercent")),OriginalCommit("<DrawToolDrawer>b__296_7"),false);Row("空域坐标细分 1/N","field_air_split",Prop(Get(boot,"airGrid"),"Division").ToString(),OriginalCommit("<DrawToolDrawer>b__296_8"),false);foreach(string n in new[]{"skyLeftEase","skyRightEase"}){int c=Val<int>(boot,n);GUILayout.Label(n=="skyLeftEase"?"左边缘缓动":"右边缘缓动");int r=GUILayout.SelectionGrid(c,new[]{"线性","SineOut","SineIn"},3);if(r!=c){string fieldName=n;Queue(delegate{Set(boot,fieldName,r);});}}Help("新建 SkyArea 默认不指定组号；在物件参数页按需设置。");}
+ }
+}

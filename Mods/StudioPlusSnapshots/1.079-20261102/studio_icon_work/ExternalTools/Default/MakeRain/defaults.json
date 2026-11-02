@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "start": 0,
+  "end": 1000,
+  "count": 200,
+  "intervalMin": 50,
+  "intervalMax": 150,
+  "xMin": -0.5,
+  "xMax": 1.5,
+  "createGroup": true
+}
