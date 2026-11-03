@@ -1,0 +1,459 @@
+{
+  "FormatVersion": 1,
+  "Name": "Perspective Cells",
+  "SourceDirectory": "Source",
+  "BackgroundPath": "background.png",
+  "DurationSeconds": 36,
+  "Defaults": {
+    "_Intensity": [
+      1
+    ],
+    "_WaveFrequency": [
+      18
+    ],
+    "_LineWidth": [
+      0.0009
+    ],
+    "_LineBend": [
+      0.18
+    ],
+    "_CenterX": [
+      0.5
+    ],
+    "_CenterY": [
+      0.18
+    ],
+    "_LineColor": [
+      1,
+      0.63,
+      0.23,
+      1
+    ],
+    "_RushColor": [
+      0.19,
+      0.045,
+      0.62,
+      1
+    ],
+    "_GridWidth": [
+      0.095
+    ],
+    "_GridScale": [
+      1.1
+    ],
+    "_CellRandomness": [
+      0.9
+    ],
+    "_BackgroundTint": [
+      0.55,
+      0.5,
+      0.8,
+      1
+    ],
+    "_Reflection": [
+      0.65
+    ]
+  },
+  "Tracks": [
+    {
+      "Property": "_WaveAmount",
+      "Keys": [
+        {
+          "Seconds": 0,
+          "Value": [
+            0
+          ],
+          "Ease": "Smooth"
+        },
+        {
+          "Seconds": 4,
+          "Value": [
+            0.008
+          ],
+          "Ease": "SineInOut"
+        },
+        {
+          "Seconds": 7,
+          "Value": [
+            0.055
+          ],
+          "Ease": "SineInOut"
+        },
+        {
+          "Seconds": 12,
+          "Value": [
+            0.012
+          ],
+          "Ease": "Smooth"
+        },
+        {
+          "Seconds": 18,
+          "Value": [
+            0.026
+          ],
+          "Ease": "Smooth"
+        },
+        {
+          "Seconds": 23,
+          "Value": [
+            0.055
+          ],
+          "Ease": "Smooth"
+        },
+        {
+          "Seconds": 26,
+          "Value": [
+            0
+          ],
+          "Ease": "Hold"
+        },
+        {
+          "Seconds": 32,
+          "Value": [
+            0
+          ],
+          "Ease": "Smooth"
+        },
+        {
+          "Seconds": 36,
+          "Value": [
+            0.008
+          ]
+        }
+      ]
+    },
+    {
+      "Property": "_WavePhase",
+      "Keys": [
+        {
+          "Seconds": 0,
+          "Value": [
+            0
+          ]
+        },
+        {
+          "Seconds": 12,
+          "Value": [
+            2.5
+          ]
+        },
+        {
+          "Seconds": 24,
+          "Value": [
+            5.5
+          ]
+        },
+        {
+          "Seconds": 36,
+          "Value": [
+            8
+          ]
+        }
+      ]
+    },
+    {
+      "Property": "_LineAmount",
+      "Keys": [
+        {
+          "Seconds": 0,
+          "Value": [
+            0.24
+          ],
+          "Ease": "Smooth"
+        },
+        {
+          "Seconds": 4,
+          "Value": [
+            0.44000000000000006
+          ],
+          "Ease": "SineInOut"
+        },
+        {
+          "Seconds": 12,
+          "Value": [
+            0.6400000000000001
+          ],
+          "Ease": "Smooth"
+        },
+        {
+          "Seconds": 17,
+          "Value": [
+            1.2000000000000002
+          ],
+          "Ease": "Smooth"
+        },
+        {
+          "Seconds": 20,
+          "Value": [
+            0.5599999999999999
+          ],
+          "Ease": "Smooth"
+        },
+        {
+          "Seconds": 24,
+          "Value": [
+            0.0
+          ],
+          "Ease": "Hold"
+        },
+        {
+          "Seconds": 32,
+          "Value": [
+            0.0
+          ],
+          "Ease": "Smooth"
+        },
+        {
+          "Seconds": 36,
+          "Value": [
+            0.32000000000000006
+          ]
+        }
+      ]
+    },
+    {
+      "Property": "_LinePhase",
+      "Keys": [
+        {
+          "Seconds": 0,
+          "Value": [
+            0
+          ]
+        },
+        {
+          "Seconds": 12,
+          "Value": [
+            0.25
+          ]
+        },
+        {
+          "Seconds": 20,
+          "Value": [
+            0.7
+          ]
+        },
+        {
+          "Seconds": 24,
+          "Value": [
+            1.5
+          ]
+        },
+        {
+          "Seconds": 36,
+          "Value": [
+            1.85
+          ]
+        }
+      ]
+    },
+    {
+      "Property": "_BaseDim",
+      "Keys": [
+        {
+          "Seconds": 0,
+          "Value": [
+            0.12
+          ],
+          "Ease": "Smooth"
+        },
+        {
+          "Seconds": 18,
+          "Value": [
+            0.2
+          ],
+          "Ease": "Smooth"
+        },
+        {
+          "Seconds": 24,
+          "Value": [
+            0.6
+          ],
+          "Ease": "Hold"
+        },
+        {
+          "Seconds": 32,
+          "Value": [
+            0.6
+          ],
+          "Ease": "Smooth"
+        },
+        {
+          "Seconds": 36,
+          "Value": [
+            0.12
+          ]
+        }
+      ]
+    },
+    {
+      "Property": "_Collapse",
+      "Keys": [
+        {
+          "Seconds": 0,
+          "Value": [
+            0
+          ],
+          "Ease": "Hold"
+        },
+        {
+          "Seconds": 20,
+          "Value": [
+            0
+          ],
+          "Ease": "SineInOut"
+        },
+        {
+          "Seconds": 23,
+          "Value": [
+            0.9
+          ],
+          "Ease": "Smooth"
+        },
+        {
+          "Seconds": 26,
+          "Value": [
+            0
+          ],
+          "Ease": "Hold"
+        },
+        {
+          "Seconds": 36,
+          "Value": [
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "Property": "_PortalRadius",
+      "Keys": [
+        {
+          "Seconds": 0,
+          "Value": [
+            0
+          ],
+          "Ease": "Hold"
+        },
+        {
+          "Seconds": 22,
+          "Value": [
+            0
+          ],
+          "Ease": "SineInOut"
+        },
+        {
+          "Seconds": 25,
+          "Value": [
+            1.5
+          ],
+          "Ease": "Hold"
+        },
+        {
+          "Seconds": 32,
+          "Value": [
+            1.5
+          ],
+          "Ease": "SineInOut"
+        },
+        {
+          "Seconds": 35,
+          "Value": [
+            0
+          ],
+          "Ease": "Hold"
+        },
+        {
+          "Seconds": 36,
+          "Value": [
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "Property": "_RushMix",
+      "Keys": [
+        {
+          "Seconds": 0,
+          "Value": [
+            0
+          ],
+          "Ease": "Hold"
+        },
+        {
+          "Seconds": 21,
+          "Value": [
+            0
+          ],
+          "Ease": "Smooth"
+        },
+        {
+          "Seconds": 22,
+          "Value": [
+            1
+          ],
+          "Ease": "Hold"
+        },
+        {
+          "Seconds": 35,
+          "Value": [
+            1
+          ],
+          "Ease": "Smooth"
+        },
+        {
+          "Seconds": 36,
+          "Value": [
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "Property": "_Travel",
+      "Keys": [
+        {
+          "Seconds": 0,
+          "Value": [
+            0
+          ],
+          "Ease": "Hold"
+        },
+        {
+          "Seconds": 22,
+          "Value": [
+            0
+          ]
+        },
+        {
+          "Seconds": 25,
+          "Value": [
+            3
+          ]
+        },
+        {
+          "Seconds": 32,
+          "Value": [
+            27
+          ]
+        },
+        {
+          "Seconds": 36,
+          "Value": [
+            32
+          ]
+        }
+      ]
+    }
+  ],
+  "CheckTimes": [
+    2,
+    8,
+    17,
+    23.5,
+    28,
+    28.125,
+    28.25,
+    35.5
+  ]
+}

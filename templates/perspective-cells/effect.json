@@ -1,0 +1,15 @@
+{
+  "FormatVersion": 1,
+  "UnityVersion": "6000.3.25f1",
+  "Platform": "StandaloneWindows64",
+  "ColorSpace": "Linear",
+  "AutoParameters": true,
+  "Effect": {
+    "Id": "perspective-cells",
+    "Label": "Perspective Cells",
+    "Target": "postprocess",
+    "Bundle": "effect.bundle",
+    "Material": "custom/perspective-cells",
+    "Parameters": []
+  }
+}
