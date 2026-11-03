@@ -131,7 +131,7 @@ internal sealed partial class PreviewSurface:IDisposable
     }
     internal RenderTexture Render(PreviewModel model,in PlaybackSnapshot snapshot,int requestedWidth,int requestedHeight)
     {
-        int w=Mathf.Clamp(requestedWidth,32,2048),h=Mathf.Clamp(requestedHeight,32,1440);
+        int w=Mathf.Clamp(requestedWidth,32,2560),h=Mathf.Clamp(requestedHeight,32,1440);
         if(scene==null||w!=width||h!=height) {
             ReleaseTargets();width=w;height=h;
             scene=Target("VFX scene",24);post=Target("VFX post",0);alternate=Target("VFX alternate",0);

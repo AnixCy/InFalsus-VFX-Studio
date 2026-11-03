@@ -71,8 +71,9 @@ public sealed partial class PreviewPlugin
     void ToggleWorkspacePlayback()
     {
         var snapshot=Bridge.Snapshot();
-        if(snapshot.Transport!=InFalsus.Presentation.TransportState.Running&&Model!=null&&Surface!=null)
-            Surface.PrimePlayback(Model,snapshot,Math.Max(32,Mathf.RoundToInt(canvas.width)),Math.Max(32,Mathf.RoundToInt(canvas.height)));
+        if(snapshot.Transport!=InFalsus.Presentation.TransportState.Running&&Model!=null&&Surface!=null) {
+            var size=PreviewSize;Surface.PrimePlayback(Model,snapshot,size.Width,size.Height);
+        }
         Bridge.TogglePlayback();
     }
     void StopHeldPreview()

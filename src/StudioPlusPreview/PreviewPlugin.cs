@@ -13,7 +13,7 @@ using UColor = UnityEngine.Color;
 
 namespace InFalsus.Vfx.StudioPlus;
 
-[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.7.1")]
+[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.7.2")]
 [BepInDependency("local.infalsusstudio.visualui", "1.0.7")]
 public sealed partial class PreviewPlugin : BaseUnityPlugin
 {
@@ -50,7 +50,7 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         TestMode = Environment.GetCommandLineArgs().Contains("-vfx-self-check");
         if (TestMode) AudioListener.volume = 0;
         folder = Path.GetDirectoryName(GetType().Assembly.Location)!;
-        InitSourceWorkspace();LoadTimelinePreferences();InitSourceProbe();
+        InitSourceWorkspace();LoadTimelinePreferences();LoadPreviewSettings();InitSourceProbe();
         harmony = new Harmony("local.infalsus.vfx.preview");
         void Patch(string method, string? prefix = null, string? postfix = null) {
             var target = typeof(StudioBootstrap).GetMethod(method, StudioBridge.Flags)

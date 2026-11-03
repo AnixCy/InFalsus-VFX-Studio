@@ -54,10 +54,11 @@ public sealed partial class PreviewPlugin
         theme.Rule(R(0,top,w,1));
         DrawLibrary(layout.Library);
         var stage=layout.Stage;
-        float stageHeight=Mathf.Min(stage.height,stage.width*9/16);canvas=new Rect(stage.center.x-stageHeight*16/9/2,stage.center.y-stageHeight/2,stageHeight*16/9,stageHeight);
-        StudioUiTheme.Fill(stage,"#061119");StudioUiTheme.Fill(canvas,"#000000");
+        var imageArea=new Rect(stage.x,stage.y+30*s,stage.width,Mathf.Max(1,stage.height-30*s));
+        float stageHeight=Mathf.Min(imageArea.height,imageArea.width*9/16);canvas=new Rect(imageArea.center.x-stageHeight*16/9/2,imageArea.center.y-stageHeight/2,stageHeight*16/9,stageHeight);
+        StudioUiTheme.Fill(stage,"#061119");DrawPreviewResolution(stage);StudioUiTheme.Fill(canvas,"#000000");
         if(Event.current.type==EventType.Repaint&&Surface!=null) {
-            try{var texture=Surface.Render(model,Bridge.Snapshot(),Mathf.RoundToInt(canvas.width),Mathf.RoundToInt(canvas.height));
+            try{var texture=RenderWorkspacePreview(Bridge.Snapshot());
                 GUI.DrawTexture(canvas,texture,ScaleMode.ScaleToFit,false);RenderedFrames++;
                 if(Surface.BackgroundGroupConflicts>0){var hint=new Rect(canvas.x,canvas.yMax-28*s,canvas.width,28*s);StudioUiTheme.Fill(hint,"#382c28dd");theme.Label(hint,"不同底图效果组重叠：以下方组为准",12,"#f2d4b1",false,2);}
                 if(imagePath.Length==0&&Surface.BackgroundControlPasses>0&&!model.Definition(model.Document.Runtime.Nodes.Single(n=>n.Target=="background")).Original){StudioUiTheme.Fill(canvas,"#091923");theme.Label(canvas,"请先在背景栏选择图片",16,"#94b6c3",false,2);}}
