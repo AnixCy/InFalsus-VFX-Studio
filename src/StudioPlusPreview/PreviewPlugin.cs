@@ -13,7 +13,7 @@ using UColor = UnityEngine.Color;
 
 namespace InFalsus.Vfx.StudioPlus;
 
-[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.7.0")]
+[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.7.1")]
 [BepInDependency("local.infalsusstudio.visualui", "1.0.7")]
 public sealed partial class PreviewPlugin : BaseUnityPlugin
 {
@@ -46,6 +46,7 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
     {
         Instance = this;
         InitWindowProbe();
+        InitPerformance();
         TestMode = Environment.GetCommandLineArgs().Contains("-vfx-self-check");
         if (TestMode) AudioListener.volume = 0;
         folder = Path.GetDirectoryName(GetType().Assembly.Location)!;
@@ -112,6 +113,7 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         TickWindowProbe();
         TickSourceProbe();
         TickSourceWorkspace();
+        TickPerformance();
     }
     void BeforeCamera(ScriptableRenderContext context, Camera camera)
     {

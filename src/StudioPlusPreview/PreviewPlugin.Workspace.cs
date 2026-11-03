@@ -48,7 +48,7 @@ public sealed partial class PreviewPlugin
         bool compact=layout.Compact;float playX=compact?12:646,playY=compact?52:10,top=layout.Top;
         if(theme.Button(R(w-116,compact?52:10,104,32),"导出 addon"))Queue(BeginAddonExport);
         bool playing=Bridge.Snapshot().Transport==TransportState.Running;
-        if(theme.Button(R(playX,playY,70,32),playing?"暂停":"播放",playing))Queue(Bridge.TogglePlayback);
+        if(theme.Button(R(playX,playY,70,32),playing?"暂停":"播放",playing))Queue(ToggleWorkspacePlayback);
         theme.Label(R(playX+80,playY,115,32),CurrentSeconds.ToString("0.000",CI)+" s",20,"#d3edf0",true,2);
         if(theme.Button(R(playX+208,playY,120,32),"自动关键帧",autoKey,false))autoKey=!autoKey;
         theme.Rule(R(0,top,w,1));

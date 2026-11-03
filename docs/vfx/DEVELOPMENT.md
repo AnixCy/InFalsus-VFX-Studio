@@ -13,7 +13,7 @@ InFalsus VFX Studio 是 Studio+ 的演出创作扩展。现已迁入共享求值
 | 原版编辑器宿主 | Studio Windows Mono 1.0.10；根目录 `Assets/`、`Packages/`、`ProjectSettings/` |
 | 增强插件源码 | Studio+ 内部 1.079；公开版本 1.0.7，绑定程序集 1.0.7.0 |
 | 本次运行基线 | 已有 Studio+ 1.0.7 build1030 完整应用；未重建完整 1.079 主插件 |
-| 本项目 | 演出编辑插件 0.7.0、最小 addon 玩家端 0.7.1 原型，尚无正式应用发行版本 |
+| 本项目 | 演出编辑插件及最小 addon 玩家端 0.7.1 原型，尚无正式应用发行版本 |
 
 Studio+ 源码固定于提交 `2c8c63722948b8e739f0eef6ebd0478cdf8ddd3d`，快照在 [Mods/StudioPlusSnapshots/1.079-20261102](../../Mods/StudioPlusSnapshots/1.079-20261102/README.md)。历史快照用于溯源，不叠加安装。
 

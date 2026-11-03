@@ -56,17 +56,24 @@ public sealed partial class PreviewPlugin
                     Queue(()=>{
                         if(heldPreviewKey!=key||generation!=heldPreviewGeneration)return;
                         heldPreviewStart=Bridge.Snapshot().ChartSeconds;heldPreviewStarted=true;
-                        Bridge.SeekSeconds(heldPreviewStart);Bridge.TogglePlayback();
+                        Bridge.SeekSeconds(heldPreviewStart);ToggleWorkspacePlayback();
                         Probe("held-started");
                     });
                 }
                 break;
             case "previewToggle":
-                if(playbackKeysDown.Add(key)&&!heldPreviewKey.HasValue)Queue(Bridge.TogglePlayback);
+                if(playbackKeysDown.Add(key)&&!heldPreviewKey.HasValue)Queue(ToggleWorkspacePlayback);
                 break;
             default:return;
         }
         e.Use();
+    }
+    void ToggleWorkspacePlayback()
+    {
+        var snapshot=Bridge.Snapshot();
+        if(snapshot.Transport!=InFalsus.Presentation.TransportState.Running&&Model!=null&&Surface!=null)
+            Surface.PrimePlayback(Model,snapshot,Math.Max(32,Mathf.RoundToInt(canvas.width)),Math.Max(32,Mathf.RoundToInt(canvas.height)));
+        Bridge.TogglePlayback();
     }
     void StopHeldPreview()
     {

@@ -23,6 +23,11 @@ public sealed partial class PreviewPlugin
         check(Render(151.8)==animated,"cancel restores the complete background project output");
         check(before.SequenceEqual(File.ReadAllBytes(file)),"background project validation does not rewrite the input JSON");
         hashes["backgroundProjectAnimated"]=animated;hashes["backgroundProjectReverse"]=reverse;
+        long revision=Model.Session.Revision;
+        int primed=Surface.PrimePlayback(Model,snapshot with{AudioSeconds=151.8,ChartSeconds=151.8},256,144);
+        check(primed is >0 and <=8&&Render(151.8)==animated,"bounded playback warmup restores the exact original GPU state");
+        check(Model.Session.Revision==revision&&before.SequenceEqual(File.ReadAllBytes(file)),"playback warmup changes neither authoring history nor project bytes");
+        check(Surface.PrimePlayback(Model,snapshot,256,144)==0,"unchanged project resumes playback without repeating its warmup");
         Surface.CheckBackgroundRenderContract(Model,snapshot with{AudioSeconds=0,ChartSeconds=0},check);
         Surface.ApplyImage(null);
     }
