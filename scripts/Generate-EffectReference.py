@@ -64,6 +64,7 @@ def main():
 | 某个英文参数具体做什么 | [参数卡](parameters.md)，先核对所在效果和材质组 |
 | 想一次添加一组关联控制 | [组合预设](presets.md) |
 | 想直接改代码 | [已知模板](custom-templates.md)和[源码工作流](../CUSTOM_EFFECTS.md) |
+| 细发光曲线、径向波动、三角网格穿行 | [Wave Lines 模板](../../../templates/wave-lines/README.md)与[参数说明](custom-templates.md) |
 
 ## 回答时的确认边界
 

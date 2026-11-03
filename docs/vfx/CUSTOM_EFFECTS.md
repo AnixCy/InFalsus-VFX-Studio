@@ -1,6 +1,6 @@
 # 自定义 Shader 与程序化效果
 
-0.5.0 的日常工作流是创建效果、编辑 Shader、保存。手动编译与导入资源收在“高级选项”。
+0.7.4 的日常工作流是创建效果、编辑 Shader、保存。手动编译与导入资源收在“高级选项”。
 
 ## 使用与制作
 
@@ -8,6 +8,8 @@
 2. 修改 Shader 并保存。监听器合并连续保存，后台自动编译并更新；编译期间的新修改会在之后补编。
 3. 在 Shader Properties 声明 Float/Range/Int/Color/Vector。名称、显示标签、默认值与 Range 范围自动生成检查器控件，不用填写参数 JSON；纹理和隐藏/时钟字段不生成动画参数。
 4. 调整数值，点击旁边 ◆ 打帧；也可开启自动关键帧。界面始终显示当前效果与编译状态，编译错误显示文件/行号并保留上次可用预览。
+
+自定义参数可按标签或 `_Property` 名筛选，空格分隔多个词；× 清空。点击时间轴的自定义关键帧，会自动筛到对应参数并将检查器回到顶部，方便看到数值和帧设置。改 Properties 的显示标签可以改善界面命名；保持属性名与类型不变，才能保留对应动画。给相位、路程、幅度写清楚 Range，避免普通 Float 的自动滑杆范围不适合实际用途。
 
 “打开效果文件夹”继续编辑此前创建的源码工程。匹配版本 Unity 首次定位后保存路径；这是后台编译更新，并非 Player 内即时 HLSL 编译。已编译包的使用者无需安装 Unity、Python 或 SDK。
 
@@ -65,3 +67,28 @@
 后处理第 0 个 Pass 使用全屏三角形，参考模板的 `SV_VertexID` 顶点入口。背景材质绘制在正交背景平面，使用普通平面顶点与 UV。无需创建场景对象或移动相机。
 
 程序化绘制可仅依赖 UV、时间和参数，也可读取输入图像做变形或混合。作者需自行控制循环与采样成本；不以 Shader 数量推断游玩性能。当前只验证离线编辑预览，未部署游戏。
+
+## Agent 与声明式编排
+
+Agent 可直接修改 `Effect.shader` 并保存；已打开且选中的源码工程沿用相同自动更新链路。`.vfx/build-status.json`、`.vfx/latest-build.json` 和构建目录中的 `shader-properties.json` 可供程序读取，不需要靠截图猜测状态或参数名。示例见 [Wave Lines](../../templates/wave-lines/README.md)。
+
+需要生成一个演出工程副本时，可提供编排 JSON，再使用隔离 Studio 检查入口；参数求值、添加帧和保存仍使用现有共享事务与实际编辑器格式，不直接拼内部工程结构：
+
+```powershell
+# 在源码工程中编译；也可让已打开的 Studio 监听保存。
+& '<源码工程>/.vfx/Build.ps1' -UnityEditor '<匹配的 Unity.exe>'
+
+# 在仓库根目录；PreviewPath 必须是可丢弃的测试副本，OutputDirectory 必须不存在。
+& ./scripts/Check-PreviewRuntime.ps1 `
+  -PreviewPath '<独立 Studio 测试副本>' `
+  -OutputDirectory '<新的生成与检查目录>' `
+  -AuthoringSpec '<sequence.json>'
+```
+
+编排字段：`FormatVersion: 1`、`Name`、`SourceDirectory`、`BackgroundPath`、`DurationSeconds`、`Defaults`、`Tracks`、`CheckTimes`。Source/图片相对路径以编排文件所在目录为基准，也接受明确的绝对路径。每条 Track 用 Shader 的 `Property` 标识，Keys 包含 `Seconds`、数组 `Value`、可选 `Ease`（默认 Linear，作用于到下一帧的区间）。每条动画显式写起点；Float 是单值数组，Color/Vector 是四值数组。CheckTimes 提供 2–16 个需要呈现不同输出的验算时刻。
+
+成功输出 `AuthoredEffect.vfx.json`、`authored-effect.json` 与常规检查报告。编排仅用于生成新工程，不会自动合并 UI 后续编辑，也不会覆写输入。已有人工调整以当前保存的 `.vfx.json` 为准，Agent 应先读取当前工程，再在副本上操作，避免用旧编排覆盖新工作。
+
+仅在明确需要视觉检查时加 `-AuthoringFrames`，将 CheckTimes 输出为显示颜色的 PNG；默认只做数值验证，不生成这些渲染图。
+
+当前限制：只监听当前选中的一个源码工程；编译需要等待外部 Unity；工程分享仍需自定义资源缓存和图片，尚无完整资源打包器。界面可操作性、物理键鼠与视觉需人工验收；后台检查不等于完成了这些验收。

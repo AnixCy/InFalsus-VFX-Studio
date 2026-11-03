@@ -98,6 +98,7 @@ public sealed partial class PreviewPlugin
             CheckPreviewResolution(Assert);
             CheckEffectNotes(Assert);
             CheckInteraction(Assert);
+            CheckAuthoredEffect(Assert,Path.GetDirectoryName(output)!,hashes);
             var report=new {ok=true,checks,hashes,unity=Application.unityVersion,colorSpace=QualitySettings.activeColorSpace.ToString(),
                 graphics=SystemInfo.graphicsDeviceType.ToString(),uiVisuallyReviewed=false,audioPlayed=false,gameStarted=false};
             File.WriteAllText(output,JsonConvert.SerializeObject(report,Json));

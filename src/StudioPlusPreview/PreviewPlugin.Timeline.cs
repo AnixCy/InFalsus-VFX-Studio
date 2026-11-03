@@ -166,7 +166,7 @@ public sealed partial class PreviewPlugin
             }else {
                 if(selectedParameter!=item.Parameter)curveComponent=0;selectedParameter=item.Parameter;
                 var key=Model.Keys.Where(k=>k.ParameterId==selectedParameter&&(new Vector2(TimeX(k.Seconds),ValueY(item.Parameter,Component(k.Value.Number,PlotComponent(item.Parameter)),CurveArea(item)))-point).magnitude<10*UiScale).OrderBy(k=>Math.Abs(TimeX(k.Seconds)-point.x)).FirstOrDefault();
-                if(point.x>=timelineRuler.x&&key!=null){selectedKey=key.Id;Bridge.SeekSeconds(key.Seconds);draggingKey=true;FreezePlot(item.Parameter);GUIUtility.hotControl=timelineControl;}
+                if(point.x>=timelineRuler.x&&key!=null){selectedKey=key.Id;FocusShaderParameter(item.Parameter);Bridge.SeekSeconds(key.Seconds);draggingKey=true;FreezePlot(item.Parameter);GUIUtility.hotControl=timelineControl;}
                 else {selectedKey="";if(point.x>=timelineRuler.x){Bridge.SeekSeconds(XTime(point.x));if(e.clickCount>1)selectedKey=Model.AddKey(selectedParameter,XTime(point.x));}}
             }
             e.Use();return;

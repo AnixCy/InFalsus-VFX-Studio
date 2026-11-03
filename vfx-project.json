@@ -41,12 +41,13 @@
     "previewBuild": "scripts/Build-Preview.ps1"
   },
   "preview": {
-    "pluginVersion": "0.7.3",
+    "pluginVersion": "0.7.4",
     "testedStudioBinary": "1.0.7 build1030",
     "unityVersion": "6000.3.25f1",
     "coreChecks": 196,
     "runtimeChecks": 295,
     "authoredBackgroundChecks": 312,
+    "combinedAuthoringChecks": 320,
     "previewResolutions": ["2560x1440", "1920x1080", "1280x720"],
     "visualAcceptance": "pending",
     "interactiveAcceptance": "pending",

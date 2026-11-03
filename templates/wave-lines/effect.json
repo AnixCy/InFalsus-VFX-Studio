@@ -1,0 +1,15 @@
+{
+  "FormatVersion": 1,
+  "UnityVersion": "6000.3.25f1",
+  "Platform": "StandaloneWindows64",
+  "ColorSpace": "Linear",
+  "AutoParameters": true,
+  "Effect": {
+    "Id": "wave-lines",
+    "Label": "Wave Lines",
+    "Target": "postprocess",
+    "Bundle": "effect.bundle",
+    "Material": "custom/wave-lines",
+    "Parameters": []
+  }
+}

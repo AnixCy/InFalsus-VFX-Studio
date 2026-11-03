@@ -7,6 +7,7 @@ public sealed partial class PreviewPlugin
 {
     long rangeRevision=-1;
     float inspectorContentHeight=650;
+    string shaderParameterSearch="";
     void DrawInspector(Rect rect)
     {
         if(sidebar=="背景"){DrawImageInspector(rect);return;}
@@ -65,7 +66,14 @@ public sealed partial class PreviewPlugin
     {
         var theme=ui!;var model=Model!;model.Sample(CurrentSeconds);
         theme.Label(R(16,y,w-32,28),"Shader 参数",15,"#c9e9ee");y+=37;
-        foreach(var p in parameters) {
+        string search=theme.Text(R(16,y,w-66,27),"vfx_shader_parameter_search",shaderParameterSearch);
+        if(search!=shaderParameterSearch){FinishText();model.Commit();shaderParameterSearch=search;}
+        if(shaderParameterSearch.Length==0)theme.Label(R(22,y,w-78,27),"筛选名称或 _Property…",12,"#668795");
+        if(theme.Button(R(w-44,y,28,27),"×",false,false,14))shaderParameterSearch="";y+=38;
+        var terms=shaderParameterSearch.Split(new[]{' '},StringSplitOptions.RemoveEmptyEntries);
+        var visible=parameters.Where(p=>terms.All(term=>(p.Label+" "+p.Binding.Property).IndexOf(term,StringComparison.OrdinalIgnoreCase)>=0)).ToArray();
+        if(visible.Length==0){theme.Paragraph(R(16,y,w-32,55),"没有匹配参数。清空筛选可显示全部参数。",12);y+=64;}
+        foreach(var p in visible) {
             if(theme.Button(R(16,y,w-70,25),theme.Fit(p.Label,(w-80)*UiScale,13),selectedParameter==p.Id,false,13)){FinishText();model.Commit();selectedParameter=p.Id;selectedKey="";curveComponent=0;}
             if(theme.Button(R(w-48,y,31,25),"◆",false,false,13))Queue(()=>{selectedParameter=p.Id;selectedKey=model.AddKey(p.Id,CurrentSeconds);});y+=32;
             if(selectedParameter==p.Id)HelpParagraph(EffectNotes.Parameter(model.Definition(model.RenderDocument.Nodes.Single(n=>n.Id==p.Binding.Node)),p.Binding.Property),w,ref y);

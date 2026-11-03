@@ -12,7 +12,7 @@ public sealed partial class PreviewPlugin
     {
         // Commit against the old key before changing any selection identity.
         FinishText();Model?.Commit();
-        if(selectedEffect!=id){inspectorScroll=Vector2.zero;curveComponent=0;}
+        if(selectedEffect!=id){inspectorScroll=Vector2.zero;curveComponent=0;shaderParameterSearch="";}
         selectedEffect=id;selectedParameter=selectedKey="";parameterPicker=false;rangeNode="";
         if(expand)collapsedEffects.Remove(id);
         if(id!="background")sidebar="效果库";
@@ -29,6 +29,13 @@ public sealed partial class PreviewPlugin
         sidebar="效果库";rangeNode="";
     }
     void OpenBackgroundSidebar(){SelectNode("background");sidebar="背景";}
+    void FocusShaderParameter(string id)
+    {
+        var descriptor=Model!.Catalog.Get(id);
+        var node=Model.RenderDocument.Nodes.Single(n=>n.Id==descriptor.Binding.Node);
+        if(Model.Definition(node).SourceDirectory.Length==0)return;
+        shaderParameterSearch=descriptor.Binding.Property;inspectorScroll=Vector2.zero;
+    }
     System.Numerics.Vector4 InspectorValue(ParameterDescriptor parameter)
     {
         var key=Model!.Keys.FirstOrDefault(k=>k.Id==selectedKey&&k.ParameterId==parameter.Id);
