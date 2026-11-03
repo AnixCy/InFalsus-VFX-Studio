@@ -17,9 +17,6 @@ public sealed partial class PreviewPlugin
     bool libraryDragging;
     string rangeNode="",rangeStart="",rangeEnd="",rangeName="";
     float LibraryListTop=>libraryFilter=="自定义"?(sourceWorkspace==null?(sourceAdvanced?292:246):sourceAdvanced?352:304):128;
-    void SelectNode(string id){selectedEffect=id;selectedParameter=selectedKey="";parameterPicker=false;rangeNode="";collapsedEffects.Remove(id);
-        var node=Model?.Document.Runtime.Nodes.FirstOrDefault(n=>n.Id==id);if(node!=null){var directory=Model!.Definition(node).SourceDirectory;
-            if(directory.Length>0&&sourceWorkspace?.Root!=directory)try{UseSource(SourceWorkspace.Open(directory));}catch(Exception e){sourceMessage=e.Message;}}}
     void AddLibraryEffect(EffectDefinition definition,double seconds,int index=-1)
     {
         SelectNode(Model!.AddEffect(definition,seconds,index));trackScroll=float.MaxValue;
@@ -37,7 +34,7 @@ public sealed partial class PreviewPlugin
         StudioUiTheme.Fill(new Rect(0,0,Screen.width,Screen.height),"#091923");
         if(theme.Button(R(12,10,100,32),"制谱视图",false,false))Queue(()=>{StopHeldPreview();CancelEffectDrag();Model!.Commit();Bridge.SetView(false);Surface?.Suspend();});
         if(theme.Button(R(124,10,70,32),"音频…"))Queue(ChooseWorkspaceAudio);
-        if(theme.Button(R(202,10,70,32),"背景")) {sidebar="背景";SelectNode("background");}
+        if(theme.Button(R(202,10,70,32),"背景"))Queue(OpenBackgroundSidebar);
         if(theme.Button(R(280,10,70,32),"打开"))Queue(LoadProject);
         if(theme.Button(R(358,10,70,32),Dirty?"保存 *":"保存"))Queue(SaveProject);
         if(theme.Button(R(436,10,70,32),"另存为"))Queue(SaveAs);
@@ -92,7 +89,7 @@ public sealed partial class PreviewPlugin
         try {
             float w=rect.width/UiScale;theme.Panel(new Rect(0,0,rect.width,rect.height));
             if(theme.Button(R(12,9,(w-28)/2,30),"效果库",sidebar=="效果库",false,14))sidebar="效果库";
-            if(theme.Button(R(16+(w-28)/2,9,(w-28)/2,30),"背景",sidebar=="背景",false,14)){sidebar="背景";SelectNode("background");}
+            if(theme.Button(R(16+(w-28)/2,9,(w-28)/2,30),"背景",sidebar=="背景",false,14))Queue(OpenBackgroundSidebar);
             if(sidebar=="背景"){DrawBackgroundSettings(w,rect.height/UiScale);return;}
             var filters=new[]{"全部","效果","预设","自定义"};
             for(int i=0;i<4;i++)if(theme.Button(R(10+i*(w-20)/4,51,(w-24)/4,27),filters[i],libraryFilter==filters[i],false,12))libraryFilter=filters[i];

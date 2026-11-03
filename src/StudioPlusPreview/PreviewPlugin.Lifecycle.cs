@@ -32,6 +32,7 @@ public sealed partial class PreviewPlugin
     {
         if (decision != PendingDecision.None) return;
         StopHeldPreview();
+        EndTimelineScrub();
         decision = intent; decisionOpenings++;
         decisionError = ""; decisionNeedsFocus = true;
         actions.Clear();

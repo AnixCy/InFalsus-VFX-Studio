@@ -13,7 +13,7 @@ using UColor = UnityEngine.Color;
 
 namespace InFalsus.Vfx.StudioPlus;
 
-[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.7.2")]
+[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.7.3")]
 [BepInDependency("local.infalsusstudio.visualui", "1.0.7")]
 public sealed partial class PreviewPlugin : BaseUnityPlugin
 {
@@ -107,8 +107,7 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
             if (decision != PendingDecision.None) { actions.Clear(); break; }
         }
         if(Bridge.AuthoringView&&Model!=null&&Surface!=null) {
-            CurrentSeconds=Bridge.Snapshot().ChartSeconds;
-            if(Bridge.Transport?.Clip&&Bridge.Transport.Playing&&Bridge.Transport.TimeMs>Bridge.Transport.Clip.length*1000)Bridge.Transport.Pause();
+            Bridge.FinishPlaybackIfEnded();CurrentSeconds=Bridge.Snapshot().ChartSeconds;
         }
         TickWindowProbe();
         TickSourceProbe();
@@ -225,8 +224,11 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
                 if(e!=null) {
                     // Some native prefixes can abort GUI dispatch before any postfix runs.
                     // Route input here instead of depending on the final GUI drawing callback.
-                    if(e.isKey||e.isMouse)p.RouteWorkspaceEvent(e,p.OwnsText);
-                    p.RoutePointerEvent(e);
+                    try {
+                        if(e.isKey||e.isMouse)p.RouteWorkspaceEvent(e,p.OwnsText);
+                        p.RoutePointerEvent(e);
+                    }catch(ExitGUIException){throw;}
+                    catch(Exception error){p.Error(error);if(e.isKey||e.isMouse||e.type==EventType.ScrollWheel)e.Use();}
                 }
                 return false;
             }

@@ -15,7 +15,8 @@ public sealed partial class PreviewPlugin
     {
         if(ui==null||!Bridge.AuthoringView||BlocksHostInput||!Application.isFocused){SetPointer(PointerShape.Default);return;}
         var point=Event.current.mousePosition;var rows=TimelineRows();PointerShape next=PointerShape.Default;
-        if(resizingChannel||ResizeRow(rows,point)!=null)next=PointerShape.Vertical;
+        if(scrubbingTimeline||timelineRuler.Contains(point))next=PointerShape.Horizontal;
+        else if(resizingChannel||ResizeRow(rows,point)!=null)next=PointerShape.Vertical;
         else if(draggingEffect)next=resizingEffect?PointerShape.Horizontal:PointerShape.Move;
         else if(draggingKey||draggingCurve||libraryDragging||libraryHits.Any(h=>h.Bounds.Contains(point)))next=PointerShape.Move;
         else if(timelineBody.Contains(point)&&point.x>=timelineRuler.x) {

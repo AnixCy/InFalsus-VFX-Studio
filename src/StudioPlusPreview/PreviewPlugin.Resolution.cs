@@ -34,7 +34,10 @@ public sealed partial class PreviewPlugin
     void DrawPreviewResolution(Rect stage)
     {
         float s=UiScale,x=stage.xMax-192*s,y=stage.y+2*s;
-        if(stage.width>304*s)ui!.Label(new Rect(stage.x,y,stage.width-204*s,24*s),"预览分辨率",12,"#7c9dad");
+        if(stage.width>304*s) {
+            string audio=Bridge.Transport?.Clip?"音乐 · "+Bridge.Transport!.Clip.name:"静音时间轴";
+            ui!.Label(new Rect(stage.x,y,stage.width-204*s,24*s),ui.Fit(audio,stage.width-204*s,12),12,"#7c9dad");
+        }
         for(int i=0;i<3;i++) {
             int height=PreviewHeights[i];
             if(ui!.Button(new Rect(x+i*64*s,y,60*s,24*s),PreviewLabels[i],previewHeight==height,false,12))Queue(()=>SetPreviewResolution(height));

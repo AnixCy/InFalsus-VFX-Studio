@@ -27,7 +27,7 @@ public sealed partial class PreviewPlugin
             return;
         }
         if(e.keyCode==KeyCode.Escape) {
-            if(libraryCandidate!=null||draggingEffect||draggingCurve||draggingKey||resizingChannel){CancelEffectDrag();e.Use();}
+            if(libraryCandidate!=null||draggingEffect||draggingCurve||draggingKey||resizingChannel||scrubbingTimeline){CancelEffectDrag();e.Use();}
             else if(heldPreviewKey.HasValue){Queue(StopHeldPreview);e.Use();}
             else if(Model!.IsEditing) {
                 Model.Cancel();draggingKey=sliderEditing=keyTimeDirty=false;textParameter=textKey=null;
@@ -56,7 +56,7 @@ public sealed partial class PreviewPlugin
                     Queue(()=>{
                         if(heldPreviewKey!=key||generation!=heldPreviewGeneration)return;
                         heldPreviewStart=Bridge.Snapshot().ChartSeconds;heldPreviewStarted=true;
-                        Bridge.SeekSeconds(heldPreviewStart);ToggleWorkspacePlayback();
+                        SeekWorkspace(heldPreviewStart);ToggleWorkspacePlayback();
                         Probe("held-started");
                     });
                 }
@@ -70,6 +70,7 @@ public sealed partial class PreviewPlugin
     }
     void ToggleWorkspacePlayback()
     {
+        EndTimelineScrub();
         var snapshot=Bridge.Snapshot();
         if(snapshot.Transport!=InFalsus.Presentation.TransportState.Running&&Model!=null&&Surface!=null) {
             var size=PreviewSize;Surface.PrimePlayback(Model,snapshot,size.Width,size.Height);
@@ -80,7 +81,7 @@ public sealed partial class PreviewPlugin
     {
         if(!heldPreviewKey.HasValue)return;
         heldPreviewKey=null;heldPreviewGeneration++;playbackKeysDown.Clear();
-        if(heldPreviewStarted){heldPreviewStarted=false;Bridge.SeekSeconds(heldPreviewStart);}
+        if(heldPreviewStarted){heldPreviewStarted=false;SeekWorkspace(heldPreviewStart);}
         Probe("held-stopped");
     }
     void OnApplicationFocus(bool focused)

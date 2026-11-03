@@ -22,6 +22,13 @@ internal sealed class StudioBridge
     bool savedCameraEnabled,virtualPlaying;
     double virtualSeconds,virtualAnchor;
     internal double DurationSeconds=>Transport?.Clip?Transport!.Clip.length:Math.Max(180,virtualSeconds+30);
+    internal double AudioEndSeconds=>Transport?.Clip?Math.Max(0,Transport!.Clip.length-Transport.AudioOffsetMs*.001):double.PositiveInfinity;
+    internal bool FinishPlaybackIfEnded()
+    {
+        var transport=Transport;
+        if(!AuthoringView||transport==null||!transport.Clip||!transport.Playing||transport.TimeMs<AudioEndSeconds*1000)return false;
+        SeekSeconds(AudioEndSeconds);return true;
+    }
     internal void SetView(bool active)
     {
         if(active==AuthoringView)return;
@@ -46,7 +53,11 @@ internal sealed class StudioBridge
     }
     internal void TogglePlayback()
     {
-        if(Transport?.Clip)Transport!.Toggle();
+        if(Transport?.Clip) {
+            virtualPlaying=false;
+            if(!Transport!.Playing&&Transport.TimeMs>=AudioEndSeconds*1000)SeekSeconds(0);
+            Transport.Toggle();
+        }
         else {virtualSeconds=VirtualTime;virtualAnchor=Time.realtimeSinceStartupAsDouble;virtualPlaying=!virtualPlaying;}
     }
     double VirtualTime=>virtualSeconds+(virtualPlaying?Time.realtimeSinceStartupAsDouble-virtualAnchor:0);
@@ -54,6 +65,7 @@ internal sealed class StudioBridge
     {
         if(!Owner)throw new InvalidOperationException("编辑器尚未就绪。");
         if(!File.Exists(path))throw new FileNotFoundException("音频文件不存在。",path);
+        SeekSeconds(Snapshot().ChartSeconds);
         Owner!.StartCoroutine((System.Collections.IEnumerator)typeof(StudioBootstrap).GetMethod("LoadAudio",Flags)!.Invoke(Owner,new object[]{path})!);
     }
     internal bool Exporting => exportActive != null && (bool)exportActive.GetValue(null)!;
@@ -70,7 +82,8 @@ internal sealed class StudioBridge
         double chart = Exporting ? (double)exportTime!.GetValue(null)! : AuthoringView
             ? transport?.Clip?transport!.TimeMs:VirtualTime*1000 : Owner ? Owner!.CurrentMs : 0;
         double offset = transport?.AudioOffsetMs ?? 0;
-        bool playing = Exporting || (transport?.Playing ?? false) || AuthoringView&&virtualPlaying;
+        bool hasClip=transport!=null&&transport.Clip;
+        bool playing = Exporting || (transport?.Playing ?? false) || AuthoringView&&!hasClip&&virtualPlaying;
         return new PlaybackSnapshot(generation, "studio-preview", 0, "", (chart + offset) * .001,
             chart * .001, 0, (float)(transport?.Rate ?? 1),
             playing ? TransportState.Running : TransportState.Frozen,

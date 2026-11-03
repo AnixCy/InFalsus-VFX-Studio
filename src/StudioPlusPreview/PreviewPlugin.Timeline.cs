@@ -127,6 +127,7 @@ public sealed partial class PreviewPlugin
     }
     void CancelEffectDrag()
     {
+        EndTimelineScrub(true);
         if(draggingEffect||draggingKey||draggingCurve||libraryCandidate!=null){Model?.Cancel();GUIUtility.hotControl=0;}
         if(resizingChannel)channelHeights[resizedChannel]=resizeStartHeight;
         resizingChannel=draggingCurve=draggingKey=false;frozenPlot="";GUIUtility.hotControl=0;
@@ -136,6 +137,7 @@ public sealed partial class PreviewPlugin
     {
         if(libraryCandidate!=null)return;
         var e=Event.current;var point=e.mousePosition;
+        if(ScrubPointer(e))return;
         if(e.type==EventType.ScrollWheel&&(timelineBody.Contains(point)||timelineRuler.Contains(point))) {
             if(e.control||e.command) {double at=XTime(point.x),fraction=(point.x-timelineRuler.x)/timelineRuler.width;
                 timelineSpan=Math.Clamp(timelineSpan*Math.Pow(1.15,e.delta.y),.1,600);timelineStart=Math.Max(0,at-fraction*timelineSpan);}
@@ -144,12 +146,12 @@ public sealed partial class PreviewPlugin
         }
         if(CurvePointer(e,rows))return;
         if(e.type==EventType.MouseDown&&e.button==0&&timelineRuler.Contains(point)) {
-            FinishText();Model!.Commit();Bridge.SeekSeconds(XTime(point.x));GUI.FocusControl(null);e.Use();return;
+            BeginTimelineScrub(point.x);GUI.FocusControl(null);GUIUtility.hotControl=timelineControl;e.Use();return;
         }
         if(e.type==EventType.MouseDown&&e.button==0&&timelineBody.Contains(point)) {
             FinishText();Model!.Commit();GUI.FocusControl(null);
             int index=RowAt(rows,point.y);if(index<0||index>=rows.Count)return;
-            var item=rows[index];var node=Model.Document.Runtime.Nodes.Single(n=>n.Id==item.Node);selectedEffect=item.Node;rangeNode="";
+            var item=rows[index];var node=Model.Document.Runtime.Nodes.Single(n=>n.Id==item.Node);SelectTimelineNode(item.Node);
             if(item.Parameter==null) {
                 selectedParameter=selectedKey="";
                 if(point.x<timelineBody.x+28*UiScale){if(!collapsedEffects.Add(node.Id))collapsedEffects.Remove(node.Id);}

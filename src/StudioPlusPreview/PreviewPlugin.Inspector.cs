@@ -69,7 +69,7 @@ public sealed partial class PreviewPlugin
             if(theme.Button(R(16,y,w-70,25),theme.Fit(p.Label,(w-80)*UiScale,13),selectedParameter==p.Id,false,13)){FinishText();model.Commit();selectedParameter=p.Id;selectedKey="";curveComponent=0;}
             if(theme.Button(R(w-48,y,31,25),"◆",false,false,13))Queue(()=>{selectedParameter=p.Id;selectedKey=model.AddKey(p.Id,CurrentSeconds);});y+=32;
             if(selectedParameter==p.Id)HelpParagraph(EffectNotes.Parameter(model.Definition(model.RenderDocument.Nodes.Single(n=>n.Id==p.Binding.Node)),p.Binding.Property),w,ref y);
-            int index=model.Catalog.Parameters.ToList().FindIndex(v=>v.Id==p.Id);var value=model.Values[index].Number;
+            var value=InspectorValue(p);
             int count=p.Binding.Kind==ParameterKind.Float?1:4;
             for(int c=0;c<count;c++) {
                 float n=Component(value,c);string label=count==1?"数值":(p.Binding.Kind==ParameterKind.Color?"RGBA":"XYZW")[c].ToString();
@@ -111,8 +111,7 @@ public sealed partial class PreviewPlugin
             for(int c=0;c<4;c++)if(theme.Button(R(16+c*(w-32)/4,y,(w-38)/4,26),labels[c].ToString(),curveComponent==c,false,12))curveComponent=c;
             y+=36;
         }
-        model.Sample(CurrentSeconds);int index=model.Catalog.Parameters.ToList().FindIndex(x=>x.Id==p.Id);
-        var value=marker!=null?model.EditedKey==marker.Id&&model.EditedValue.HasValue?model.EditedValue.Value.Number:marker.Value.Number:model.Values[index].Number;
+        model.Sample(CurrentSeconds);var value=InspectorValue(p);
         int components=p.Binding.Kind==ParameterKind.Float?1:4;
         if(PreviewModel.IsSwitch(p.Id)) {
             string[] labels={"自动","关闭","开启"};float[] states={0,-1,1};
