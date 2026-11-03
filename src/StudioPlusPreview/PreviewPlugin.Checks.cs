@@ -20,6 +20,9 @@ public sealed partial class PreviewPlugin
         void Assert(bool value,string name){if(!value)throw new Exception(name);checks.Add(name);}
         try {
             Assert(Model!=null&&Surface!=null,"plugin bound to Studio camera");
+            var theme=StudioUiTheme.TryBind();
+            Assert(theme!=null&&theme.HasLiveHost,"flat UI delegates bind to the actual Studio+ component");
+            Assert(theme!.CheckTextMetrics(),"Chinese and numeric labels use the host font rasterizer");
             Assert(!Dirty&&MayQuit(),"unchanged project exits without a confirmation");
             RenderStageForCheck();
             Assert(RenderedFrames>0,"stage camera rendering callback ran");

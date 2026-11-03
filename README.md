@@ -18,7 +18,7 @@
 | Studio+ 1.079 增强插件源码 | 已保留为开发基线 |
 | 原版 Studio 1.0.10 Unity 工程 | 继承上游 |
 | 演出求值、参数预览、编辑事务、撤销与可靠保存 | 已迁入 `src/Presentation`，184 项检查通过 |
-| Studio+ 参数面板与实时背景预览 | 已接入，44 项运行检查通过，包含实际 GPU 输出与退出重入验证 |
+| Studio+ 参数面板与实时背景预览 | 已接入，46 项运行检查通过，包含宿主 UI 组件、实际 GPU 输出与退出重入验证 |
 | 关键帧编辑界面、循环区间编辑、游戏包导出 | 待开发 |
 
 上游源码、功能与历史检查记录不等于本项目已经完成对应集成或验收。
@@ -27,6 +27,7 @@
 
 - [项目开发说明](docs/vfx/DEVELOPMENT.md)：实际源码入口、版本关系、工作顺序与验证边界。
 - [参数预览使用说明](docs/vfx/PARAMETER_PREVIEW.md) · [本次验证范围](docs/vfx/VALIDATION.md)。
+- [可复用 UI 组件与接入边界](docs/vfx/UI_COMPONENTS.md)。
 - [贡献规范](CONTRIBUTING.md) · [Agent 工作规范](AGENTS.md) · [本项目更新记录](CHANGELOG.md)。
 - [基线清单](vfx-project.json)：固定提交、版本和源码路径。
 - [Studio+ 1.079 快照](Mods/StudioPlusSnapshots/1.079-20261102/README.md)。

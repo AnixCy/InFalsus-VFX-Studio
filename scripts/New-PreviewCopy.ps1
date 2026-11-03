@@ -28,6 +28,7 @@ $taskLauncher='@echo off'+"`r`n"+'setlocal'+"`r`n"+'cd /d "%~dp0"'+"`r`n"+'set "
 [IO.File]::WriteAllText((Join-Path $taskDestination 'Start-VFX.bat'),$taskLauncher,[Text.Encoding]::ASCII)
 $taskGuide=@'
 VFX 参数预览测试版
+0.1.2：演出面板和确认框复用 Studio+ 扁平 UI 组件。
 
 双击 Start-VFX.bat。使用该入口可将测试设置保存到本目录 UserData。
 右上角“演出参数”打开面板；可使用内置背景或选择本地 PNG/JPEG。

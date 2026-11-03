@@ -74,13 +74,10 @@ public sealed partial class PreviewPlugin
             GUI.FocusControl(null); GUIUtility.hotControl = 0;
             sliderEditing = false; decisionNeedsFocus = false;
         }
-        var previous = GUI.color;
-        GUI.color = new Color(0, 0, 0, .72f);
-        GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
-        GUI.color = previous;
-        float width = Mathf.Min(480, Mathf.Max(260, Screen.width - 24));
-        var rect = new Rect((Screen.width - width) * .5f, Mathf.Max(12, (Screen.height - 210) * .5f), width, 210);
-        GUI.ModalWindow(0x564659, rect, DrawDecisionWindow, "未保存的演出工程", windowStyle!);
+        StudioUiTheme.Fill(new Rect(0,0,Screen.width,Screen.height),"#000000b8");
+        float width = Mathf.Min(520*UiScale,Screen.width-24),height=240*UiScale;
+        var rect = new Rect((Screen.width-width)*.5f,Mathf.Max(12,(Screen.height-height)*.5f),width,height);
+        GUI.ModalWindow(0x564659,rect,DrawDecisionWindow,GUIContent.none,GUIStyle.none);
         if (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.Escape) {
             QueueDecision(DecisionChoice.Cancel); Event.current.Use();
         }
@@ -88,18 +85,22 @@ public sealed partial class PreviewPlugin
 
     void DrawDecisionWindow(int id)
     {
-        float width = Mathf.Min(480, Mathf.Max(260, Screen.width - 24));
+        float width = Mathf.Min(520*UiScale,Screen.width-24)/UiScale;
+        var theme=ui!;
+        theme.Panel(R(0,0,width,240));
+        theme.Label(R(20,14,width-40,36),"未保存的演出工程",22,"#c9e9ee");
+        theme.Rule(R(20,58,width-40,1));
         bool quitting = decision == PendingDecision.Quit;
-        GUI.Label(new Rect(16, 43, width - 32, 52), quitting
+        theme.Paragraph(R(20,72,width-40,58),quitting
             ? "演出工程有未保存修改。\n请选择保存后退出、放弃修改，或取消退出。"
-            : "当前演出工程有未保存修改。\n保存或放弃修改后，再选择要打开的工程。", labelStyle!);
-        GUI.Label(new Rect(16, 101, width - 32, 49), decisionError, captionStyle!);
-        float buttonWidth = (width - 48) / 3;
-        if (GUI.Button(new Rect(16, 163, buttonWidth, 30), quitting ? "保存并退出" : "保存并打开", buttonStyle!))
+            : "当前演出工程有未保存修改。\n保存或放弃修改后，再选择要打开的工程。",15,"#a6c3d1");
+        theme.Paragraph(R(20,137,width-40,48),decisionError,13,"#efb0ba");
+        float buttonWidth = (width-56)/3;
+        if (theme.Button(R(20,194,buttonWidth,32),quitting?"保存并退出":"保存并打开"))
             QueueDecision(DecisionChoice.Save);
-        if (GUI.Button(new Rect(24 + buttonWidth, 163, buttonWidth, 30), quitting ? "放弃并退出" : "放弃并打开", buttonStyle!))
+        if (theme.Button(R(28+buttonWidth,194,buttonWidth,32),quitting?"放弃并退出":"放弃并打开"))
             QueueDecision(DecisionChoice.Discard);
-        if (GUI.Button(new Rect(32 + buttonWidth * 2, 163, buttonWidth, 30), "取消", buttonStyle!))
+        if (theme.Button(R(36+buttonWidth*2,194,buttonWidth,32),"取消"))
             QueueDecision(DecisionChoice.Cancel);
     }
 }

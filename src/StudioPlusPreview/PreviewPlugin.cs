@@ -13,7 +13,7 @@ using UColor = UnityEngine.Color;
 
 namespace InFalsus.Vfx.StudioPlus;
 
-[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.1.1")]
+[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.1.2")]
 [BepInDependency("local.infalsusstudio.visualui", "1.0.7")]
 public sealed partial class PreviewPlugin : BaseUnityPlugin
 {
@@ -25,7 +25,7 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
     Harmony? harmony;
     string folder = "", imagePath = "", savedImagePath = "", projectFile = "";
     ProjectFileVersion? fileVersion;
-    string status = "参数修改实时显示；数值可输入后按回车应用。";
+    string status = "实时预览 · 回车应用 · Esc 取消";
     bool previewEnabled = true, stopped, actionRunning;
     internal bool TestMode;
     internal int RenderedFrames;
