@@ -1,6 +1,6 @@
 # 共享演出核心
 
-从项目既有创作基础设施迁入，原始 14 个文件的来源与 SHA-256 见 [ORIGIN.json](ORIGIN.json)。后续仅 AuthoringSession.cs 增加可撤销材质图替换并另列当前哈希，其余 13 个文件保持原样。本目录不依赖 Unity 或具体编辑器。
+从项目既有创作基础设施迁入，原始 14 个文件的来源与 SHA-256 见 [ORIGIN.json](ORIGIN.json)。EffectPackage、AuthoringProject 与 AuthoringSession 已扩展实例元数据、区间、图事务与稳定身份时序编辑，当前哈希单列；其余 11 个文件保持原样。本目录不依赖 Unity 或具体编辑器。
 
 - `core/`：时间域、播放快照、资源契约与可随机定位的时间轴求值。
 - `portable/`：以 `netstandard2.1` 编译核心，JSON 编解码由宿主提供。

@@ -1,0 +1,19 @@
+{
+  "FormatVersion": 1,
+  "UnityVersion": "6000.3.25f1",
+  "Platform": "StandaloneWindows64",
+  "ColorSpace": "Linear",
+  "Effect": {
+    "Id": "procedural-pulse",
+    "Label": "Procedural Pulse",
+    "Target": "postprocess",
+    "Bundle": "effect.bundle",
+    "Material": "custom/procedural-pulse",
+    "Parameters": [
+      { "Property": "_Color", "Label": "Color", "Kind": "Color", "Value": [0.3, 0.15, 1, 1], "Min": 0, "Max": 2 },
+      { "Property": "_Intensity", "Label": "Intensity", "Kind": "Float", "Value": [0.5], "Min": 0, "Max": 2 },
+      { "Property": "_Frequency", "Label": "Frequency", "Kind": "Float", "Value": [8], "Min": 1, "Max": 30 },
+      { "Property": "_Speed", "Label": "Speed", "Kind": "Float", "Value": [1], "Min": 0, "Max": 8 }
+    ]
+  }
+}

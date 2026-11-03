@@ -16,7 +16,7 @@ public sealed partial class PreviewPlugin
         var snapshot=tableType.GetMethod("Snapshot",StudioBridge.Flags)!.Invoke(table,null)!;
         var previousModel=Model;var previousKey=selectedKey;bool previousView=Bridge.AuthoringView;
         var chartHistory=Bridge.Owner!.History;
-        var model=new PreviewModel(folder,Application.unityVersion,QualitySettings.activeColorSpace.ToString());
+        var model=new PreviewModel(folder,Application.unityVersion,QualitySettings.activeColorSpace.ToString(),legacy:true);
         string id="adjust/_Fade";
         float Sample(double time){model.Sample(time);return model.Values[model.Catalog.Parameters.ToList().FindIndex(p=>p.Id==id)].Number.X;}
         Event Key(KeyCode code,bool ctrl=false,bool shift=false,EventType type=EventType.KeyDown)=>
@@ -90,7 +90,7 @@ public sealed partial class PreviewPlugin
         string file=args[at+1];var original=File.ReadAllBytes(file);var data=Decode(File.ReadAllText(file));
         var store=new ProjectFileStore(p=>JsonConvert.SerializeObject(new ProjectFile{Project=p,BackgroundPath=data.BackgroundPath,AudioPath=data.AudioPath},Json),
             text=>Decode(text).Project,PreviewModel.Capabilities);
-        var opened=store.Open(file);var fixture=new PreviewModel(folder,Application.unityVersion,QualitySettings.activeColorSpace.ToString());
+        var opened=store.Open(file);var fixture=new PreviewModel(folder,Application.unityVersion,QualitySettings.activeColorSpace.ToString(),legacy:true);
         fixture.Replace(opened.Session);var keys=fixture.Keys.ToArray();int missing=fixture.MissingAnimationStarts;
         check(missing>0,"read-only fixture reproduces continuous tracks without starting anchors");
         check(fixture.RepairAnimationStarts()==missing&&fixture.MissingAnimationStarts==0,"explicit repair fills all missing continuous starts in one transaction");

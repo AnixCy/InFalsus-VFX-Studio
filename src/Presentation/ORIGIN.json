@@ -18,11 +18,19 @@
     "authoring/ParameterPreviewSession.cs": "3a9409ff6a75fc4af82d76f284b1fc92949aca69520a22d3e94bb0876cdf06e3",
     "authoring/ProjectFileStore.cs": "c1945abc57645543177d9e1bb21dd19efb5dfe84343e052a06733aaece84708b"
   },
-  "notes": "The sha256 map records the original import. Thirteen files remain exact; later changes are listed separately. No game media is included.",
+  "notes": "The sha256 map records the original import. Eleven files remain exact; three extended core/authoring files are listed separately. No game media is included.",
   "modifiedAfterImport": {
     "authoring/AuthoringSession.cs": {
-      "change": "Transactional material graph replacement with stable track/key identities and undo history.",
-      "sha256": "e47eda8ef2cfe951d418069e49c29e29ad5a30d35643ca360d1a01df37dec678"
+      "change": "Transactional graph replacement and stable-key interval retiming with undo history.",
+      "sha256": "ed1ec145a720ec9f8ba528ebac324bcba818d7781e2eb82c5d0ae27c627bf580"
+    },
+    "core/EffectPackage.cs": {
+      "change": "Optional effect instance identity, name, enabled state and finite time intervals, protected by the effect.instances capability.",
+      "sha256": "6b70235a52c843c936cee172ad7c0023ef75ec00bf42dc8d6cd634ac5db999e8"
+    },
+    "authoring/AuthoringProject.cs": {
+      "change": "Deep copy and equality of effect instance metadata for undo, reliable persistence and snapshots.",
+      "sha256": "8ba3d0525c1cb8b36805167c5c644ac5a2351b34dc4aae38d3ff0f10c98e0bf9"
     }
   }
 }

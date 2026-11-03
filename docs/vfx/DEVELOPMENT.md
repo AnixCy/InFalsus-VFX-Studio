@@ -13,7 +13,7 @@ InFalsus VFX Studio 是 Studio+ 的演出创作扩展。现已迁入共享求值
 | 原版编辑器宿主 | Studio Windows Mono 1.0.10；根目录 `Assets/`、`Packages/`、`ProjectSettings/` |
 | 增强插件源码 | Studio+ 内部 1.079；公开版本 1.0.7，绑定程序集 1.0.7.0 |
 | 本次运行基线 | 已有 Studio+ 1.0.7 build1030 完整应用；未重建完整 1.079 主插件 |
-| 本项目 | 演出编辑插件 0.2.1 原型，尚无正式应用发行版本 |
+| 本项目 | 演出编辑插件 0.3.0 原型，尚无正式应用发行版本 |
 
 Studio+ 源码固定于提交 `2c8c63722948b8e739f0eef6ebd0478cdf8ddd3d`，快照在 [Mods/StudioPlusSnapshots/1.079-20261102](../../Mods/StudioPlusSnapshots/1.079-20261102/README.md)。历史快照用于溯源，不叠加安装。
 
@@ -23,7 +23,7 @@ Studio+ 源码固定于提交 `2c8c63722948b8e739f0eef6ebd0478cdf8ddd3d`，快�
 | [src/Presentation](../../src/Presentation/README.md) | Unity 无关的共享核心与创作层；原始导入及后续扩展哈希记录在 `ORIGIN.json` |
 | [src/StudioPlusPreview](../../src/StudioPlusPreview/) | BepInEx/Harmony 适配、时钟、参数面板、项目文件和渲染资源生命周期 |
 | [src/ShaderAssets](../../src/ShaderAssets/) | 独立 Unity Shader 资源工程，不使用上游根工程构建 |
-| [tests](../../tests/) | 67 项参数检查、117 项创作工程检查及通用契约夹具 |
+| [tests](../../tests/) | 67 项参数检查、129 项创作工程检查及通用契约夹具 |
 | [scripts](../../scripts/) | 插件与资源构建、独立副本生成、静音运行检查 |
 | [studio_icon_work/Source](../../Mods/StudioPlusSnapshots/1.079-20261102/studio_icon_work/Source/) | 所选增强主插件的 160 个 C# 源文件 |
 
@@ -69,6 +69,8 @@ dotnet run --project tests/Project.Checks/Project.Checks.csproj -c Release -- .
 
 完整运行检查需要已准备的 12 套本地官谱材质缓存。可选 `-ProjectFixture '<已有演出工程>'` 只读验证旧工程补起点，并在检查输出目录生成修复副本；不改写输入文件、不载入其中的音频。宿主需能注册自身字体；受限的低完整性进程可能在初始化 UI 时失败。
 
+`-EffectFixture '<构建出的 effect.json>'` 额外验证自定义 Shader 导入、缓存、参数、局部时间和旧工程新增效果后的保存；这些检查会在隔离测试安装内写入自定义缓存及一条故意损坏的缓存夹具，不能针对用户正在使用的安装运行。构建入口及格式见 [CUSTOM_EFFECTS.md](CUSTOM_EFFECTS.md)。
+
 本次结果和未验收范围见 [VALIDATION.md](VALIDATION.md)。实际操作和视觉由人工验收，自动检查不替代它们。
 
 ## 接入约定
@@ -81,6 +83,8 @@ dotnet run --project tests/Project.Checks/Project.Checks.csproj -c Release -- .
 - 演出 OnGUI 隔离前缀必须先于宿主热键捕获；绑定解析直接读取宿主实时 `StudioHotkeys`，不调用制谱动作分发，也不复制第二套持久化设置。数值输入保留文本编辑按键；按住预览需处理释放和失焦。
 - 退出确认使用单个非阻塞界面，原生文件操作由动作队列互斥执行。`Application.Quit` 延后处理，授权最多消费一次，其他订阅者阻止退出时未用授权会过期；不要在退出回调内启动消息循环或弹窗。
 - 演出工程独立于 SPC；原编辑器的谱面保存逻辑不变。`timinggroup`、`noinput` 等已有扩展不是本项目的演出格式。
+- `MaterialNodeDocument` 的实例身份、名称、启停和区间属于演出核心；区间移动通过 `SetNodeRange` 保留关键帧身份。新实例需声明 `effect.instances`，旧游戏适配器未接入此能力。效果库筛选只影响检索，不能改变时间轴内容。
+- 自定义资源按内容标识缓存在当前安装中；导入不创建实例。制作端用 Unity 构建，使用端只加载预编译 Shader/Material，不依赖 Unity Editor、Python 或新编译器。
 - 视频导出时钟通过可选反射适配；导出采样排除临时值，但完整视频导出仍待验证。玩家运行包和创作端依赖分别管理。
 
 默认集成分支是 `vfx`，开发分支使用 `codex/<任务名>`。提交及来源要求见 [CONTRIBUTING.md](../../CONTRIBUTING.md)。

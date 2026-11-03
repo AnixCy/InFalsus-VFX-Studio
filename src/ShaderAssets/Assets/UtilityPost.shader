@@ -1,6 +1,7 @@
 Shader "InFalsusVFX/UtilityPost"
 {
  Properties {
+  _BaseColor("Base Color",Color)=(1,1,1,1)
   _Exposure("Exposure",Float)=0 _Contrast("Contrast",Float)=1 _Saturation("Saturation",Float)=1
   _Zoom("Zoom",Float)=1 _Rotation("Rotation",Float)=0 _Chroma("Chroma",Float)=0
   _Ripple("Ripple",Float)=0 _RippleFrequency("Ripple frequency",Float)=20 _RippleSpeed("Ripple speed",Float)=2
@@ -19,6 +20,7 @@ Shader "InFalsusVFX/UtilityPost"
   float4 _BlitTexture_TexelSize;
   float _Exposure,_Contrast,_Saturation,_Zoom,_Rotation,_Chroma,_Ripple,_RippleFrequency,_RippleSpeed;
   float _Scanline,_Noise,_PixelSize,_Vignette,_Fade,_Wipe,_Ring,_RingRadius,_RingWidth,_PresentationTime;
+  float4 _BaseColor;
   struct Varyings {float4 position:SV_POSITION;float2 uv:TEXCOORD0;};
   Varyings Vert(uint id:SV_VertexID){Varyings o;o.uv=float2((id<<1)&2,id&2);o.position=float4(o.uv*2-1,0,1);
   #if UNITY_UV_STARTS_AT_TOP
@@ -43,7 +45,7 @@ Shader "InFalsusVFX/UtilityPost"
    float ring=1-smoothstep(_RingWidth,_RingWidth+max(_BlitTexture_TexelSize.x,.001),abs(r-_RingRadius));
    color+=ring*_Ring*float3(.55,.25,1);
    float mask=_Wipe<=0?1:1-smoothstep((1-_Wipe)*.8-.02,(1-_Wipe)*.8,r);
-   return half4(color*(1-saturate(_Fade))*mask,1);
+   return half4(color*_BaseColor.rgb*(1-saturate(_Fade))*mask,1);
   }
   ENDHLSL
  } }

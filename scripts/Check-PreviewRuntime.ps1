@@ -2,7 +2,8 @@ param(
     [Parameter(Mandatory=$true)][string]$PreviewPath,
     [Parameter(Mandatory=$true)][string]$OutputDirectory,
     [string]$PluginDirectory,
-    [string]$ProjectFixture
+    [string]$ProjectFixture,
+    [string]$EffectFixture
 )
 $ErrorActionPreference='Stop'
 $taskRoot=[IO.Path]::GetFullPath($PreviewPath)
@@ -20,6 +21,7 @@ try{
     $env:VFX_WORK_ROOT=Join-Path $taskOut 'UserData/vfx'
     $taskArgs=@('-batchmode','-force-d3d11','-screen-width','1280','-screen-height','720','-vfx-self-check','-vfx-check-output',('"'+(Join-Path $taskOut 'checks.json')+'"'),'-logFile',('"'+(Join-Path $taskOut 'player.log')+'"'))
     if($ProjectFixture){$taskArgs+=@('-vfx-project-fixture',('"'+[IO.Path]::GetFullPath($ProjectFixture)+'"'))}
+    if($EffectFixture){$taskArgs+=@('-vfx-effect-fixture',('"'+[IO.Path]::GetFullPath($EffectFixture)+'"'))}
     $taskProcess=Start-Process -FilePath $taskExe -ArgumentList $taskArgs -WorkingDirectory $taskRoot -WindowStyle Hidden -PassThru
     if(-not $taskProcess.WaitForExit(45000)){Stop-Process -Id $taskProcess.Id;throw 'The owned check process exceeded 45 seconds.'}
     if($taskProcess.ExitCode -ne 0){throw ('Runtime checks failed with exit code '+$taskProcess.ExitCode+'; see player.log and checks.json.')}

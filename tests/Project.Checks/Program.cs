@@ -13,7 +13,7 @@ sealed class Checks(string root)
     private readonly List<string> _groups = new();
     private readonly string _manifest = Path.Combine(root, "tests/Fixtures/material-contract/manifest.json");
     private readonly string _out = Path.Combine(root, "local/checks/authoring-project");
-    private static readonly string[] Caps = { "clock.audio", "clock.chart", "shader.bundle", "background.material", "postprocess.blit.experimental" };
+    private static readonly string[] Caps = { "clock.audio", "clock.chart", "shader.bundle", "background.material", "postprocess.blit.experimental", "effect.instances" };
     private static readonly JsonSerializerOptions Json = new() { WriteIndented = true, PropertyNameCaseInsensitive = true,
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false) } };
     private string _work = "";
@@ -46,7 +46,7 @@ sealed class Checks(string root)
     {
         Directory.CreateDirectory(_out); _work = Path.Combine(_out, "work-" + Guid.NewGuid().ToString("N")[..8]); Directory.CreateDirectory(_work);
         var sourceHash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(_manifest)));
-        ImportAndDrag(); KeysAndCurves(); ConflictsAndGuards(); SaveAndReopen(); BackgroundSave(); MissingAssets();
+        ImportAndDrag(); KeysAndCurves(); ConflictsAndGuards(); SaveAndReopen(); BackgroundSave(); MissingAssets(); EffectIntervals();
         Assert(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(_manifest))) == sourceHash, "Original runtime package stays untouched.");
         var report = new { checks = _checks, groups = _groups, workDirectory = _work,
             gameStarted = false, graphicsExecuted = false, visualCalls = 0, sourceManifestModified = false };
@@ -54,6 +54,36 @@ sealed class Checks(string root)
         Console.WriteLine(JsonSerializer.Serialize(report, Json));
     }
 
+    private void EffectIntervals()
+    {
+        var session=Session();var original=session.Snapshot();var keyIds=original.Tracks.Single(t=>t.ParameterId=="bg/_Amount").KeyIds;
+        using(var edit=session.BeginEdit(session.Revision,"Move effect")) {
+            edit.SetNodeRange("bg",2,7,true);edit.SetNodeRange("bg",3,8,true);
+            var preview=edit.CompilePreview();
+            Assert(preview.Document.Nodes[0].StartSeconds==3&&preview.Document.Channels[0].Keys[0].Seconds==3,"Effect drag uses absolute target times without cumulative drift.");
+            edit.Commit();
+        }
+        Assert(session.Snapshot().Tracks.Single(t=>t.ParameterId=="bg/_Amount").KeyIds.SequenceEqual(keyIds),"Moving an interval preserves animated key identities.");
+        Near(Sample(session,3,"bg/_Amount").Number.X,Sample(Package(),0,"bg/_Amount").Number.X,"Moved animation follows the interval.");
+        session.Undo(session.Revision);Assert(session.Snapshot().Runtime.Nodes[0].StartSeconds==0,"One undo restores the whole interval drag.");
+        session.Redo(session.Revision);Assert(session.Snapshot().Runtime.Nodes[0].EndSeconds==8,"Redo restores the effect interval.");
+        using(var edit=session.BeginEdit(session.Revision)) {
+            Fail<ArgumentException>(()=>edit.SetNodeRange("bg",double.NaN,9,true));
+            Fail<ArgumentException>(()=>edit.SetNodeRange("bg",4,4,true));
+            Assert(edit.CompilePreview().Document.Nodes[0].StartSeconds==3,"Invalid interval input leaves its draft unchanged.");
+        }
+        var graph=session.Snapshot().Runtime;graph.Nodes[1].EffectId="test-effect";graph.Nodes[1].Name="Test layer";graph.Nodes[1].Enabled=false;
+        using(var edit=session.BeginEdit(session.Revision)){edit.ReplaceGraph(graph,session.Snapshot().ParameterHints);edit.Commit();}
+        Assert(session.Snapshot().Runtime.Nodes[1].Name=="Test layer"&&!session.Snapshot().Runtime.Nodes[1].Enabled,"Instance identity name and enable state participate in graph edits.");
+        var store=new ProjectFileStore(Encode,Decode,Caps);string file=Path.Combine(_work,"effect-instances.json");store.Save(session,file,session.Revision);
+        var reopened=store.Open(file).Session.Snapshot();
+        Assert(reopened.Runtime.Nodes[1].EffectId=="test-effect"&&reopened.Runtime.Nodes[0].StartSeconds==3,"Instance metadata survives save and reopen.");
+        var noSupport=Caps.Where(c=>c!="effect.instances").ToArray();
+        Fail<NotSupportedException>(()=>EffectPackage.FromDocument(reopened.Runtime,Package().Root,noSupport,false));
+        graph.Requires=graph.Requires.Where(c=>c!="effect.instances").ToArray();
+        Fail<InvalidDataException>(()=>EffectPackage.FromDocument(graph,Package().Root,Caps,false));
+        _groups.Add("Effect interval metadata, stable-key retiming, undo, persistence and capability guards");
+    }
     private void ImportAndDrag()
     {
         var original = Package(); var document = AuthoringProjects.Import(original);

@@ -11,9 +11,9 @@ public sealed class EditorKey
     public ParameterValue Value;
     public Easing Ease;
 }
-public sealed class PreviewModel
+public sealed partial class PreviewModel
 {
-    public static readonly string[] Capabilities={"clock.chart","clock.audio","background.material","shader.bundle","postprocess.blit.experimental"};
+    public static readonly string[] Capabilities={"clock.chart","clock.audio","background.material","shader.bundle","postprocess.blit.experimental","effect.instances"};
     public AuthoringSession Session {get;private set;}
     public ParameterCatalog Catalog {get;private set;}=null!;
     public EffectPackage Package {get;private set;}=null!;
@@ -21,6 +21,7 @@ public sealed class PreviewModel
     public ParameterValue[] Values {get;private set;}=Array.Empty<ParameterValue>();
     public EditorKey[] Keys {get;private set;}=Array.Empty<EditorKey>();
     public EffectLibrary Library {get;}
+    readonly string assetRoot;
     ParameterPreviewSession preview=null!;
     AuthoringEdit? drag;
     EffectPackage? draftTimeline;
@@ -33,10 +34,17 @@ public sealed class PreviewModel
     public string? EditedKey=>editedKey;
     public double? MovingSeconds {get;private set;}
     public ParameterValue? EditedValue {get;private set;}
-    public PreviewModel(string assetRoot,string unityVersion,string colorSpace)
+    public PreviewModel(string assetRoot,string unityVersion,string colorSpace,bool legacy=false)
     {
+        this.assetRoot=Path.GetFullPath(assetRoot);
         Library=EffectLibrary.Load(assetRoot);
-        var project=AuthoringProjects.Import(EffectPackage.FromDocument(Template(unityVersion,colorSpace),assetRoot,Capabilities,false));
+        var template=Template(unityVersion,colorSpace);
+        if(!legacy) {
+            var color=Library.Effects.Single(e=>e.Id=="color-grade");
+            var node=template.Nodes.Single(n=>n.Id=="adjust");node.EffectId=color.Id;node.Name=color.Label;
+            template.Channels=template.Channels.Where(c=>c.Node!="adjust").Concat(Channels(node.Id,color)).ToArray();
+        }
+        var project=AuthoringProjects.Import(EffectPackage.FromDocument(template,assetRoot,Capabilities,false));
         project.ParameterHints=Hints(project.Runtime,Library);
         Session=new AuthoringSession(project,assetRoot,Capabilities,isSaved:true);Refresh();
     }
@@ -54,7 +62,7 @@ public sealed class PreviewModel
         Keys=keys.ToArray();
         missingStarts=Catalog.Parameters.Where(p=>!IsSwitch(p.Id)&&p.Binding.Kind!=ParameterKind.Choice)
             .Select(p=>(Parameter:p,Key:Keys.Where(k=>k.ParameterId==p.Id).OrderBy(k=>k.Seconds).FirstOrDefault()))
-            .Where(p=>p.Key!=null&&p.Key.Seconds>0&&p.Key.Ease!=Easing.Hold&&p.Key.Value!=p.Parameter.DefaultValue)
+            .Where(p=>p.Key!=null&&p.Key.Seconds>Document.Runtime.Nodes.Single(n=>n.Id==p.Parameter.Binding.Node).StartSeconds&&p.Key.Ease!=Easing.Hold&&p.Key.Value!=p.Parameter.DefaultValue)
             .Select(p=>p.Key!).ToArray();
     }
     public void Sample(double seconds,bool committedOnly=false)
@@ -75,6 +83,7 @@ public sealed class PreviewModel
     }
     public string UpdateAnimatedParameter(string id,ParameterValue value,double seconds,string? selectedKey,bool autoKey)
     {
+        seconds=ParameterTime(id,seconds);
         Begin("value:"+id);
         if(editedKey==null) {
             var existing=Keys.FirstOrDefault(k=>k.ParameterId==id&&(k.Id==selectedKey||Math.Abs(k.Seconds-seconds)<.00001));
@@ -90,7 +99,7 @@ public sealed class PreviewModel
     }
     public string AddKey(string id,double seconds)
     {
-        Commit();seconds=Math.Round(seconds,3);
+        Commit();seconds=Math.Round(ParameterTime(id,seconds),3);
         var existing=Keys.FirstOrDefault(k=>k.ParameterId==id&&Math.Abs(k.Seconds-seconds)<.00001);
         if(existing!=null)return existing.Id;
         Sample(seconds);int index=Catalog.Parameters.ToList().FindIndex(p=>p.Id==id);
@@ -101,14 +110,15 @@ public sealed class PreviewModel
     void AddAnimationStart(AuthoringEdit edit,string id,double seconds)
     {
         var parameter=Catalog.Parameters.Single(p=>p.Id==id);
-        if(seconds>0&&!IsSwitch(id)&&parameter.Binding.Kind!=ParameterKind.Choice&&!Keys.Any(k=>k.ParameterId==id))
-            edit.AddKey(id,KeyPosition.Seconds(0),parameter.DefaultValue,Easing.Linear);
+        double start=Document.Runtime.Nodes.Single(n=>n.Id==parameter.Binding.Node).StartSeconds;
+        if(seconds>start&&!IsSwitch(id)&&parameter.Binding.Kind!=ParameterKind.Choice&&!Keys.Any(k=>k.ParameterId==id))
+            edit.AddKey(id,KeyPosition.Seconds(start),parameter.DefaultValue,Easing.Linear);
     }
     public int RepairAnimationStarts()
     {
         Commit();int count=missingStarts.Length;if(count==0)return 0;
         using var edit=Session.BeginEdit(Session.Revision,"补齐连续动画起点");
-        foreach(var key in missingStarts)edit.AddKey(key.ParameterId,KeyPosition.Seconds(0),
+        foreach(var key in missingStarts)edit.AddKey(key.ParameterId,KeyPosition.Seconds(Document.Runtime.Nodes.Single(n=>n.Id==Catalog.Get(key.ParameterId).Binding.Node).StartSeconds),
             Catalog.Parameters.Single(p=>p.Id==key.ParameterId).DefaultValue,Easing.Linear);
         edit.Commit();Refresh();return count;
     }
@@ -131,15 +141,17 @@ public sealed class PreviewModel
     public void Reset()
     {
         Commit();using var e=Session.BeginEdit(Session.Revision,"恢复参数默认值");
-        foreach(var node in Document.Runtime.Nodes)foreach(var p in Library.Get(node.Material).Parameters)
-            e.SetDefaultValue(ParameterDescriptor.MakeId(node.Id,p.Property),Number(p.Value));
+        foreach(var p in Catalog.Parameters) {
+            var node=Document.Runtime.Nodes.Single(n=>n.Id==p.Binding.Node);
+            e.SetDefaultValue(p.Id,Number(Library.Resolve(node).Parameters.Single(v=>v.Property==p.Binding.Property).Value));
+        }
         e.Commit();Refresh();
     }
     public void SelectEffect(EffectDefinition? effect,string target)
     {
         Commit();var old=Document.Runtime;
-        var bg=target=="background"?effect!:Library.Get(old.Nodes.Single(n=>n.Target=="background").Material);
-        var pp=target=="postprocess"?effect:old.Nodes.FirstOrDefault(n=>n.Id=="post") is { } p?Library.Get(p.Material):null;
+        var bg=target=="background"?effect!:Library.Resolve(old.Nodes.Single(n=>n.Target=="background"));
+        var pp=target=="postprocess"?effect:old.Nodes.FirstOrDefault(n=>n.Id=="post") is { } p?Library.Resolve(p):null;
         var runtime=Compose(old.UnityVersion,old.ColorSpace,bg,pp);
         runtime.Id=old.Id;runtime.TimeDomain=old.TimeDomain;runtime.OffsetSeconds=old.OffsetSeconds;runtime.Seed=old.Seed;
         runtime.SongKey=old.SongKey;runtime.Difficulty=old.Difficulty;runtime.ChartFingerprint=old.ChartFingerprint;
@@ -155,13 +167,18 @@ public sealed class PreviewModel
         var package=session.CompileSnapshot(false);
         package.ValidateMaterialGraph(package.Document.UnityVersion,"StandaloneWindows64",package.Document.ColorSpace);
         foreach(var node in package.Document.Nodes) {
-            if(node.Id is not ("background" or "post" or "adjust"))throw new InvalidDataException("不支持的效果节点标识。");
-            var definition=Library.Get(node.Material);
+            var definition=Library.Resolve(node);
+            if(definition.Material!=node.Material||definition.Bundle!=node.Bundle)throw new InvalidDataException("效果资源身份不匹配。");
             if(definition.Target!=node.Target)throw new InvalidDataException("效果节点目标不匹配。");
             foreach(var c in package.Document.Channels.Where(c=>c.Node==node.Id))
                 if(!definition.Parameters.Any(p=>p.Property==c.Property&&p.Kind==c.Kind))throw new InvalidDataException("不支持的效果参数。");
         }
-        Cancel();Session=session;Refresh();
+        Cancel();var document=session.Snapshot();
+        if(!string.Equals(Path.GetFullPath(document.AssetRoot),assetRoot,StringComparison.OrdinalIgnoreCase)) {
+            document.AssetRoot=assetRoot;
+            session=new AuthoringSession(document,assetRoot,Capabilities,isSaved:!session.IsDirty);
+        }
+        Session=session;Refresh();
     }
     static KeyDocument CloneKey(KeyDocument k)=>new(){Seconds=k.Seconds,Beat=k.Beat,Value=k.Value.ToArray(),Ease=k.Ease,
         Curve=k.Curve?.Select(c=>new CurvePointDocument{X=c.X,Y=c.Y}).ToArray()};
@@ -175,6 +192,8 @@ public sealed class PreviewModel
             Nodes=defs.Select(d=>new MaterialNodeDocument{Id=d.Id,Target=d.Def.Target,Bundle=d.Def.Bundle,Material=d.Def.Material}).ToArray(),
             Channels=defs.SelectMany(d=>d.Def.Parameters.Select(p=>new ChannelDocument{Node=d.Id,Property=p.Property,Kind=p.Kind,Default=p.Value.ToArray()})).ToArray()};
     }
-    static ParameterPresentation[] Hints(PackageDocument document,EffectLibrary library)=>document.Nodes.SelectMany(n=>library.Get(n.Material).Parameters.Select(p=>
-        new ParameterPresentation{Node=n.Id,Property=p.Property,Label=p.Label,Group=n.Id,SuggestedMin=p.Min,SuggestedMax=p.Max})).ToArray();
+    static ParameterPresentation[] Hints(PackageDocument document,EffectLibrary library)=>document.Channels.Select(c=>{
+        var p=library.Resolve(document.Nodes.Single(n=>n.Id==c.Node)).Parameters.Single(p=>p.Property==c.Property);
+        return new ParameterPresentation{Node=c.Node,Property=p.Property,Label=p.Label,Group=c.Node,SuggestedMin=p.Min,SuggestedMax=p.Max};
+    }).ToArray();
 }

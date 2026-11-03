@@ -23,11 +23,13 @@ internal sealed class PreviewSurface:IDisposable
     RenderTexture? scene,post,alternate;
     RTHandle? sceneHandle,postHandle,alternateHandle;
     Texture2D? ownedTexture;
+    Material? blendMaterial;
     bool imageOverride;
     int width,height;
     internal bool Enabled {get;set;}=true;
     internal Material Material=>resources["background"].Material;
     internal int ResourceCount=>resources.Count;
+    internal Material NodeMaterial(string id)=>resources[id].Material;
     internal PreviewSurface(Camera view,string folder)
     {
         this.folder=folder;hostCamera=view;
@@ -56,13 +58,14 @@ internal sealed class PreviewSurface:IDisposable
         Material material=asset is Shader shader?new Material(shader):asset is Material original?new Material(original):
             throw new InvalidDataException("找不到效果材质："+node.Material);
         if(!material.shader.isSupported){Object.DestroyImmediate(material);throw new NotSupportedException("当前设备不支持该效果。");}
-        return new Resource{Path=node.Bundle+":"+node.Material,Material=material,Definition=library.Get(node.Material)};
+        return new Resource{Path=node.Bundle+":"+node.Material,Material=material,Definition=library.Resolve(node)};
     }
-    void Ensure(PackageDocument document,EffectLibrary library)
+    void Ensure(PackageDocument document,EffectLibrary library,Func<MaterialNodeDocument,bool>? active=null)
     {
         foreach(var node in document.Nodes) {
+            if(active!=null&&!active(node))continue;
             var path=node.Bundle+":"+node.Material;
-            if(resources.TryGetValue(node.Id,out var old)&&old.Path==path)continue;
+            if(resources.TryGetValue(node.Id,out var old)&&old.Path==path){old.Definition=library.Resolve(node);continue;}
             var candidate=Load(node,library);
             if(old!=null)Object.DestroyImmediate(old.Material);
             resources[node.Id]=candidate;
@@ -74,27 +77,30 @@ internal sealed class PreviewSurface:IDisposable
         foreach(var key in resources.Keys.Where(id=>!document.Nodes.Any(n=>n.Id==id)).ToArray()) {
             Object.DestroyImmediate(resources[key].Material);resources.Remove(key);
         }
-        foreach(var path in bundles.Keys.Where(path=>!document.Nodes.Any(n=>n.Bundle==path)).ToArray()) {
+        foreach(var path in bundles.Keys.Where(path=>!document.Nodes.Any(n=>n.Bundle==path)&&!(path=="preview.bundle"&&blendMaterial)).ToArray()) {
             bundles[path].Unload(true);bundles.Remove(path);
         }
     }
     int Id(string name){if(!ids.TryGetValue(name,out int id))ids[name]=id=Shader.PropertyToID(name);return id;}
     internal FrameContext Draw(PreviewModel model,in PlaybackSnapshot snapshot,bool committedOnly)
     {
-        Ensure(model.Package.Document,model.Library);
         var frame=clock.Sample(snapshot,model.Package.Tempo,model.Package.Document.TimeDomain,model.Package.Document.OffsetSeconds,model.Package.Document.Seed);
+        var document=model.RenderDocument;
+        Ensure(document,model.Library,n=>model.IsActive(n,frame.Seconds));
         model.Sample(frame.Seconds,committedOnly);
         for(int i=0;i<model.Values.Length;i++) {
-            var p=model.Catalog.Parameters[i];var m=resources[p.Binding.Node].Material;var v=model.Values[i].Number;
+            var p=model.Catalog.Parameters[i];if(!resources.TryGetValue(p.Binding.Node,out var resource))continue;
+            var m=resource.Material;var v=model.Values[i].Number;
             if(p.Binding.Property.StartsWith("_KW_",StringComparison.Ordinal)||!m.HasProperty(Id(p.Binding.Property)))continue;
             if(p.Binding.Kind==ParameterKind.Color)m.SetColor(Id(p.Binding.Property),new Color(v.X,v.Y,v.Z,v.W));
             else if(p.Binding.Kind==ParameterKind.Vector)m.SetVector(Id(p.Binding.Property),new Vector4(v.X,v.Y,v.Z,v.W));
             else m.SetFloat(Id(p.Binding.Property),v.X);
         }
         foreach(var pair in resources) {
+            var node=document.Nodes.Single(n=>n.Id==pair.Key);if(!model.IsActive(node,frame.Seconds))continue;
             var r=pair.Value;var m=r.Material;
             foreach(var keyword in r.Definition.Keywords) {
-                string canonical=keyword.Substring(4).Replace("_","");bool enabled=false;float control=0;
+                string canonical=(keyword.StartsWith("USE_",StringComparison.Ordinal)?keyword.Substring(4):keyword).Replace("_","");bool enabled=false;float control=0;
                 for(int i=0;i<model.Values.Length;i++) {
                     var p=model.Catalog.Parameters[i];if(p.Binding.Node!=pair.Key)continue;
                     if(p.Binding.Property=="_KW_"+keyword)control=model.Values[i].Number.X;
@@ -105,6 +111,9 @@ internal sealed class PreviewSurface:IDisposable
                 var local=new LocalKeyword(m.shader,keyword);if(local.isValid)m.SetKeyword(local,enabled);
             }
             m.SetFloat("_PresentationTime",(float)frame.Seconds);m.SetFloat("_CurrentTime",(float)frame.Seconds);
+            m.SetFloat("_EffectTime",(float)(frame.Seconds-node.StartSeconds));
+            m.SetFloat("_EffectDuration",(float)(node.EndSeconds.HasValue?node.EndSeconds.Value-node.StartSeconds:0));
+            m.SetFloat("_EffectProgress",node.EndSeconds.HasValue?(float)Math.Clamp((frame.Seconds-node.StartSeconds)/(node.EndSeconds.Value-node.StartSeconds),0,1):0);
             m.SetInt("_FrameCount",(int)Math.Floor(frame.Seconds*120));
             float aspect=width>0?(float)width/height:hostCamera.aspect;
             if(r.Definition.Original)m.SetVector("_Aspect",new Vector4(aspect,1/aspect,0,0));else m.SetFloat("_Aspect",aspect);
@@ -120,17 +129,30 @@ internal sealed class PreviewSurface:IDisposable
             scene=Target("VFX scene",24);post=Target("VFX post",0);alternate=Target("VFX alternate",0);
             sceneHandle=RTHandles.Alloc(scene);postHandle=RTHandles.Alloc(post);alternateHandle=RTHandles.Alloc(alternate);
         }
-        Draw(model,snapshot,false);previewCamera.aspect=(float)w/h;quad.transform.localScale=new Vector3(previewCamera.aspect,1,1);
-        request.destination=scene;quad.SetActive(true);
+        var frame=Draw(model,snapshot,false);previewCamera.aspect=(float)w/h;quad.transform.localScale=new Vector3(previewCamera.aspect,1,1);
+        request.destination=scene;quad.SetActive(model.RenderDocument.Nodes.Any(n=>n.Target=="background"&&model.IsActive(n,frame.Seconds)));
         try{RenderPipeline.SubmitRenderRequest(previewCamera,request);}finally{quad.SetActive(false);}
-        var source=sceneHandle!;RenderTexture result=scene!;int index=0;
+        var handles=new[]{sceneHandle!,postHandle!,alternateHandle!};var targets=new[]{scene!,post!,alternate!};
+        RenderTexture result=scene!;int index=0;
         command.Clear();command.SetGlobalVector("_BlitTexture_TexelSize",new Vector4(1f/w,1f/h,w,h));
-        foreach(var node in model.Package.Document.Nodes.Where(n=>n.Target=="postprocess")) {
-            result=index%2==0?post!:alternate!;command.SetRenderTarget(result);
-            Blitter.BlitTexture(command,source,new Vector4(1,1,0,0),resources[node.Id].Material,0);
-            source=index%2==0?postHandle!:alternateHandle!;index++;
+        bool hasCommands=false;
+        double seconds=frame.Seconds;
+        foreach(var node in model.RenderDocument.Nodes.Where(n=>n.Target=="postprocess"&&model.IsActive(n,seconds))) {
+            float opacity=model.Opacity(node.Id);if(opacity<=0)continue;
+            int before=index;index=(index+1)%3;command.SetRenderTarget(targets[index]);
+            Blitter.BlitTexture(command,handles[before],new Vector4(1,1,0,0),resources[node.Id].Material,0);hasCommands=true;
+            if(opacity<.99999f) {
+                if(!blendMaterial) {
+                    if(!bundles.TryGetValue("preview.bundle",out var bundle)){bundle=AssetBundle.LoadFromFile(Path.Combine(folder,"preview.bundle"));bundles.Add("preview.bundle",bundle);}
+                    blendMaterial=new Material(bundle.LoadAsset<Shader>("vfx/effect-blend"));
+                }
+                int effected=index;index=(index+1)%3;command.SetRenderTarget(targets[index]);
+                command.SetGlobalTexture("_VfxBeforeTexture",targets[before]);command.SetGlobalFloat("_VfxBlend",opacity);
+                Blitter.BlitTexture(command,handles[effected],new Vector4(1,1,0,0),blendMaterial,0);
+            }
+            result=targets[index];
         }
-        if(index>0)Graphics.ExecuteCommandBuffer(command);return result;
+        if(hasCommands)Graphics.ExecuteCommandBuffer(command);return result;
     }
     RenderTexture Target(string name,int depth){var rt=new RenderTexture(width,height,depth,RenderTextureFormat.ARGBHalf){name=name};if(!rt.Create())throw new InvalidOperationException("无法分配预览画布。");return rt;}
     internal Texture2D PrepareImage(string path)
@@ -165,6 +187,7 @@ internal sealed class PreviewSurface:IDisposable
     {
         ReleaseTargets();foreach(var r in resources.Values)Object.DestroyImmediate(r.Material);resources.Clear();
         Object.DestroyImmediate(root);Object.DestroyImmediate(mesh);if(ownedTexture)Object.Destroy(ownedTexture);
+        if(blendMaterial)Object.DestroyImmediate(blendMaterial);
         foreach(var b in bundles.Values)b.Unload(true);bundles.Clear();command.Release();
     }
 }

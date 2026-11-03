@@ -14,8 +14,8 @@ public static class BuildPreviewBundle
         importer.assetBundleName = "preview.bundle"; importer.assetBundleVariant = "";
         AssetDatabase.SaveAssets();
         var build = new AssetBundleBuild {
-            assetBundleName = "preview.bundle", assetNames = new[] { "Assets/ParameterPreview.shader", "Assets/UtilityPost.shader" },
-            addressableNames = new[] { "vfx/parameter-preview", "vfx/utility-post" }
+            assetBundleName = "preview.bundle", assetNames = new[] { "Assets/ParameterPreview.shader", "Assets/UtilityPost.shader", "Assets/EffectBlend.shader" },
+            addressableNames = new[] { "vfx/parameter-preview", "vfx/utility-post", "vfx/effect-blend" }
         };
         var result = BuildPipeline.BuildAssetBundles(output, new[] { build },
             BuildAssetBundleOptions.ChunkBasedCompression | BuildAssetBundleOptions.ForceRebuildAssetBundle,
@@ -24,6 +24,7 @@ public static class BuildPreviewBundle
         var shader = AssetDatabase.LoadAssetAtPath<Shader>("Assets/ParameterPreview.shader");
         if (ShaderUtil.ShaderHasError(shader)) throw new InvalidOperationException("Preview shader has compiler errors; see shader-build.log.");
         if (ShaderUtil.ShaderHasError(AssetDatabase.LoadAssetAtPath<Shader>("Assets/UtilityPost.shader"))) throw new InvalidOperationException("Utility shader compiler error.");
+        if (ShaderUtil.ShaderHasError(AssetDatabase.LoadAssetAtPath<Shader>("Assets/EffectBlend.shader"))) throw new InvalidOperationException("Blend shader compiler error.");
         var verified = AssetBundle.LoadFromFile(Path.Combine(output,"preview.bundle"));
         if (!verified) throw new InvalidOperationException("Generated file is not a loadable AssetBundle.");
         try { if (!verified.LoadAsset<Shader>("vfx/parameter-preview")) throw new InvalidOperationException("Preview shader entry missing."); }

@@ -10,7 +10,7 @@ public sealed partial class PreviewPlugin
 {
     void CheckTimelineAndEffects(Action<bool,string> check,string output,Dictionary<string,string> hashes)
     {
-        var timeline=new PreviewModel(folder,Application.unityVersion,QualitySettings.activeColorSpace.ToString());
+        var timeline=new PreviewModel(folder,Application.unityVersion,QualitySettings.activeColorSpace.ToString(),legacy:true);
         string id="background/_Brightness";
         int Index(string parameter)=>timeline.Catalog.Parameters.ToList().FindIndex(p=>p.Id==parameter);
         float Sample(double time){timeline.Sample(time);return timeline.Values[Index(id)].Number.X;}
@@ -31,7 +31,7 @@ public sealed partial class PreviewPlugin
         check(duplicate&&timeline.Keys.Length==2,"duplicate key time is rejected without changing the artwork");
         check(timeline.AddKey(id,2)==second,"adding at an existing key selects it without duplication");
         var file=Path.Combine(output,"timeline.vfx.json");Store().Save(timeline.Session,file,timeline.Session.Revision);
-        var opened=Store().Open(file);var restored=new PreviewModel(folder,Application.unityVersion,QualitySettings.activeColorSpace.ToString());
+        var opened=Store().Open(file);var restored=new PreviewModel(folder,Application.unityVersion,QualitySettings.activeColorSpace.ToString(),legacy:true);
         restored.Replace(opened.Session);restored.Sample(1);
         check(restored.Keys.Select(k=>k.Id).SequenceEqual(timeline.Keys.Select(k=>k.Id))&&Math.Abs(restored.Values[Index(id)].Number.X-1)<.0001,
             "animated project saves and reopens with stable key identities and exact samples");
@@ -55,7 +55,7 @@ public sealed partial class PreviewPlugin
         legacy.Runtime.Channels=legacy.Runtime.Channels.Where(c=>c.Node=="background").ToArray();
         legacy.Tracks=legacy.Tracks.Where(t=>t.ParameterId.StartsWith("background/",StringComparison.Ordinal)).ToArray();
         legacy.ParameterHints=legacy.ParameterHints.Where(p=>p.Node=="background").ToArray();
-        var legacyModel=new PreviewModel(folder,Application.unityVersion,QualitySettings.activeColorSpace.ToString());
+        var legacyModel=new PreviewModel(folder,Application.unityVersion,QualitySettings.activeColorSpace.ToString(),legacy:true);
         legacyModel.Replace(new AuthoringSession(legacy,folder,PreviewModel.Capabilities,isSaved:true));
         check(legacyModel.Package.Document.Nodes.Length==1&&legacyModel.Keys.Length==4,"earlier single-background project schema remains editable");
 
@@ -106,7 +106,7 @@ public sealed partial class PreviewPlugin
         timeline.SelectEffect(EffectLibrary.Background,"background");
         timeline.Undo();check(timeline.Package.Document.Nodes[0].Material==feedback.Material,"material graph changes are undoable");
         timeline.Redo();check(timeline.Package.Document.Nodes[0].Material==EffectLibrary.Background.Material,"material graph changes support redo");
-        var moving=new PreviewModel(folder,Application.unityVersion,QualitySettings.activeColorSpace.ToString());
+        var moving=new PreviewModel(folder,Application.unityVersion,QualitySettings.activeColorSpace.ToString(),legacy:true);
         moving.UpdateParameter("background/_Speed",new ParameterValue(new NVector4(0,0,0,0)));moving.Commit();
         moving.UpdateParameter("adjust/_Ripple",new ParameterValue(new NVector4(.04f,0,0,0)));moving.Commit();
         var start=Bridge.Snapshot() with{ChartSeconds=0,AudioSeconds=0};

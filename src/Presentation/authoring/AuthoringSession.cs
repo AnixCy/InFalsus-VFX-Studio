@@ -217,6 +217,26 @@ public sealed class AuthoringEdit : IDisposable
     }
     public EffectPackage CompilePreview()
     { Open(); return AuthoringProjects.Compile(Draft, _directory, _capabilities, requireResources: false); }
+    /// <summary>Move an effect interval and optionally its keys without changing their identities.</summary>
+    public void SetNodeRange(string nodeId,double start,double? end,bool moveKeys)
+    {
+        Open();if(_graphReplaced)throw new InvalidOperationException("Graph already replaced.");
+        if(!double.IsFinite(start)||start<0||end.HasValue&&(!double.IsFinite(end.Value)||end<=start))
+            throw new ArgumentException("Invalid effect interval.");
+        var node=Draft.Runtime.Nodes.Single(n=>n.Id==nodeId);double delta=start-node.StartSeconds;
+        if(moveKeys) {
+            var tempo=new TempoMap(Draft.Runtime.Tempo.Select(t=>new TempoChange(t.Seconds,t.Bpm)));
+            foreach(var channel in Draft.Runtime.Channels.Where(c=>c.Node==nodeId))foreach(var key in channel.Keys) {
+                double seconds=(key.Seconds??tempo.ToSeconds(key.Beat!.Value))+delta;
+                if(seconds<0)throw new ArgumentException("Effect movement would place keys before zero.");
+            }
+            foreach(var channel in Draft.Runtime.Channels.Where(c=>c.Node==nodeId))foreach(var key in channel.Keys) {
+                key.Seconds=(key.Seconds??tempo.ToSeconds(key.Beat!.Value))+delta;key.Beat=null;
+            }
+        }
+        node.StartSeconds=start;node.EndSeconds=end;
+        Draft.Runtime.Requires=Draft.Runtime.Requires.Append("effect.instances").Distinct().ToArray();
+    }
     /// <summary>Replace a material graph in this transaction. Preserve identities at unchanged parameter/time positions.</summary>
     public void ReplaceGraph(PackageDocument runtime, IEnumerable<ParameterPresentation> hints)
     {

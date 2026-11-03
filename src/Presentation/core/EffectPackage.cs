@@ -32,6 +32,11 @@ public sealed class MaterialNodeDocument
     public string Target { get; set; } = "background";
     public string Bundle { get; set; } = "";
     public string Material { get; set; } = "";
+    public string EffectId { get; set; } = "";
+    public string Name { get; set; } = "";
+    public bool Enabled { get; set; } = true;
+    public double StartSeconds { get; set; }
+    public double? EndSeconds { get; set; }
     public Dictionary<string, string> Textures { get; set; } = new();
 }
 public sealed class ChannelDocument
@@ -110,6 +115,13 @@ public sealed class EffectPackage
             throw new InvalidDataException("Unique effect nodes are required.");
         foreach (var n in doc.Nodes)
         {
+            if (!double.IsFinite(n.StartSeconds) || n.StartSeconds < 0 || n.EndSeconds.HasValue
+                && (!double.IsFinite(n.EndSeconds.Value) || n.EndSeconds <= n.StartSeconds)
+                || n.EffectId == null || n.Name == null || n.Name.Length > 160)
+                throw new InvalidDataException($"{n.Id}: invalid effect instance or time range.");
+            if ((n.EffectId.Length != 0 || n.Name.Length != 0 || !n.Enabled || n.StartSeconds != 0 || n.EndSeconds.HasValue)
+                && !doc.Requires.Contains("effect.instances"))
+                throw new InvalidDataException("Effect instances require the effect.instances capability.");
             if (string.IsNullOrWhiteSpace(n.Material) || n.Textures == null)
                 throw new InvalidDataException($"{n.Id}: material and texture map are required.");
             ResolveAsset(root, n.Bundle, requireResources);

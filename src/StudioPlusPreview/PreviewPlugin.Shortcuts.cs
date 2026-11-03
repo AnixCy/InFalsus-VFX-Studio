@@ -26,7 +26,8 @@ public sealed partial class PreviewPlugin
             return;
         }
         if(e.keyCode==KeyCode.Escape) {
-            if(heldPreviewKey.HasValue){Queue(StopHeldPreview);e.Use();}
+            if(libraryCandidate!=null||draggingEffect){CancelEffectDrag();e.Use();}
+            else if(heldPreviewKey.HasValue){Queue(StopHeldPreview);e.Use();}
             else if(Model!.IsEditing) {
                 Model.Cancel();draggingKey=sliderEditing=keyTimeDirty=false;textParameter=textKey=null;
                 drafts.Clear();GUIUtility.hotControl=0;e.Use();
@@ -45,6 +46,8 @@ public sealed partial class PreviewPlugin
             case "redo":Queue(Model!.Redo);break;
             case "delete":
                 if(selectedKey.Length>0)Queue(()=>{Model!.DeleteKey(selectedKey);selectedKey="";});
+                else if(selectedParameter.Length>0)Queue(()=>Model!.ClearTrack(selectedParameter));
+                else if(Model!.Document.Runtime.Nodes.Any(n=>n.Id==selectedEffect&&n.Target=="postprocess"))Queue(()=>Model!.RemoveEffect(selectedEffect));
                 break;
             case "previewHold":
                 if(playbackKeysDown.Add(key)&&!heldPreviewKey.HasValue) {
@@ -73,5 +76,6 @@ public sealed partial class PreviewPlugin
     {
         if(focused)return;
         StopHeldPreview();playbackKeysDown.Clear();
+        CancelEffectDrag();
     }
 }

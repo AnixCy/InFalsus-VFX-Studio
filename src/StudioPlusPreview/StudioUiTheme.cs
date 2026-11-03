@@ -71,7 +71,11 @@ internal sealed class StudioUiTheme
     internal void Label(Rect rect, string value, float size = 16, string color = "#a6c3d1", bool numeric = false, int align = 0)
         => text(rect, value, DesignSize(size), ColorOf(color), numeric ? NumberFace : ChineseFace, align);
     internal bool Button(Rect rect, string value, bool active = false, bool boxed = true, float size = 15)
-        => button(rect, value, DesignSize(size), active, boxed);
+    {
+        bool pressed=button(rect,value,DesignSize(size),active,boxed);
+        if(pressed)GUI.FocusControl(null);
+        return pressed;
+    }
     internal void Paragraph(Rect rect, string value, float size = 13, string color = "#7c9dad")
         => paragraph(rect, value, DesignSize(size), ColorOf(color));
     internal void Panel(Rect rect)
@@ -92,8 +96,11 @@ internal sealed class StudioUiTheme
         return pressed ? !enabled : enabled;
     }
 
-    internal string Number(Rect rect, string key, string value)
+    internal string Number(Rect rect,string key,string value)=>Field(rect,key,value,true);
+    internal string Text(Rect rect,string key,string value)=>Field(rect,key,value,false);
+    string Field(Rect rect, string key, string value,bool numeric)
     {
+        string face=numeric?NumberFace:ChineseFace;int align=numeric?2:0;
         if (input == null) {
             input = new GUIStyle(Skin.textField) { border = new RectOffset(), margin = new RectOffset(),
                 padding = new RectOffset(5, 5, 0, 0), alignment = TextAnchor.MiddleRight, fixedHeight = 0 };
@@ -104,6 +111,7 @@ internal sealed class StudioUiTheme
         }
         int pixels = fontPixels(DesignSize(19)), padding = Mathf.RoundToInt(5 * Scale);
         input.fontSize = pixels; input.padding.left = input.padding.right = padding;
+        input.alignment=numeric?TextAnchor.MiddleRight:TextAnchor.MiddleLeft;
         bool wasFocused = GUI.GetNameOfFocusedControl() == key;
         var e = Event.current; var kind = e.type; var mouse = e.mousePosition; bool shift = e.shift;
         var caret = Skin.settings.cursorColor; var selection = Skin.settings.selectionColor;
@@ -117,18 +125,18 @@ internal sealed class StudioUiTheme
         if (focused && kind == EventType.MouseDown && rect.Contains(mouse)) {
             if (!wasFocused || e.clickCount > 1) editor!.SelectAll();
             else {
-                editor!.cursorIndex = hitIndex(rect, next, NumberFace, pixels, 2, padding, key, mouse.x);
+                editor!.cursorIndex = hitIndex(rect, next, face, pixels, align, padding, key, mouse.x);
                 if (!shift) editor.selectIndex = editor.cursorIndex;
             }
             pointerKey = key; pointerAnchor = editor!.selectIndex;
         } else if (focused && kind == EventType.MouseDrag && pointerKey == key) {
             editor!.selectIndex = pointerAnchor;
-            editor.cursorIndex = hitIndex(rect, next, NumberFace, pixels, 2, padding, key, mouse.x);
+            editor.cursorIndex = hitIndex(rect, next, face, pixels, align, padding, key, mouse.x);
         }
         if (kind == EventType.MouseUp && pointerKey == key) pointerKey = null;
         Fill(rect, "#091923");
         Fill(new Rect(rect.x, rect.yMax - Scale, rect.width, Scale), focused ? "#b4efef" : "#4b7481");
-        paintInput(rect, key, next, NumberFace, pixels, 2, padding, focused, editor, ColorOf("#d3edf0"), null);
+        paintInput(rect, key, next, face, pixels, align, padding, focused, editor, ColorOf("#d3edf0"), null);
         return next;
     }
 }

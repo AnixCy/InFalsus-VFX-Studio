@@ -13,7 +13,7 @@ using UColor = UnityEngine.Color;
 
 namespace InFalsus.Vfx.StudioPlus;
 
-[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.2.1")]
+[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.3.0")]
 [BepInDependency("local.infalsusstudio.visualui", "1.0.7")]
 public sealed partial class PreviewPlugin : BaseUnityPlugin
 {
@@ -90,7 +90,7 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
             if (Bridge.Owner && Bridge.Owner!.ViewCamera) {
                 try {
                     Surface?.Dispose(); Model?.Cancel();
-                    Model = new PreviewModel(folder, Application.unityVersion, QualitySettings.activeColorSpace.ToString());
+                    Model = new PreviewModel(folder, Application.unityVersion, QualitySettings.activeColorSpace.ToString(),legacy:TestMode);
                     Surface = new PreviewSurface(Bridge.Owner.ViewCamera, folder);
                 } catch (Exception e) { Error(e); stopped = true; }
             } else Bridge.Owner = null;
