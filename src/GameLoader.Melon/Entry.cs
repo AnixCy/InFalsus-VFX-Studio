@@ -4,7 +4,7 @@ using InFalsus.Presentation.Game;
 using MelonLoader;
 using MelonLoader.NativeUtils;
 
-[assembly: MelonInfo(typeof(InFalsus.Presentation.Melon.Entry), "InFalsus Presentation", "0.7.0", "Local")]
+[assembly: MelonInfo(typeof(InFalsus.Presentation.Melon.Entry), "InFalsus Presentation", "0.7.1", "Local")]
 
 namespace InFalsus.Presentation.Melon;
 

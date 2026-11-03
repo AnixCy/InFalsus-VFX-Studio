@@ -4,6 +4,7 @@ Shader "InFalsusVFX/FlowFeedbackBackground"
     {
         _MainTex("Background",2D)="white" {}
         _BaseColor("Base Color",Color)=(1,1,1,1)
+        [HideInInspector] _Color("Native scene color",Color)=(1,1,1,1)
         _Brightness("Brightness",Float)=1
         _EphemeralAmount("Flow Distortion",Range(0,2))=0
         _FeedbackAmount("Nested Scale",Range(0,2))=0
@@ -14,11 +15,11 @@ Shader "InFalsusVFX/FlowFeedbackBackground"
     }
     SubShader
     {
-        Tags {"RenderPipeline"="UniversalPipeline" "Queue"="Background" "RenderType"="Opaque"}
+        Tags {"RenderPipeline"="UniversalPipeline" "Queue"="Geometry" "RenderType"="Opaque"}
         Pass
         {
             Tags {"LightMode"="SRPDefaultUnlit"}
-            Cull Off ZWrite Off ZTest Always
+            Cull Back ZWrite On ZTest LEqual
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
@@ -27,7 +28,7 @@ Shader "InFalsusVFX/FlowFeedbackBackground"
             struct Input {float4 vertex:POSITION;float2 uv:TEXCOORD0;};
             struct Output {float4 vertex:SV_POSITION;float2 uv:TEXCOORD0;};
             sampler2D _MainTex;
-            float4 _BaseColor,_Center;
+            float4 _BaseColor,_Center,_Color;
             float _Brightness,_EphemeralAmount,_FeedbackAmount,_FeedbackRotation,_PresentationTime,_Aspect;
             Output Vert(Input v){Output o;o.vertex=UnityObjectToClipPos(v.vertex);o.uv=v.uv;return o;}
 
@@ -68,7 +69,7 @@ Shader "InFalsusVFX/FlowFeedbackBackground"
                 float2 uv=i.uv;
                 if(abs(_EphemeralAmount)>0.000001)uv=Flow(uv);
                 if(abs(_FeedbackAmount)+abs(_FeedbackRotation)>0.000001)uv=Nested(uv);
-                return half4(tex2D(_MainTex,uv).rgb*_BaseColor.rgb*_Brightness,1);
+                return tex2D(_MainTex,uv)*_BaseColor*_Color*half4(_Brightness.xxx,1);
             }
             ENDHLSL
         }

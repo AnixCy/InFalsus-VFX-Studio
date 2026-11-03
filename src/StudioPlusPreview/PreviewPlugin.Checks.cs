@@ -108,7 +108,7 @@ public sealed partial class PreviewPlugin
         yield return null;
         if(failure==null) {
             // Finish through the actual asynchronous quit path, not a test-mode bypass.
-            MayQuit();ResolveDecision(DecisionChoice.Discard);
+            if(MayQuit())quitApplication();else ResolveDecision(DecisionChoice.Discard);
         } else {
             quitPermit=true;quitPermitExpiresAfter=Time.frameCount+1;Application.Quit(2);
         }

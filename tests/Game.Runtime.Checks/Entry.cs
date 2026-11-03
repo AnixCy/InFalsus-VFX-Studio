@@ -52,7 +52,8 @@ public sealed class Entry:MelonMod
     }
     void Log(string message){messages.Add(message);LoggerInstance.Msg(message);}
     void Check(bool ok,string name){if(!ok)throw new InvalidOperationException(name);checks.Add(name);LoggerInstance.Msg("PASS "+name);}
-    void Next(){stage++;since=elapsed.Elapsed.TotalSeconds;frames=0;}
+    void Go(int next){stage=next;since=elapsed.Elapsed.TotalSeconds;frames=0;}
+    void Next()=>Go(stage+1);
     bool Wait(double seconds)=>elapsed.Elapsed.TotalSeconds-since>=seconds;
     void Config(bool enabled,int serial=0)=>File.WriteAllText(Path.Combine(data,"config.json"),JsonSerializer.Serialize(new{enabled,reloadSerial=serial},Json));
     void Clean(string name){var d=host!.Diagnostics;Check(d.Effects==0&&d.Preparations==0&&d.Materials==0&&d.Bundles==0&&d.BundleLeases==0&&d.PendingLoads==0&&d.RetiredGroups==0&&d.RenderRegistrations==0&&d.Images==0&&d.CleanupFailures==0,name);}
@@ -105,7 +106,24 @@ public sealed class Entry:MelonMod
                 case 8:
                     if(!Wait(.8))return;
                     Check(host!.IsActive&&messages.Any(m=>m.Contains("integrity mismatch")),"failed live update retains the last good presentation");
-                    bindings!.Valid=false;Next();break;
+                    bindings!.Valid=false;bindings.TransitionVisible=true;Go(80);break;
+                case 80:
+                    if(frames<5)return;
+                    Check(host!.IsActive&&bindings!.CurrentMaterial(bindings.Background)!=original!.Pointer,"transport teardown retains the addon while the native background is visible");
+                    Check(Math.Abs(new Material(bindings!.CurrentMaterial(bindings.Background)).GetFloat("_Brightness")-1.4)<.001,"transition holds the last sampled frame without advancing its clock");
+                    Config(false,1);Go(81);break;
+                case 81:
+                    if(!Wait(.8))return;
+                    Check(!host!.IsActive&&bindings!.CurrentMaterial(bindings.Background)==original!.Pointer,"explicit disable restores the original even during a visible exit transition");
+                    Clean("transition disable releases all owned resources");
+                    bindings!.Valid=true;bindings.TransitionVisible=false;Config(true,1);Go(82);break;
+                case 82:
+                    if(!host!.IsActive||!Wait(.8))return;
+                    bindings!.Valid=false;bindings.TransitionVisible=true;Go(83);break;
+                case 83:
+                    if(frames<5)return;
+                    Check(host!.IsActive,"a later visible transition can retain a reenabled addon");
+                    bindings!.TransitionVisible=false;Go(9);break;
                 case 9:
                     if(frames<5)return;
                     Check(!host!.IsActive&&bindings!.CurrentMaterial(bindings.Background)==original!.Pointer,"leaving chart restores original background");
@@ -202,11 +220,12 @@ public sealed class Entry:MelonMod
     sealed class ProbeBindings:IGameBindings
     {
         readonly NativeGameBridge native;readonly GameObject root;
-        public bool Valid=true,Paused;public double Seconds=1;
+        public bool Valid=true,Paused,TransitionVisible;public double Seconds=1;
         public IntPtr Background{get;}
         public Camera? GameCamera=>null;
         public bool HasSpecialScene=>false;
         public string SceneControllerName=>"isolated C2D lifecycle probe";
+        public bool CanRetainBackground=>TransitionVisible;
         public ProbeBindings(NativeGameBridge native,Il2CppBase::Il2CppSystem.Type type)
         {
             this.native=native;root=GameObject.CreatePrimitive(PrimitiveType.Quad);root.name="VFX isolated native C2D";

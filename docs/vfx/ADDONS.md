@@ -57,6 +57,10 @@ ExampleAddon/
 
 `templates/game-addon/FlowFeedbackBackground.shader` 提供轻量流场与嵌套缩放/旋转参考：一次背景图片采样，可独立驱动三个强度/旋转参数和变换中心，不使用历史帧或附加全屏 Pass。没有性能帧时间验收，单次采样也不等于零成本。
 
+游戏背景模板采用原背景的 Geometry 队列、LEqual 测试与深度写入，并响应 Constrained2D 的 `_Color`。不能照搬离线全屏画布的 `ZTest Always / ZWrite Off`，否则会改变背景对远处透明物件的遮挡。背景替换不调整 Note 的淡入系数或生成距离。
+
+玩家端在 transport 拆除后，只为仍可见、身份未变的原场景保留最后一帧；不在这一阶段加载新包。目标隐藏、销毁或切换时清理，显式关闭始终优先。不使用固定延时猜测转场长度，日志用 `Transition` 标识保留阶段。
+
 `New-GameSandbox.py` 创建新的物理副本，使用独立产品名和可执行文件名。`Check-GameAddonRuntime.ps1` 只接受有标记的副本；使用真实 IL2CPP/C2D 与合成时钟检查，不模拟键鼠或进入歌曲。测试插件不进入手动验收启动目录。
 
 实际进歌、原生暂停/返回选曲、视觉一致性和全尺寸帧时间仍待人工验收，详见[验证记录](VALIDATION.md)。

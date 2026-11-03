@@ -23,6 +23,7 @@ public sealed partial class PreviewPlugin
         check(Render(151.8)==animated,"cancel restores the complete background project output");
         check(before.SequenceEqual(File.ReadAllBytes(file)),"background project validation does not rewrite the input JSON");
         hashes["backgroundProjectAnimated"]=animated;hashes["backgroundProjectReverse"]=reverse;
+        Surface.CheckBackgroundRenderContract(Model,snapshot with{AudioSeconds=0,ChartSeconds=0},check);
         Surface.ApplyImage(null);
     }
 }

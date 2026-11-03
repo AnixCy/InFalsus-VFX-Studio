@@ -25,11 +25,11 @@ public sealed class RuntimeHost : IDisposable
     Dictionary<string,EffectPackage> addons=new(StringComparer.OrdinalIgnoreCase);
     HostConfiguration config=new();
     DateTime configStamp;
-    bool configRead,disposed;
+    bool configRead,disposed,holdingBackground;
     long ambiguousGeneration=long.MinValue;
     double nextPoll;
     (long Generation,EffectPackage Package)? requested;
-    (RenderResourceCounts Resources,string? Id,PlaybackPhase? Phase)? diagnostic;
+    (RenderResourceCounts Resources,string? Id,PlaybackPhase? Phase,bool Holding)? diagnostic;
     public IGameBindings Bridge { get; }
     public bool IsActive=>session.IsActive;
     public string? ActivePackageId=>session.ActivePackageId;
@@ -47,10 +47,17 @@ public sealed class RuntimeHost : IDisposable
     public void Tick()
     {
         if(disposed)return;
+        holdingBackground=false;
         try {
             PollConfig();backend.Collect();
             if(!config.Enabled||addons.Count==0){session.End();requested=null;return;}
-            if(!Bridge.TrySample(out var snapshot)){session.End();requested=null;return;}
+            if(!Bridge.TrySample(out var snapshot)){
+                // Freeze the last frame through the native scene transition, rather than
+                // exposing the original image as soon as audio stops. Explicit disable wins above.
+                holdingBackground=session.IsActive&&Bridge.CanRetainBackground;
+                if(!holdingBackground){session.End();requested=null;}
+                return;
+            }
             EffectPackage? match=null;
             foreach(var pair in addons)if(pair.Value.Matches(snapshot)) {
                 if(match!=null){if(ambiguousGeneration!=snapshot.SessionGeneration){report("Ambiguous addons for this chart; using original presentation.");ambiguousGeneration=snapshot.SessionGeneration;}match=null;break;}
@@ -100,10 +107,10 @@ public sealed class RuntimeHost : IDisposable
     }
     void PublishDiagnostics()
     {
-        var state=(backend.Diagnostics.AllocationState,session.ActivePackageId,session.LastFrame?.Playback.Phase);
+        var state=(backend.Diagnostics.AllocationState,session.ActivePackageId,session.LastFrame?.Playback.Phase,holdingBackground);
         if(diagnostic==state)return;diagnostic=state;
         report("Addon diagnostics: "+JsonSerializer.Serialize(new { Package=session.ActivePackageId,
-            Phase=session.LastFrame?.Playback.Phase.ToString()??"Idle",Seconds=session.LastFrame?.Seconds,Resources=backend.Diagnostics }));
+            Phase=holdingBackground?"Transition":session.LastFrame?.Playback.Phase.ToString()??"Idle",Seconds=session.LastFrame?.Seconds,Resources=backend.Diagnostics }));
     }
     public void Dispose()
     {

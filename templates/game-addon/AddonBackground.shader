@@ -5,6 +5,7 @@ Shader "InFalsusVFX/AddonBackground"
         _MainTex("Background",2D)="white" {}
         _Brightness("Brightness",Float)=1
         _Tint("Tint",Color)=(1,1,1,1)
+        [HideInInspector] _Color("Native scene color",Color)=(1,1,1,1)
         _Distortion("UV displacement",Float)=0.15
         _Frequency("Spatial frequency",Float)=6
         _Speed("Temporal frequency",Float)=0.3
@@ -24,11 +25,11 @@ Shader "InFalsusVFX/AddonBackground"
     }
     SubShader
     {
-        Tags {"RenderPipeline"="UniversalPipeline" "Queue"="Background" "RenderType"="Opaque"}
+        Tags {"RenderPipeline"="UniversalPipeline" "Queue"="Geometry" "RenderType"="Opaque"}
         Pass
         {
             Tags {"LightMode"="SRPDefaultUnlit"}
-            Cull Off ZWrite Off ZTest Always
+            Cull Back ZWrite On ZTest LEqual
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
@@ -37,7 +38,7 @@ Shader "InFalsusVFX/AddonBackground"
             struct Input {float4 vertex:POSITION;float2 uv:TEXCOORD0;};
             struct Output {float4 vertex:SV_POSITION;float2 uv:TEXCOORD0;};
             sampler2D _MainTex;
-            float4 _Tint,_BaseColor;
+            float4 _Tint,_BaseColor,_Color;
             float _Brightness,_Distortion,_Frequency,_Speed,_OffsetX,_OffsetY,_PatternMix,_PresentationTime,_Aspect;
             float _Exposure,_Contrast,_Saturation,_GradeOpacity,_GradeEnabled,_GradeStart,_GradeEnd;
             Output Vert(Input v){Output o;o.vertex=UnityObjectToClipPos(v.vertex);o.uv=v.uv;return o;}
@@ -55,7 +56,7 @@ Shader "InFalsusVFX/AddonBackground"
                 float3 graded=(lerp(grey.xxx,color,_Saturation)-.18)*_Contrast+.18;
                 graded*=exp2(_Exposure)*_BaseColor.rgb;
                 float active=_GradeEnabled*step(_GradeStart,_PresentationTime)*(1-step(_GradeEnd,_PresentationTime));
-                return half4(lerp(color,graded,saturate(_GradeOpacity)*active),1);
+                return half4(lerp(color,graded,saturate(_GradeOpacity)*active)*_Color.rgb,_Color.a);
             }
             ENDHLSL
         }

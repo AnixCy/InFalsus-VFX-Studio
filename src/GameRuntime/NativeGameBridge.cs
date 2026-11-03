@@ -46,6 +46,7 @@ public sealed unsafe class NativeGameBridge : IGameBindings
     public Camera? GameCamera { get; private set; }
     public bool HasSpecialScene { get; private set; }
     public string SceneControllerName { get; private set; } = "none";
+    public bool CanRetainBackground { get; private set; }
     public ulong SeekSerial { get; private set; }
     public bool HasExactSeekSerial { get; set; }
     private readonly Dictionary<string, ChartIdentity> _catalog;
@@ -59,6 +60,7 @@ public sealed unsafe class NativeGameBridge : IGameBindings
     private IntPtr _lastScene, _lastAudio, _lastChart, _pausePointer;
     private IntPtr _controllerClass;
     private Component? _pause;
+    private Component? _sceneObject, _backgroundObject;
     private long _logicalStamp, _practiceGeneration = -1, _generation;
     private ChartIdentity? _identity;
 
@@ -123,13 +125,14 @@ public sealed unsafe class NativeGameBridge : IGameBindings
     public bool TrySample(out PlaybackSnapshot snapshot)
     {
         snapshot = default;
+        CanRetainBackground = false;
         _static(_sceneStatic, out var scene); _static(_engineStatic, out var engine); _static(_logicalStatic, out var logical);
-        if (scene == IntPtr.Zero || engine == IntPtr.Zero || logical == IntPtr.Zero) { Invalidate(); return false; }
+        if (scene == IntPtr.Zero || engine == IntPtr.Zero || logical == IntPtr.Zero) return TransportUnavailable(scene);
         // Unity validity is cached per scene, not reconstructed every frame.
         var state = Marshal.ReadInt32(scene + 0x230);
         var audio = Marshal.ReadIntPtr(scene + 0x1e8);
         if (state < 1 || state > 4 || audio == IntPtr.Zero || Marshal.ReadByte(audio + 0x28) == 0
-            || _ready(audio, IntPtr.Zero) == 0) { Invalidate(); return false; }
+            || _ready(audio, IntPtr.Zero) == 0) return TransportUnavailable(scene);
         var chart = Marshal.ReadIntPtr(logical + 0x48);
         var stamp = Marshal.ReadInt64(logical + 0x58);
         var practice = BaseAddress + Profile.PracticeStateRva;
@@ -143,6 +146,8 @@ public sealed unsafe class NativeGameBridge : IGameBindings
             _lastScene = scene; _lastAudio = audio; _lastChart = chart;
             _logicalStamp = stamp; _practiceGeneration = generation; _generation++;
             Scene = scene; Background = Marshal.ReadIntPtr(scene + 0xd0);
+            _sceneObject = new Component(scene);
+            _backgroundObject = Background == IntPtr.Zero ? null : new Component(Background);
             var transform = Marshal.ReadIntPtr(scene + 0x110);
             if (transform != IntPtr.Zero) GameCamera = new Component(transform).GetComponent<Camera>();
         }
@@ -154,7 +159,7 @@ public sealed unsafe class NativeGameBridge : IGameBindings
         var rate = *(float*)(audio + 0x48);
         var seconds = _clock(audio, IntPtr.Zero);
         var transport = kind == 2 ? TransportState.Running : kind == 1 ? TransportState.Frozen : TransportState.Stopped;
-        if (transport == TransportState.Stopped) return false;
+        if (transport == TransportState.Stopped) return TransportUnavailable(scene);
         var phase = state == 4 ? PlaybackPhase.Ending : transport == TransportState.Frozen ? PlaybackPhase.Paused
             : state < 3 || seconds < 0 || ui ? PlaybackPhase.Countdown : PlaybackPhase.Playing;
         var special = Marshal.ReadIntPtr(engine + 0xc8);
@@ -173,10 +178,24 @@ public sealed unsafe class NativeGameBridge : IGameBindings
         return snapshot.IsValid;
     }
 
+    private bool TransportUnavailable(IntPtr scene)
+    {
+        // End-of-song/exit stops and releases audio before the scene's visual transition ends.
+        // Retain only an already identified, unchanged target; this cannot start a new addon.
+        CanRetainBackground = _identity != null && _lastScene != IntPtr.Zero
+            && (scene == IntPtr.Zero || scene == _lastScene)
+            && _sceneObject != null && _backgroundObject != null
+            && _sceneObject.gameObject.activeInHierarchy && _backgroundObject.gameObject.activeInHierarchy
+            && Marshal.ReadIntPtr(_lastScene + 0xd0) == Background;
+        if (!CanRetainBackground) Invalidate();
+        return false;
+    }
+
     private void Invalidate()
     {
         _lastScene = _lastAudio = _lastChart = IntPtr.Zero; _identity = null;
         Scene = Background = IntPtr.Zero; GameCamera = null; _pause = null; _pausePointer = IntPtr.Zero;
+        _sceneObject = _backgroundObject = null; CanRetainBackground = false;
     }
     public bool TargetAlive(IntPtr target) => target != IntPtr.Zero && new Component(target) != null;
     public IntPtr CurrentMaterial(IntPtr target) => _material(target, IntPtr.Zero);
