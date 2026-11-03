@@ -72,6 +72,16 @@
   "presentationUiImplemented": true,
   "presentationBuildVerified": true,
   "gameIntegrationVerified": false,
+  "audioReactive": {
+    "status": "infrastructure-demo",
+    "source": "src/AudioReactive",
+    "guide": "docs/vfx/AUDIO_REACTIVE.md",
+    "checks": 83,
+    "targetFramework": "netstandard2.1",
+    "studioIntegration": false,
+    "playerDspDependency": false,
+    "bakedChannelKind": "Float"
+  },
   "addonRuntime": {
     "version": "0.7.1",
     "loader": "MelonLoader IL2CPP",

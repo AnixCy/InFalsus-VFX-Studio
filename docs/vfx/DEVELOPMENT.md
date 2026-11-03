@@ -21,6 +21,7 @@ Studio+ 源码固定于提交 `2c8c63722948b8e739f0eef6ebd0478cdf8ddd3d`，快�
 | --- | --- |
 | [vfx-project.json](../../vfx-project.json) | 仓库身份、基线指纹与构建入口，不是演出工程格式 |
 | [src/Presentation](../../src/Presentation/README.md) | Unity 无关的共享核心与创作层；原始导入及后续扩展哈希记录在 `ORIGIN.json` |
+| [src/AudioReactive](../../src/AudioReactive/README.md) | 独立创作端频段分析、包络、参数调制与烘焙；未接入宿主或玩家依赖 |
 | [src/StudioPlusPreview](../../src/StudioPlusPreview/) | BepInEx/Harmony 适配、时钟、参数面板、项目文件和渲染资源生命周期 |
 | [src/ShaderAssets](../../src/ShaderAssets/) | 独立 Unity Shader 资源工程，不使用上游根工程构建 |
 | [tests](../../tests/) | 67 项参数检查、129 项创作工程检查及通用契约夹具 |
@@ -73,6 +74,8 @@ dotnet run --project tests/Project.Checks/Project.Checks.csproj -c Release -- .
 `-EffectFixture '<构建出的 effect.json>'` 额外验证自定义 Shader 导入、缓存、参数、局部时间和旧工程新增效果后的保存；这些检查会在隔离测试安装内写入自定义缓存及一条故意损坏的缓存夹具，不能针对用户正在使用的安装运行。构建入口及格式见 [CUSTOM_EFFECTS.md](CUSTOM_EFFECTS.md)。
 
 运行检查还生成 `SourceFixture` 源码模板。构建两次并调整第二次 Shader 后，传入 `-SourceFixture` 验证多实例更新、关键帧身份与 GPU 撤销/重做。源码构建使用独占锁、版本化输出和带所有权标记的 Unity 缓存；失败保留上次成功输出。
+
+音频驱动基础设施另用 `scripts/Check-AudioReactive.ps1 -OutputDirectory '<新目录>'` 验证，无需 Unity 或游戏。它生成合成 WAV、分析缓存、recipe、烘焙曲线、可手动打开的预览工程及数值报告；接口和边界见 [AUDIO_REACTIVE.md](AUDIO_REACTIVE.md)。本库尚未被 Studio/玩家项目引用。
 
 本次结果和未验收范围见 [VALIDATION.md](VALIDATION.md)。实际操作和视觉由人工验收，自动检查不替代它们。
 
