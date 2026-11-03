@@ -81,11 +81,13 @@ public sealed partial class PreviewPlugin
                 surface.Draw(model,future,false);
             }
             Assert(surface.Material.GetInstanceID()==material,"parameter updates reuse one material and bundle");model.Cancel();
+            button=new Rect(60,60,100,32);
             bool blocked=(bool)typeof(InFalsusStudio.StudioBootstrap).GetMethod("WorkspaceBlocksInput",StudioBridge.Flags)!
-                .Invoke(Bridge.Owner,new object[]{new Vector2(window.center.x,window.center.y)})!;
+                .Invoke(Bridge.Owner,new object[]{button.center})!;
             Assert(blocked,"editor panel blocks host authoring input");
             Assert(!Bridge.Transport!.Playing,"checks never started audio transport");
             CheckLifecycle(Assert,Path.GetDirectoryName(output)!);
+            CheckTimelineAndEffects(Assert,Path.GetDirectoryName(output)!,hashes);
             var report=new {ok=true,checks,hashes,unity=Application.unityVersion,colorSpace=QualitySettings.activeColorSpace.ToString(),
                 graphics=SystemInfo.graphicsDeviceType.ToString(),uiVisuallyReviewed=false,audioPlayed=false,gameStarted=false};
             File.WriteAllText(output,JsonConvert.SerializeObject(report,Json));

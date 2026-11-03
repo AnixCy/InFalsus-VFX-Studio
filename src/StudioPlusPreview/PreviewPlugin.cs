@@ -13,7 +13,7 @@ using UColor = UnityEngine.Color;
 
 namespace InFalsus.Vfx.StudioPlus;
 
-[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.1.2")]
+[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.2.0")]
 [BepInDependency("local.infalsusstudio.visualui", "1.0.7")]
 public sealed partial class PreviewPlugin : BaseUnityPlugin
 {
@@ -23,7 +23,7 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
     internal PreviewSurface? Surface;
     readonly Queue<Action> actions = new();
     Harmony? harmony;
-    string folder = "", imagePath = "", savedImagePath = "", projectFile = "";
+    string folder = "", imagePath = "", savedImagePath = "", projectFile = "",audioPath="",savedAudioPath="";
     ProjectFileVersion? fileVersion;
     string status = "实时预览 · 回车应用 · Esc 取消";
     bool previewEnabled = true, stopped, actionRunning;
@@ -39,8 +39,9 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         public int FormatVersion { get; set; } = 1;
         public AuthoringProjectDocument Project { get; set; } = null!;
         public string BackgroundPath { get; set; } = "";
+        public string AudioPath { get; set; } = "";
     }
-    bool Dirty => Model != null && (Model.Session.IsDirty || Model.IsEditing || textParameter != null || imagePath != savedImagePath);
+    bool Dirty => Model != null && (Model.Session.IsDirty || Model.IsEditing || textParameter != null || imagePath != savedImagePath || audioPath!=savedAudioPath || keyTimeDirty);
     internal void Awake()
     {
         Instance = this;
@@ -63,6 +64,10 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
             Patch("HandleSceneEvent", prefix: nameof(Hooks.Scene));
             Patch("HandleKeyboard", prefix: nameof(Hooks.Keys));
             Patch("HandleCommittedInput", prefix: nameof(Hooks.TextInput));
+            Patch("LateUpdate",prefix:nameof(Hooks.ChartTick));
+            var nativeUi=AppDomain.CurrentDomain.GetAssemblies().First(a=>a.GetName().Name=="InfStudioVisualUI")
+                .GetType("InFalsusStudio.NativeEditorUI.NativeEditorUIPlugin")!;
+            harmony.Patch(nativeUi.GetMethod("Update",StudioBridge.Flags),prefix:new HarmonyMethod(typeof(Hooks).GetMethod(nameof(Hooks.ChartTick))!));
             harmony.Patch(typeof(StudioTransport).GetMethod("Seek"), postfix: new HarmonyMethod(typeof(Hooks).GetMethod(nameof(Hooks.Seek))!));
             if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("VFX_WORK_ROOT"))) {
                 var getter = typeof(StudioBootstrap).GetProperty("PreferencesPath", StudioBridge.Flags)?.GetGetMethod(true);
@@ -98,9 +103,15 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
             finally { actionRunning = false; }
             if (decision != PendingDecision.None) { actions.Clear(); break; }
         }
+        if(Bridge.AuthoringView&&Model!=null&&Surface!=null) {
+            CurrentSeconds=Bridge.Snapshot().ChartSeconds;
+            if(Bridge.Transport?.Clip&&Bridge.Transport.Playing&&Bridge.Transport.TimeMs>Bridge.Transport.Clip.length*1000)Bridge.Transport.Pause();
+        }
     }
     void BeforeCamera(ScriptableRenderContext context, Camera camera)
     {
+        // Normal authoring renders explicitly into its isolated surface; chart view incurs no material updates.
+        if(!TestMode)return;
         if (stopped || Model == null || Surface == null || !Bridge.Owner || camera != Bridge.Owner!.ViewCamera) return;
         Surface.Enabled = previewEnabled;
         if (!previewEnabled) return;
@@ -120,12 +131,12 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         if (decision != PendingDecision.None) decisionError = status;
         Logger.LogWarning("VFX: " + e);
     }
-    ProjectFileStore Store() => new(p => JsonConvert.SerializeObject(new ProjectFile { Project = p, BackgroundPath = imagePath }, Json),
+    ProjectFileStore Store() => new(p => JsonConvert.SerializeObject(new ProjectFile { Project = p, BackgroundPath = imagePath,AudioPath=audioPath }, Json),
         text => Decode(text).Project, PreviewModel.Capabilities);
     static ProjectFile Decode(string text)
     {
         var p = JsonConvert.DeserializeObject<ProjectFile>(text, Json);
-        if (p == null || p.FormatVersion != 1 || p.Project == null || p.BackgroundPath == null)
+        if (p == null || p.FormatVersion != 1 || p.Project == null || p.BackgroundPath == null || p.AudioPath==null)
             throw new InvalidDataException("不是受支持的演出参数工程。");
         return p;
     }
@@ -138,7 +149,7 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         string target = projectFile.Length == 0 ? saveDialog("演出工程.vfx.json") : projectFile;
         if (target.Length == 0) return false;
         var result = Store().Save(Model.Session, target, Model.Session.Revision, fileVersion);
-        projectFile = target; fileVersion = result.FileVersion; savedImagePath = imagePath;
+        projectFile = target; fileVersion = result.FileVersion; savedImagePath = imagePath;savedAudioPath=audioPath;
         status = "工程已保存。";
         return true;
     }
@@ -148,7 +159,7 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         Model.Commit(); var target = saveDialog("演出工程.vfx.json"); if (target.Length == 0) return;
         var result = Store().Save(Model.Session, target, Model.Session.Revision,
             string.Equals(target, projectFile, StringComparison.OrdinalIgnoreCase) ? fileVersion : null);
-        projectFile = target; fileVersion = result.FileVersion; savedImagePath = imagePath; status = "工程已另存。";
+        projectFile = target; fileVersion = result.FileVersion; savedImagePath = imagePath;savedAudioPath=audioPath; status = "工程已另存。";
     }
     void LoadProject()
     {
@@ -166,9 +177,13 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         Texture2D? image = null;
         try {
             if (data.BackgroundPath.Length != 0) image = Surface.PrepareImage(data.BackgroundPath);
+            if(data.AudioPath.Length!=0&&!File.Exists(data.AudioPath))throw new FileNotFoundException("工程音频不存在。",data.AudioPath);
             Model.Replace(opened.Session);
         } catch { if (image) Destroy(image); throw; }
         Surface.ApplyImage(image); imagePath = savedImagePath = data.BackgroundPath;
+        audioPath=savedAudioPath=data.AudioPath;
+        if(audioPath.Length!=0)Bridge.LoadAudio(audioPath);
+        selectedKey="";selectedParameter="";
         projectFile = file; fileVersion = opened.FileVersion; drafts.Clear(); status = "工程已打开。";
     }
     void ChooseImage()
@@ -177,40 +192,46 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         var path = openDialog("选择背景图片", "png,jpg,jpeg"); if (path.Length == 0) return;
         var image = Surface.PrepareImage(path);
         Surface.ApplyImage(image); imagePath = Path.GetFullPath(path);
-        Model.UpdateParameter("background/_PatternMix", new ParameterValue(new System.Numerics.Vector4(0,0,0,0)));
-        Model.Commit(); status = "背景已载入；参数修改实时预览。";
+        if(Model.Catalog.Parameters.Any(p=>p.Id=="background/_PatternMix")) {
+            Model.UpdateParameter("background/_PatternMix", new ParameterValue(new System.Numerics.Vector4(0,0,0,0)));Model.Commit();
+        }
+        status = "背景已载入；参数修改实时预览。";
     }
     void OnDestroy()
     {
         stopped = true; RenderPipelineManager.beginCameraRendering -= BeforeCamera;
+        Bridge.SetView(false);
         Application.wantsToQuit -= MayQuit; harmony?.UnpatchSelf();
         Model?.Cancel(); Surface?.Dispose(); ReleaseStyle();
         if (Instance == this) Instance = null;
     }
     public static class Hooks
     {
-        public static void GuiBefore(StudioBootstrap __instance, out Event? __state)
+        public static bool GuiBefore(StudioBootstrap __instance, out Event? __state)
         {
             __state=null; var p=Instance; var e=Event.current;
-            if(p?.Bridge.Owner!=__instance||p.Model==null||e==null)return;
-            if((p.stopped||p.Bridge.Exporting)&&!p.BlocksHostInput)return;
+            if(p?.Bridge.Owner!=__instance||p.Model==null)return true;
+            if(p.Bridge.AuthoringView)return false;
+            if(e==null)return true;
+            if((p.stopped||p.Bridge.Exporting)&&!p.BlocksHostInput)return true;
             if(p.BlocksHostInput) {
                 if(e.isMouse||e.isKey||e.type==EventType.ScrollWheel) {
                     __state=e; Event.current=new Event(e){type=EventType.Ignore};
                 }
-                return;
+                return true;
             }
             bool ownText=p.OwnsText;
             if(ownText&&e.type==EventType.MouseDown&&!p.Captures(e.mousePosition)&&GUIUtility.hotControl==0) {
                 GUI.FocusControl(null); ownText=false;
             }
             bool mouse=e.isMouse||e.type==EventType.ScrollWheel;
-            if(!(mouse&&(p.Captures(e.mousePosition)||p.sliderEditing||ownText))&&!(e.isKey&&ownText))return;
+            if(!(mouse&&(p.Captures(e.mousePosition)||p.sliderEditing||ownText))&&!(e.isKey&&ownText))return true;
             if(e.type==EventType.KeyDown&&ownText&&(e.control||e.command)&&e.keyCode==KeyCode.S) {
                 p.Queue(p.SaveProject); e.Use();
             }
             // Host controls still receive the same GUI tree, without consuming the overlay's input.
             __state=e; Event.current=new Event(e){type=EventType.Ignore};
+            return true;
         }
         public static void Draw(StudioBootstrap __instance, Event? __state)
         {
@@ -222,19 +243,20 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         }
         public static Exception? GuiFinally(Exception? __exception, Event? __state)
         { if(__state!=null)Event.current=__state; return __exception; }
-        public static void Block(Vector2 __0, ref bool __result) { if (Instance != null) __result |= Instance.BlocksHostInput || Instance.Captures(__0); }
-        public static bool Scene(Event __0) => Instance == null || !(Instance.BlocksHostInput || Instance.Captures(__0.mousePosition));
+        public static bool ChartTick()=>Instance?.Bridge.AuthoringView!=true;
+        public static void Block(Vector2 __0, ref bool __result) { if (Instance != null) __result |= Instance.Bridge.AuthoringView || Instance.BlocksHostInput || Instance.Captures(__0); }
+        public static bool Scene(Event __0) => Instance == null || !(Instance.Bridge.AuthoringView || Instance.BlocksHostInput || Instance.Captures(__0.mousePosition));
         public static bool Keys(Event __0)
         {
             var p = Instance;
-            if (p?.BlocksHostInput == true) return false;
+            if (p?.BlocksHostInput == true || p?.Bridge.AuthoringView==true) return false;
             if (p == null || !p.OwnsText) return true;
             if (__0.type == EventType.KeyDown && (__0.control || __0.command) && __0.keyCode == KeyCode.S) {
                 p.Queue(p.SaveProject); __0.Use();
             }
             return false;
         }
-        public static bool TextInput() => Instance == null || !(Instance.BlocksHostInput || Instance.OwnsText);
+        public static bool TextInput() => Instance == null || !(Instance.Bridge.AuthoringView || Instance.BlocksHostInput || Instance.OwnsText);
         public static void Seek(StudioTransport __instance) => Instance?.Bridge.Seeked(__instance);
         public static bool Preferences(ref string __result)
         {

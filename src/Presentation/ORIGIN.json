@@ -1,7 +1,7 @@
 {
   "source": "Existing project presentation core and authoring infrastructure",
   "importDate": "2026-11-03",
-  "sourceFilesUnmodified": true,
+  "sourceFilesUnmodified": false,
   "sha256": {
     "Directory.Build.props": "72a81cfd64d4b4a7c1b565bf1c6ced423b35337d86e23c3fb8148d5b18310761",
     "portable/Compatibility.cs": "2c057cda34edf4827d914e0efc856564561dabdd0c73e734ae2fa03c26c27048",
@@ -18,5 +18,11 @@
     "authoring/ParameterPreviewSession.cs": "3a9409ff6a75fc4af82d76f284b1fc92949aca69520a22d3e94bb0876cdf06e3",
     "authoring/ProjectFileStore.cs": "c1945abc57645543177d9e1bb21dd19efb5dfe84343e052a06733aaece84708b"
   },
-  "notes": "Creator-side sources only. No game assets, recordings or user settings imported."
+  "notes": "The sha256 map records the original import. Thirteen files remain exact; later changes are listed separately. No game media is included.",
+  "modifiedAfterImport": {
+    "authoring/AuthoringSession.cs": {
+      "change": "Transactional material graph replacement with stable track/key identities and undo history.",
+      "sha256": "e47eda8ef2cfe951d418069e49c29e29ad5a30d35643ca360d1a01df37dec678"
+    }
+  }
 }

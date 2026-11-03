@@ -125,6 +125,7 @@ public sealed class AuthoringEdit : IDisposable
     private readonly string[] _capabilities;
     private readonly string _directory;
     private bool _closed;
+    private bool _graphReplaced;
     internal AuthoringProjectDocument Draft { get; }
     internal string Label { get; }
     public long BaseRevision { get; }
@@ -137,10 +138,11 @@ public sealed class AuthoringEdit : IDisposable
         _catalog = new ParameterCatalog(package, draft.ParameterHints); _tempo = package.Tempo;
     }
     private void Open() { if (_closed) throw new AuthoringEditException(AuthoringEditError.ClosedTransaction); }
-    private int Track(string parameterId) { Open(); return _catalog.IndexOf(parameterId); }
+    private int Track(string parameterId) { Open();if(_graphReplaced)throw new InvalidOperationException("Commit the graph replacement before editing parameters.");return _catalog.IndexOf(parameterId); }
     private (int Track, int Key) Find(string keyId)
     {
         Open();
+        if(_graphReplaced)throw new InvalidOperationException("Commit the graph replacement before editing keys.");
         for (var i = 0; i < Draft.Tracks.Length; i++)
         {
             var j = Array.IndexOf(Draft.Tracks[i].KeyIds, keyId);
@@ -215,6 +217,29 @@ public sealed class AuthoringEdit : IDisposable
     }
     public EffectPackage CompilePreview()
     { Open(); return AuthoringProjects.Compile(Draft, _directory, _capabilities, requireResources: false); }
+    /// <summary>Replace a material graph in this transaction. Preserve identities at unchanged parameter/time positions.</summary>
+    public void ReplaceGraph(PackageDocument runtime, IEnumerable<ParameterPresentation> hints)
+    {
+        Open();
+        if(_graphReplaced)throw new InvalidOperationException("Only one graph replacement is allowed per transaction.");
+        var candidate = AuthoringProjects.Copy(Draft);
+        candidate.Runtime = AuthoringProjects.CopyRuntime(runtime);
+        candidate.ParameterHints = hints.ToArray();
+        candidate.Tracks = candidate.Runtime.Channels.Select(channel => {
+            var id = ParameterDescriptor.MakeId(channel.Node, channel.Property);
+            var oldTrack = Draft.Tracks.FirstOrDefault(t => t.ParameterId == id);
+            var oldChannel = Draft.Runtime.Channels.FirstOrDefault(c => c.Node == channel.Node && c.Property == channel.Property && c.Kind == channel.Kind);
+            var ids = new Dictionary<(double?, double?), string>();
+            if (oldTrack != null && oldChannel != null)
+                for (int i = 0; i < oldChannel.Keys.Length; i++) ids[(oldChannel.Keys[i].Seconds,oldChannel.Keys[i].Beat)] = oldTrack.KeyIds[i];
+            return new TrackIdentityDocument { ParameterId=id,TrackId=oldTrack?.TrackId??Guid.NewGuid().ToString("N"),
+                KeyIds=channel.Keys.Select(k=>ids.TryGetValue((k.Seconds,k.Beat),out var keyId)?keyId:Guid.NewGuid().ToString("N")).ToArray() };
+        }).ToArray();
+        _ = AuthoringProjects.Compile(candidate,_directory,_capabilities,requireResources:false);
+        Draft.Runtime=candidate.Runtime;Draft.Tracks=candidate.Tracks;
+        Draft.ParameterHints=AuthoringProjects.Copy(candidate).ParameterHints;
+        _graphReplaced=true;
+    }
     public long Commit() { Open(); var revision = _owner.Commit(this); _closed = true; return revision; }
     public void Cancel() => _closed = true;
     public void Dispose() => Cancel();

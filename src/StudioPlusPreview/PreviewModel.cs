@@ -4,93 +4,152 @@ using InFalsus.Presentation.Authoring;
 
 namespace InFalsus.Vfx.StudioPlus;
 
-/// <summary>Editor state independent of Unity rendering and IMGUI.</summary>
+public sealed class EditorKey
+{
+    public string ParameterId="",Id="";
+    public double Seconds;
+    public ParameterValue Value;
+    public Easing Ease;
+}
 public sealed class PreviewModel
 {
-    public static readonly string[] Capabilities = { "clock.chart", "clock.audio", "background.material", "shader.bundle" };
-    public AuthoringSession Session { get; private set; }
-    public ParameterCatalog Catalog { get; private set; } = null!;
-    public EffectPackage Package { get; private set; } = null!;
-    public ParameterValue[] Values { get; private set; } = Array.Empty<ParameterValue>();
-    ParameterPreviewSession preview = null!;
+    public static readonly string[] Capabilities={"clock.chart","clock.audio","background.material","shader.bundle","postprocess.blit.experimental"};
+    public AuthoringSession Session {get;private set;}
+    public ParameterCatalog Catalog {get;private set;}=null!;
+    public EffectPackage Package {get;private set;}=null!;
+    public AuthoringProjectDocument Document {get;private set;}=null!;
+    public ParameterValue[] Values {get;private set;}=Array.Empty<ParameterValue>();
+    public EditorKey[] Keys {get;private set;}=Array.Empty<EditorKey>();
+    public EffectLibrary Library {get;}
+    ParameterPreviewSession preview=null!;
     AuthoringEdit? drag;
-    string? dragId;
+    EffectPackage? draftTimeline;
+    string? dragId,editedKey;
     long sequence;
-    public bool IsEditing => drag != null;
-    public PreviewModel(string assetRoot, string unityVersion, string colorSpace)
+    public bool IsEditing=>drag!=null;
+    public string? EditedKey=>editedKey;
+    public double? MovingSeconds {get;private set;}
+    public ParameterValue? EditedValue {get;private set;}
+    public PreviewModel(string assetRoot,string unityVersion,string colorSpace)
     {
-        var d = Template(unityVersion, colorSpace);
-        var project = AuthoringProjects.Import(EffectPackage.FromDocument(d, assetRoot, Capabilities, false));
-        project.ParameterHints = Hints();
-        Session = new AuthoringSession(project, assetRoot, Capabilities, isSaved: true);
-        Refresh();
+        Library=EffectLibrary.Load(assetRoot);
+        var project=AuthoringProjects.Import(EffectPackage.FromDocument(Template(unityVersion,colorSpace),assetRoot,Capabilities,false));
+        project.ParameterHints=Hints(project.Runtime,Library);
+        Session=new AuthoringSession(project,assetRoot,Capabilities,isSaved:true);Refresh();
     }
     public void Refresh()
     {
-        Package = Session.CompileSnapshot(false);
-        Catalog = new ParameterCatalog(Package, Session.Snapshot().ParameterHints);
-        preview = new ParameterPreviewSession(Catalog, Session.Revision);
-        Values = new ParameterValue[Catalog.Parameters.Count]; sequence = 0;
+        Document=Session.Snapshot();Package=Session.CompileSnapshot(false);
+        Catalog=new ParameterCatalog(Package,Document.ParameterHints);
+        preview=new ParameterPreviewSession(Catalog,Session.Revision);Values=new ParameterValue[Catalog.Parameters.Count];sequence=0;
+        var keys=new List<EditorKey>();
+        foreach(var track in Document.Tracks) {
+            var c=Document.Runtime.Channels.Single(c=>ParameterDescriptor.MakeId(c.Node,c.Property)==track.ParameterId);
+            for(int i=0;i<c.Keys.Length;i++) {var k=c.Keys[i];keys.Add(new EditorKey{ParameterId=track.ParameterId,Id=track.KeyIds[i],
+                Seconds=k.Seconds??Package.Tempo.ToSeconds(k.Beat!.Value),Value=Number(k.Value),Ease=k.Ease});}
+        }
+        Keys=keys.ToArray();
     }
-    public void Sample(double seconds, bool committedOnly = false)
-        => preview.SampleInto(seconds, Values, !committedOnly);
-    public void UpdateParameter(string id, ParameterValue value)
+    public void Sample(double seconds,bool committedOnly=false)
     {
-        if (drag != null && dragId != id) Commit();
-        if (drag == null) { drag = Session.BeginEdit(Session.Revision, "调整参数"); dragId = id; }
-        drag.SetDefaultValue(id, value);
-        preview.ReplaceOverrides(new PreviewEdit(preview.SessionId, Session.Revision, ++sequence,
-            new[] { new PreviewOverride(id, value) }));
+        if(!committedOnly&&draftTimeline!=null)draftTimeline.Timeline.Sample(seconds,Values);
+        else preview.SampleInto(seconds,Values,!committedOnly);
     }
+    public void SampleCurve(double seconds,ParameterValue[] values)=>(draftTimeline??Package).Timeline.Sample(seconds,values);
+    void Begin(string id)
+    {
+        if(drag!=null&&dragId!=id)Commit();
+        if(drag==null){drag=Session.BeginEdit(Session.Revision,"调整演出");dragId=id;}
+    }
+    public void UpdateParameter(string id,ParameterValue value)
+    {
+        Begin(id);drag!.SetDefaultValue(id,value);
+        preview.ReplaceOverrides(new PreviewEdit(preview.SessionId,Session.Revision,++sequence,new[]{new PreviewOverride(id,value)}));
+    }
+    public string UpdateAnimatedParameter(string id,ParameterValue value,double seconds,string? selectedKey,bool autoKey)
+    {
+        Begin("value:"+id);
+        if(editedKey==null) {
+            var existing=Keys.FirstOrDefault(k=>k.ParameterId==id&&(k.Id==selectedKey||Math.Abs(k.Seconds-seconds)<.00001));
+            if(existing!=null)editedKey=existing.Id;
+            else if(autoKey)editedKey=drag!.AddKey(id,KeyPosition.Seconds(Math.Round(seconds,3)),value,id.Contains("/_KW_")?Easing.Hold:Easing.Linear);
+            else if(Keys.Any(k=>k.ParameterId==id)){Cancel();throw new InvalidOperationException("请选择关键帧，或启用自动关键帧。");}
+        }
+        if(editedKey!=null)drag!.SetKeyValue(editedKey,value);else drag!.SetDefaultValue(id,value);
+        EditedValue=value;draftTimeline=drag!.CompilePreview();return editedKey??"";
+    }
+    public string AddKey(string id,double seconds)
+    {
+        Commit();seconds=Math.Round(seconds,3);
+        var existing=Keys.FirstOrDefault(k=>k.ParameterId==id&&Math.Abs(k.Seconds-seconds)<.00001);
+        if(existing!=null)return existing.Id;
+        Sample(seconds);int index=Catalog.Parameters.ToList().FindIndex(p=>p.Id==id);
+        using var edit=Session.BeginEdit(Session.Revision,"添加关键帧");
+        var key=edit.AddKey(id,KeyPosition.Seconds(seconds),Values[index],id.Contains("/_KW_")?Easing.Hold:Easing.Linear);edit.Commit();Refresh();return key;
+    }
+    public void MoveKey(string key,double seconds)
+    {
+        Begin("move:"+key);drag!.MoveKey(key,KeyPosition.Seconds(Math.Max(0,Math.Round(seconds,3))));
+        editedKey=key;MovingSeconds=seconds;draftTimeline=drag.CompilePreview();
+    }
+    public void DeleteKey(string key){Commit();using var e=Session.BeginEdit(Session.Revision,"删除关键帧");e.RemoveKey(key);e.Commit();Refresh();}
+    public void SetEase(string key,Easing ease){Commit();using var e=Session.BeginEdit(Session.Revision,"设置缓动");e.SetKeyEase(key,ease);e.Commit();Refresh();}
+    public void ClearTrack(string id){Commit();using var e=Session.BeginEdit(Session.Revision,"清空参数轨道");foreach(var k in Keys.Where(k=>k.ParameterId==id))e.RemoveKey(k.Id);e.Commit();Refresh();}
     public void Commit()
     {
-        if (drag == null) return;
-        var pending = drag; drag = null; dragId = null;
-        try { pending.Commit(); } finally { pending.Dispose(); Refresh(); }
+        if(drag==null)return;var e=drag;drag=null;dragId=editedKey=null;draftTimeline=null;MovingSeconds=null;EditedValue=null;
+        try{e.Commit();}finally{e.Dispose();Refresh();}
     }
-    public void Cancel() { drag?.Dispose(); drag = null; dragId = null; Refresh(); }
-    public void Undo() { Commit(); Session.Undo(Session.Revision); Refresh(); }
-    public void Redo() { Commit(); Session.Redo(Session.Revision); Refresh(); }
+    public void Cancel(){drag?.Dispose();drag=null;dragId=editedKey=null;draftTimeline=null;MovingSeconds=null;EditedValue=null;Refresh();}
+    public void Undo(){Commit();Session.Undo(Session.Revision);Refresh();}
+    public void Redo(){Commit();Session.Redo(Session.Revision);Refresh();}
     public void Reset()
     {
-        Commit(); using var edit = Session.BeginEdit(Session.Revision, "恢复默认参数");
-        foreach (var c in Template(Package.Document.UnityVersion, Package.Document.ColorSpace).Channels)
-            edit.SetDefaultValue(ParameterDescriptor.MakeId(c.Node, c.Property), Number(c.Default));
-        edit.Commit(); Refresh();
+        Commit();using var e=Session.BeginEdit(Session.Revision,"恢复参数默认值");
+        foreach(var node in Document.Runtime.Nodes)foreach(var p in Library.Get(node.Material).Parameters)
+            e.SetDefaultValue(ParameterDescriptor.MakeId(node.Id,p.Property),Number(p.Value));
+        e.Commit();Refresh();
+    }
+    public void SelectEffect(EffectDefinition? effect,string target)
+    {
+        Commit();var old=Document.Runtime;
+        var bg=target=="background"?effect!:Library.Get(old.Nodes.Single(n=>n.Target=="background").Material);
+        var pp=target=="postprocess"?effect:old.Nodes.FirstOrDefault(n=>n.Id=="post") is { } p?Library.Get(p.Material):null;
+        var runtime=Compose(old.UnityVersion,old.ColorSpace,bg,pp);
+        runtime.Id=old.Id;runtime.TimeDomain=old.TimeDomain;runtime.OffsetSeconds=old.OffsetSeconds;runtime.Seed=old.Seed;
+        runtime.SongKey=old.SongKey;runtime.Difficulty=old.Difficulty;runtime.ChartFingerprint=old.ChartFingerprint;
+        runtime.Tempo=old.Tempo.Select(t=>new TempoDocument{Seconds=t.Seconds,Bpm=t.Bpm}).ToArray();
+        foreach(var c in runtime.Channels) {
+            var previous=old.Channels.FirstOrDefault(x=>x.Node==c.Node&&x.Property==c.Property&&x.Kind==c.Kind);
+            if(previous!=null){c.Default=previous.Default.ToArray();c.Keys=previous.Keys.Select(CloneKey).ToArray();}
+        }
+        using var edit=Session.BeginEdit(Session.Revision,"更换效果材质");edit.ReplaceGraph(runtime,Hints(runtime,Library));edit.Commit();Refresh();
     }
     public void Replace(AuthoringSession session)
     {
-        var package = session.CompileSnapshot(false);
-        var template = Template(package.Document.UnityVersion, package.Document.ColorSpace);
-        if (package.Document.Nodes.Length != 1 || package.Document.Nodes[0].Material != "vfx/parameter-preview"
-            || package.Document.Nodes[0].Id != "background" || package.Document.Nodes[0].Target != "background"
-            || package.Document.Channels.Length != template.Channels.Length
-            || package.Document.Channels.Any(c => c.Keys.Length != 0 || !template.Channels.Any(t =>
-                t.Node == c.Node && t.Property == c.Property && t.Kind == c.Kind)))
-            throw new InvalidDataException("此版本只支持内置背景的常量参数工程。");
-        Cancel(); Session = session; Refresh();
-    }
-    public static ParameterValue Number(double[] v) => new(v.Length == 1
-        ? new Vector4((float)v[0], 0, 0, 0) : new Vector4((float)v[0], (float)v[1], (float)v[2], (float)v[3]));
-    static ChannelDocument Float(string name, double value) => new() {
-        Node = "background", Property = name, Kind = ParameterKind.Float, Default = new[] { value } };
-    public static PackageDocument Template(string unityVersion, string colorSpace) => new() {
-        Id = "studio-background-preview", UnityVersion = unityVersion, ColorSpace = colorSpace,
-        TimeDomain = TimeDomain.Chart, Requires = Capabilities,
-        Nodes = new[] { new MaterialNodeDocument { Id = "background", Bundle = "preview.bundle", Material = "vfx/parameter-preview" } },
-        Channels = new[] {
-            Float("_Brightness", 1),
-            new ChannelDocument { Node = "background", Property = "_Tint", Kind = ParameterKind.Color, Default = new[] { 1.0, 1.0, 1.0, 1 } },
-            Float("_Distortion", .15), Float("_Frequency", 6), Float("_Speed", .3),
-            Float("_OffsetX", 0), Float("_OffsetY", 0), Float("_PatternMix", 1)
+        var package=session.CompileSnapshot(false);
+        package.ValidateMaterialGraph(package.Document.UnityVersion,"StandaloneWindows64",package.Document.ColorSpace);
+        foreach(var node in package.Document.Nodes) {
+            if(node.Id is not ("background" or "post" or "adjust"))throw new InvalidDataException("不支持的效果节点标识。");
+            var definition=Library.Get(node.Material);
+            if(definition.Target!=node.Target)throw new InvalidDataException("效果节点目标不匹配。");
+            foreach(var c in package.Document.Channels.Where(c=>c.Node==node.Id))
+                if(!definition.Parameters.Any(p=>p.Property==c.Property&&p.Kind==c.Kind))throw new InvalidDataException("不支持的效果参数。");
         }
-    };
-    static ParameterPresentation Hint(string property, string label, double min, double max) => new() {
-        Node = "background", Property = property, Label = label, SuggestedMin = min, SuggestedMax = max };
-    static ParameterPresentation[] Hints() => new[] {
-        Hint("_Brightness", "亮度", 0, 3), Hint("_Tint", "颜色", 0, 2),
-        Hint("_Distortion", "UV 位移强度", 0, 1), Hint("_Frequency", "空间频率", 1, 24),
-        Hint("_Speed", "时间频率", 0, 2), Hint("_OffsetX", "水平偏移", -1, 1),
-        Hint("_OffsetY", "垂直偏移", -1, 1), Hint("_PatternMix", "内置图案混合", 0, 1)
-    };
+        Cancel();Session=session;Refresh();
+    }
+    static KeyDocument CloneKey(KeyDocument k)=>new(){Seconds=k.Seconds,Beat=k.Beat,Value=k.Value.ToArray(),Ease=k.Ease,
+        Curve=k.Curve?.Select(c=>new CurvePointDocument{X=c.X,Y=c.Y}).ToArray()};
+    public static ParameterValue Number(double[] v)=>new(v.Length==1?new Vector4((float)v[0],0,0,0):new Vector4((float)v[0],(float)v[1],(float)v[2],(float)v[3]));
+    public static PackageDocument Template(string unityVersion,string colorSpace)=>Compose(unityVersion,colorSpace,EffectLibrary.Background,null);
+    static PackageDocument Compose(string version,string colorSpace,EffectDefinition bg,EffectDefinition? post)
+    {
+        var defs=new List<(string Id,EffectDefinition Def)>{("background",bg)};
+        if(post!=null)defs.Add(("post",post));defs.Add(("adjust",EffectLibrary.Utility));
+        return new PackageDocument{Id="studio-background-preview",UnityVersion=version,ColorSpace=colorSpace,TimeDomain=TimeDomain.Chart,Requires=Capabilities,
+            Nodes=defs.Select(d=>new MaterialNodeDocument{Id=d.Id,Target=d.Def.Target,Bundle=d.Def.Bundle,Material=d.Def.Material}).ToArray(),
+            Channels=defs.SelectMany(d=>d.Def.Parameters.Select(p=>new ChannelDocument{Node=d.Id,Property=p.Property,Kind=p.Kind,Default=p.Value.ToArray()})).ToArray()};
+    }
+    static ParameterPresentation[] Hints(PackageDocument document,EffectLibrary library)=>document.Nodes.SelectMany(n=>library.Get(n.Material).Parameters.Select(p=>
+        new ParameterPresentation{Node=n.Id,Property=p.Property,Label=p.Label,Group=n.Id,SuggestedMin=p.Min,SuggestedMax=p.Max})).ToArray();
 }

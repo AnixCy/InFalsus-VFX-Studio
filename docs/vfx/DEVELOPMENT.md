@@ -2,9 +2,9 @@
 
 ## 当前实现
 
-InFalsus VFX Studio 是 Studio+ 的演出创作扩展。现已迁入共享求值、临时参数、事务、撤销和保存核心，并接入常量参数编辑与实时背景预览。使用方法见[参数预览说明](PARAMETER_PREVIEW.md)。
+InFalsus VFX Studio 是 Studio+ 的演出创作扩展。现已迁入共享求值、临时参数、事务、撤销和保存核心，并接入独立演出视图、参数关键帧与实时背景预览。使用方法见[参数预览说明](PARAMETER_PREVIEW.md)。
 
-新增代码位于 `src/`，没有改写根宿主工程或增强插件快照。核心有关键帧能力，当前界面尚无关键帧编辑、循环区间编辑或游戏包导出。既有离线渲染器和游戏适配器未在本次迁入。
+新增代码位于 `src/`，没有改写根宿主工程或增强插件快照。界面已有关键帧编辑，当前尚无循环区间编辑或游戏包导出。既有离线渲染器和游戏适配器未在本次迁入。
 
 ## 版本与源码
 
@@ -13,14 +13,14 @@ InFalsus VFX Studio 是 Studio+ 的演出创作扩展。现已迁入共享求值
 | 原版编辑器宿主 | Studio Windows Mono 1.0.10；根目录 `Assets/`、`Packages/`、`ProjectSettings/` |
 | 增强插件源码 | Studio+ 内部 1.079；公开版本 1.0.7，绑定程序集 1.0.7.0 |
 | 本次运行基线 | 已有 Studio+ 1.0.7 build1030 完整应用；未重建完整 1.079 主插件 |
-| 本项目 | 参数预览插件 0.1.2 原型，尚无正式应用发行版本 |
+| 本项目 | 演出编辑插件 0.2.0 原型，尚无正式应用发行版本 |
 
 Studio+ 源码固定于提交 `2c8c63722948b8e739f0eef6ebd0478cdf8ddd3d`，快照在 [Mods/StudioPlusSnapshots/1.079-20261102](../../Mods/StudioPlusSnapshots/1.079-20261102/README.md)。历史快照用于溯源，不叠加安装。
 
 | 路径 | 用途 |
 | --- | --- |
 | [vfx-project.json](../../vfx-project.json) | 仓库身份、基线指纹与构建入口，不是演出工程格式 |
-| [src/Presentation](../../src/Presentation/README.md) | Unity 无关的共享核心与创作层；来源文件哈希记录在 `ORIGIN.json` |
+| [src/Presentation](../../src/Presentation/README.md) | Unity 无关的共享核心与创作层；原始导入及后续扩展哈希记录在 `ORIGIN.json` |
 | [src/StudioPlusPreview](../../src/StudioPlusPreview/) | BepInEx/Harmony 适配、时钟、参数面板、项目文件和渲染资源生命周期 |
 | [src/ShaderAssets](../../src/ShaderAssets/) | 独立 Unity Shader 资源工程，不使用上游根工程构建 |
 | [tests](../../tests/) | 67 项参数检查、117 项创作工程检查及通用契约夹具 |
@@ -45,7 +45,7 @@ Studio+ 源码固定于提交 `2c8c63722948b8e739f0eef6ebd0478cdf8ddd3d`，快�
     -Destination '<新的测试目录>'
 ```
 
-默认构建输出为 `local/build/preview`，包含三个项目 DLL 和 `preview.bundle`。`-SkipShader` 仅用于资源已构建且未变化时的 C# 重建。脚本核对宿主核心 SHA-256，Shader 构建还核对 Unity 版本、编译错误、Bundle 可加载性和资源入口。
+默认构建输出为 `local/build/preview`，包含三个项目 DLL 和包含背景/通用后处理 Shader 的 `preview.bundle`。官谱资源按 [TIMELINE.md](TIMELINE.md) 准备到该目录的 Effects 子目录，副本生成脚本会一起复制；未准备时仍可运行通用效果。`-SkipShader` 仅用于资源已构建且未变化时的 C# 重建。脚本核对宿主核心 SHA-256，Shader 构建还核对 Unity 版本、编译错误、Bundle 可加载性和资源入口。
 
 生成脚本复制完整运行依赖，排除原日志和常用缓存/用户数据，添加项目插件与 `Start-VFX.bat`；目标必须不存在，不覆盖原安装。启动入口设置副本自己的配置目录。该副本为本地测试用途，脚本不代表获得了重新分发全部依赖和素材的许可。
 
@@ -74,7 +74,8 @@ dotnet run --project tests/Project.Checks/Project.Checks.csproj -c Release -- .
 - GUI 只控制 `PreviewModel`；数据求值和事务属于共享层，渲染资源属于 `PreviewSurface`，宿主时间与对话框属于 `StudioBridge`。
 - `StudioUiTheme` 复用当前宿主的 UI 绘制组件和皮肤；字体资源由宿主管理，插件不复制或销毁它们。组件清单和草稿隔离边界见 [UI_COMPONENTS.md](UI_COMPONENTS.md)。
 - 预览使用经 Studio+ 适配的显示时刻，另保留音频偏移信息，避免二次偏移；SV 不是时钟。时间驱动 Shader 不自行累计 `Time.time`。
-- 参数拖动使用临时覆盖，松手一次提交；取消恢复原值。背景材质和 Bundle 在参数变化时复用，不逐帧加载。
+- 参数与关键帧拖动松手一次提交，取消恢复；材质在数值变化时复用。材质图替换使用共享事务，公共轨道和身份保留，其余可撤销恢复。
+- 演出视图禁用谱面相机、GUI 和编辑更新，返回时恢复并释放预览画布。隔离画布最多 2048×1440；只在演出视图绘制，不处理制谱视图的每帧材质。
 - 退出确认使用单个非阻塞界面，原生文件操作由动作队列互斥执行。`Application.Quit` 延后处理，授权最多消费一次，其他订阅者阻止退出时未用授权会过期；不要在退出回调内启动消息循环或弹窗。
 - 演出工程独立于 SPC；原编辑器的谱面保存逻辑不变。`timinggroup`、`noinput` 等已有扩展不是本项目的演出格式。
 - 视频导出时钟通过可选反射适配；导出采样排除临时值，但完整视频导出仍待验证。玩家运行包和创作端依赖分别管理。

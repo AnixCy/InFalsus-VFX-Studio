@@ -2,87 +2,169 @@ using InFalsus.Presentation;
 using InFalsusStudio;
 using UnityEngine;
 using UnityEngine.Rendering;
-using Object = UnityEngine.Object;
+using UnityEngine.Rendering.Universal;
+using Object=UnityEngine.Object;
 
 namespace InFalsus.Vfx.StudioPlus;
 
-internal sealed class PreviewSurface : IDisposable
+internal sealed class PreviewSurface:IDisposable
 {
-    readonly AssetBundle bundle;
-    readonly GameObject root;
+    sealed class Resource {public string Path="";public Material Material=null!;public EffectDefinition Definition=null!;}
+    readonly string folder;
+    readonly Camera hostCamera,previewCamera;
+    readonly GameObject root,quad;
     readonly Mesh mesh;
-    readonly Material material;
-    readonly Camera camera;
-    readonly Dictionary<string, int> ids = new();
-    readonly ClockSource clock = new();
+    readonly Dictionary<string,AssetBundle> bundles=new(StringComparer.OrdinalIgnoreCase);
+    readonly Dictionary<string,Resource> resources=new();
+    readonly Dictionary<string,int> ids=new();
+    readonly ClockSource clock=new();
+    readonly CommandBuffer command=new(){name="VFX isolated postprocess"};
+    readonly UniversalRenderPipeline.SingleCameraRequest request=new();
+    RenderTexture? scene,post,alternate;
+    RTHandle? sceneHandle,postHandle,alternateHandle;
     Texture2D? ownedTexture;
-    internal Material Material => material;
-    internal bool Enabled { get => root.activeSelf; set => root.SetActive(value); }
-    internal PreviewSurface(Camera view, string folder)
+    bool imageOverride;
+    int width,height;
+    internal bool Enabled {get;set;}=true;
+    internal Material Material=>resources["background"].Material;
+    internal int ResourceCount=>resources.Count;
+    internal PreviewSurface(Camera view,string folder)
     {
-        camera = view;
-        bundle = AssetBundle.LoadFromFile(Path.Combine(folder, "preview.bundle"));
-        if (!bundle) throw new InvalidDataException("无法加载背景 Shader 资源。");
-        var shader = bundle.LoadAsset<Shader>("vfx/parameter-preview");
-        if (!shader || !shader.isSupported) { bundle.Unload(false); throw new InvalidDataException("背景 Shader 不受当前设备支持。"); }
-        material = new Material(shader) { name = "VFX parameter preview (owned)", renderQueue = 1100 };
-        material.SetTexture("_MainTex", Texture2D.whiteTexture);
-        mesh = new Mesh { name = "VFX background plane" };
-        mesh.vertices = new[] { new Vector3(-1,-1,0), new Vector3(1,-1,0), new Vector3(1,1,0), new Vector3(-1,1,0) };
-        mesh.uv = new[] { Vector2.zero, Vector2.right, Vector2.one, Vector2.up };
-        mesh.triangles = new[] { 0,2,1,0,3,2 }; mesh.RecalculateBounds();
-        root = new GameObject("VFX background preview", typeof(MeshFilter), typeof(MeshRenderer)) { layer = 30 };
-        root.transform.SetParent(camera.transform, false);
-        root.GetComponent<MeshFilter>().sharedMesh = mesh;
-        var renderer = root.GetComponent<MeshRenderer>(); renderer.sharedMaterial = material;
-        renderer.shadowCastingMode = ShadowCastingMode.Off; renderer.receiveShadows = false;
-        foreach (var c in PreviewModel.Template(Application.unityVersion, QualitySettings.activeColorSpace.ToString()).Channels)
-            ids[c.Property] = Shader.PropertyToID(c.Property);
-        Enabled = true;
+        this.folder=folder;hostCamera=view;
+        root=new GameObject("VFX isolated preview");
+        var cameraObject=new GameObject("VFX preview camera");cameraObject.transform.SetParent(root.transform);
+        previewCamera=cameraObject.AddComponent<Camera>();previewCamera.enabled=false;previewCamera.orthographic=true;
+        previewCamera.orthographicSize=.5f;previewCamera.transform.position=new Vector3(0,0,-10);
+        previewCamera.cullingMask=1<<31;previewCamera.clearFlags=CameraClearFlags.SolidColor;previewCamera.backgroundColor=Color.black;
+        previewCamera.allowHDR=true;previewCamera.allowMSAA=false;
+        previewCamera.GetUniversalAdditionalCameraData().renderPostProcessing=false;
+        mesh=new Mesh{name="VFX background plane"};
+        mesh.vertices=new[]{new Vector3(-.5f,-.5f,0),new Vector3(.5f,-.5f,0),new Vector3(.5f,.5f,0),new Vector3(-.5f,.5f,0)};
+        mesh.uv=new[]{Vector2.zero,Vector2.right,Vector2.one,Vector2.up};mesh.triangles=new[]{0,2,1,0,3,2};mesh.RecalculateBounds();
+        quad=new GameObject("VFX image plane",typeof(MeshFilter),typeof(MeshRenderer)){layer=31};quad.transform.SetParent(root.transform);
+        quad.GetComponent<MeshFilter>().sharedMesh=mesh;
+        quad.SetActive(false);
+        Ensure(PreviewModel.Template(Application.unityVersion,QualitySettings.activeColorSpace.ToString()),EffectLibrary.Load(folder));
     }
+    Resource Load(MaterialNodeDocument node,EffectLibrary library)
+    {
+        if(!bundles.TryGetValue(node.Bundle,out var bundle)) {
+            bundle=AssetBundle.LoadFromFile(EffectPackage.ResolveAsset(folder,node.Bundle));
+            if(!bundle)throw new InvalidDataException("无法加载效果资源："+node.Bundle);bundles.Add(node.Bundle,bundle);
+        }
+        var asset=bundle.LoadAsset<Object>(node.Material);
+        Material material=asset is Shader shader?new Material(shader):asset is Material original?new Material(original):
+            throw new InvalidDataException("找不到效果材质："+node.Material);
+        if(!material.shader.isSupported){Object.DestroyImmediate(material);throw new NotSupportedException("当前设备不支持该效果。");}
+        return new Resource{Path=node.Bundle+":"+node.Material,Material=material,Definition=library.Get(node.Material)};
+    }
+    void Ensure(PackageDocument document,EffectLibrary library)
+    {
+        foreach(var node in document.Nodes) {
+            var path=node.Bundle+":"+node.Material;
+            if(resources.TryGetValue(node.Id,out var old)&&old.Path==path)continue;
+            var candidate=Load(node,library);
+            if(old!=null)Object.DestroyImmediate(old.Material);
+            resources[node.Id]=candidate;
+            if(node.Target=="background") {
+                candidate.Material.renderQueue=1100;quad.GetComponent<MeshRenderer>().sharedMaterial=candidate.Material;
+                ApplyBackgroundTexture();
+            }
+        }
+        foreach(var key in resources.Keys.Where(id=>!document.Nodes.Any(n=>n.Id==id)).ToArray()) {
+            Object.DestroyImmediate(resources[key].Material);resources.Remove(key);
+        }
+        foreach(var path in bundles.Keys.Where(path=>!document.Nodes.Any(n=>n.Bundle==path)).ToArray()) {
+            bundles[path].Unload(true);bundles.Remove(path);
+        }
+    }
+    int Id(string name){if(!ids.TryGetValue(name,out int id))ids[name]=id=Shader.PropertyToID(name);return id;}
+    internal FrameContext Draw(PreviewModel model,in PlaybackSnapshot snapshot,bool committedOnly)
+    {
+        Ensure(model.Package.Document,model.Library);
+        var frame=clock.Sample(snapshot,model.Package.Tempo,model.Package.Document.TimeDomain,model.Package.Document.OffsetSeconds,model.Package.Document.Seed);
+        model.Sample(frame.Seconds,committedOnly);
+        for(int i=0;i<model.Values.Length;i++) {
+            var p=model.Catalog.Parameters[i];var m=resources[p.Binding.Node].Material;var v=model.Values[i].Number;
+            if(p.Binding.Property.StartsWith("_KW_",StringComparison.Ordinal)||!m.HasProperty(Id(p.Binding.Property)))continue;
+            if(p.Binding.Kind==ParameterKind.Color)m.SetColor(Id(p.Binding.Property),new Color(v.X,v.Y,v.Z,v.W));
+            else if(p.Binding.Kind==ParameterKind.Vector)m.SetVector(Id(p.Binding.Property),new Vector4(v.X,v.Y,v.Z,v.W));
+            else m.SetFloat(Id(p.Binding.Property),v.X);
+        }
+        foreach(var pair in resources) {
+            var r=pair.Value;var m=r.Material;
+            foreach(var keyword in r.Definition.Keywords) {
+                string canonical=keyword.Substring(4).Replace("_","");bool enabled=false;float control=0;
+                for(int i=0;i<model.Values.Length;i++) {
+                    var p=model.Catalog.Parameters[i];if(p.Binding.Node!=pair.Key)continue;
+                    if(p.Binding.Property=="_KW_"+keyword)control=model.Values[i].Number.X;
+                    else if(p.Binding.Property.Replace("_","").Replace("Amount","").ToUpperInvariant()==canonical)
+                        enabled|=Math.Abs(model.Values[i].Number.X)>.000001f;
+                }
+                if(control>.5f)enabled=true;else if(control<-.5f)enabled=false;
+                var local=new LocalKeyword(m.shader,keyword);if(local.isValid)m.SetKeyword(local,enabled);
+            }
+            m.SetFloat("_PresentationTime",(float)frame.Seconds);m.SetFloat("_CurrentTime",(float)frame.Seconds);
+            m.SetInt("_FrameCount",(int)Math.Floor(frame.Seconds*120));
+            float aspect=width>0?(float)width/height:hostCamera.aspect;
+            if(r.Definition.Original)m.SetVector("_Aspect",new Vector4(aspect,1/aspect,0,0));else m.SetFloat("_Aspect",aspect);
+            m.SetVector("_R2",new Vector4((float)(frame.VisualTick*.754877666%1),(float)(frame.VisualTick*.569840296%1),0,0));
+        }
+        return frame;
+    }
+    internal RenderTexture Render(PreviewModel model,in PlaybackSnapshot snapshot,int requestedWidth,int requestedHeight)
+    {
+        int w=Mathf.Clamp(requestedWidth,32,2048),h=Mathf.Clamp(requestedHeight,32,1440);
+        if(scene==null||w!=width||h!=height) {
+            ReleaseTargets();width=w;height=h;
+            scene=Target("VFX scene",24);post=Target("VFX post",0);alternate=Target("VFX alternate",0);
+            sceneHandle=RTHandles.Alloc(scene);postHandle=RTHandles.Alloc(post);alternateHandle=RTHandles.Alloc(alternate);
+        }
+        Draw(model,snapshot,false);previewCamera.aspect=(float)w/h;quad.transform.localScale=new Vector3(previewCamera.aspect,1,1);
+        request.destination=scene;quad.SetActive(true);
+        try{RenderPipeline.SubmitRenderRequest(previewCamera,request);}finally{quad.SetActive(false);}
+        var source=sceneHandle!;RenderTexture result=scene!;int index=0;
+        command.Clear();command.SetGlobalVector("_BlitTexture_TexelSize",new Vector4(1f/w,1f/h,w,h));
+        foreach(var node in model.Package.Document.Nodes.Where(n=>n.Target=="postprocess")) {
+            result=index%2==0?post!:alternate!;command.SetRenderTarget(result);
+            Blitter.BlitTexture(command,source,new Vector4(1,1,0,0),resources[node.Id].Material,0);
+            source=index%2==0?postHandle!:alternateHandle!;index++;
+        }
+        if(index>0)Graphics.ExecuteCommandBuffer(command);return result;
+    }
+    RenderTexture Target(string name,int depth){var rt=new RenderTexture(width,height,depth,RenderTextureFormat.ARGBHalf){name=name};if(!rt.Create())throw new InvalidOperationException("无法分配预览画布。");return rt;}
     internal Texture2D PrepareImage(string path)
     {
-        var info = new FileInfo(path);
-        if (!info.Exists || info.Length > 32 * 1024 * 1024) throw new InvalidDataException("请选择不超过 32 MiB 的 PNG/JPEG 图片。");
-        var bytes = File.ReadAllBytes(info.FullName);
-        var validator = typeof(StudioBootstrap).Assembly.GetType("InFalsusStudio.Core.LocalImageSize")!;
-        validator.GetMethod("Validate", StudioBridge.Flags)!.Invoke(null, new object[] { bytes, 8192, 33554432 });
-        var image = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-        try {
-            if (!ImageConversion.LoadImage(image, bytes)) throw new InvalidDataException("图片解码失败。");
-            image.wrapMode = TextureWrapMode.Clamp; image.filterMode = FilterMode.Bilinear;
-            return image;
-        } catch { Object.Destroy(image); throw; }
+        var info=new FileInfo(path);if(!info.Exists||info.Length>32*1024*1024)throw new InvalidDataException("请选择不超过 32 MiB 的 PNG/JPEG 图片。");
+        var bytes=File.ReadAllBytes(path);typeof(StudioBootstrap).Assembly.GetType("InFalsusStudio.Core.LocalImageSize")!
+            .GetMethod("Validate",StudioBridge.Flags)!.Invoke(null,new object[]{bytes,8192,33554432});
+        var image=new Texture2D(2,2,TextureFormat.RGBA32,false);
+        try{if(!ImageConversion.LoadImage(image,bytes))throw new InvalidDataException("图片解码失败。");image.wrapMode=TextureWrapMode.Clamp;return image;}
+        catch{Object.Destroy(image);throw;}
     }
     internal void ApplyImage(Texture2D? image)
     {
-        var old = ownedTexture; ownedTexture = image;
-        material.SetTexture("_MainTex", image ? image : Texture2D.whiteTexture);
-        if (old) Object.Destroy(old);
+        var old=ownedTexture;ownedTexture=image;imageOverride=image!=null;ApplyBackgroundTexture();if(old)Object.Destroy(old);
     }
-    internal FrameContext Draw(PreviewModel model, in PlaybackSnapshot snapshot, bool committedOnly)
+    void ApplyBackgroundTexture()
     {
-        var frame = clock.Sample(snapshot, model.Package.Tempo, model.Package.Document.TimeDomain,
-            model.Package.Document.OffsetSeconds, model.Package.Document.Seed);
-        model.Sample(frame.Seconds, committedOnly);
-        for (int i = 0; i < model.Values.Length; i++) {
-            var p = model.Catalog.Parameters[i]; var value = model.Values[i].Number;
-            if (p.Binding.Kind == ParameterKind.Color)
-                material.SetColor(ids[p.Binding.Property], new Color(value.X,value.Y,value.Z,value.W));
-            else material.SetFloat(ids[p.Binding.Property], value.X);
-        }
-        material.SetFloat("_PresentationTime", (float)frame.Seconds);
-        material.SetFloat("_Aspect", camera.aspect);
-        float depth = camera.farClipPlane * .90f;
-        float hh = camera.orthographic ? camera.orthographicSize : depth * Mathf.Tan(camera.fieldOfView * Mathf.Deg2Rad * .5f);
-        root.transform.localPosition = new Vector3(0,0,depth);
-        root.transform.localScale = new Vector3(hh*camera.aspect*1.002f,hh*1.002f,1);
-        return frame;
+        if(!resources.TryGetValue("background",out var r))return;
+        string property=r.Definition.Original?"_BaseMap":"_MainTex";
+        if(imageOverride)r.Material.SetTexture(property,ownedTexture);
+        else if(!r.Definition.Original)r.Material.SetTexture(property,Texture2D.whiteTexture);
+        else if(bundles.TryGetValue(r.Definition.Bundle,out var bundle))r.Material.SetTexture(property,bundle.LoadAsset<Material>(r.Definition.Material).GetTexture(property));
     }
+    void ReleaseTargets()
+    {
+        sceneHandle?.Release();postHandle?.Release();alternateHandle?.Release();sceneHandle=postHandle=alternateHandle=null;
+        foreach(var rt in new[]{scene,post,alternate})if(rt){rt!.Release();Object.DestroyImmediate(rt);}
+        scene=post=alternate=null;width=height=0;
+    }
+    internal void Suspend()=>ReleaseTargets();
     public void Dispose()
     {
-        if (root) Object.Destroy(root); if (mesh) Object.Destroy(mesh);
-        if (material) Object.Destroy(material); if (ownedTexture) Object.Destroy(ownedTexture);
-        if (bundle) bundle.Unload(false);
+        ReleaseTargets();foreach(var r in resources.Values)Object.DestroyImmediate(r.Material);resources.Clear();
+        Object.DestroyImmediate(root);Object.DestroyImmediate(mesh);if(ownedTexture)Object.Destroy(ownedTexture);
+        foreach(var b in bundles.Values)b.Unload(true);bundles.Clear();command.Release();
     }
 }

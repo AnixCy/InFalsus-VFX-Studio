@@ -3,7 +3,7 @@
   "id": "infalsus-vfx-studio",
   "name": "InFalsus VFX Studio",
   "repository": "https://github.com/AnixCy/InFalsus-VFX-Studio",
-  "status": "parameter-preview-prototype",
+  "status": "timeline-editor-prototype",
   "projectRelease": null,
   "branches": {
     "integration": "vfx",
@@ -40,14 +40,17 @@
     "previewBuild": "scripts/Build-Preview.ps1"
   },
   "preview": {
-    "pluginVersion": "0.1.2",
+    "pluginVersion": "0.2.0",
     "testedStudioBinary": "1.0.7 build1030",
     "unityVersion": "6000.3.25f1",
     "coreChecks": 184,
-    "runtimeChecks": 46,
+    "runtimeChecks": 100,
     "visualAcceptance": "pending",
     "interactiveAcceptance": "pending",
-    "full1079PluginVerified": false
+    "full1079PluginVerified": false,
+    "timelineImplemented": true,
+    "independentAuthoringView": true,
+    "officialMaterialPairs": 12
   },
   "presentationCoreImported": true,
   "presentationUiImplemented": true,
