@@ -7,6 +7,7 @@
     <StudioManaged>$(StudioPath)/InFalsusStudio_Data/Managed</StudioManaged>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Include="../../docs/vfx/reference/effect-notes.json" LogicalName="InFalsus.Vfx.EffectNotes.json" />
     <ProjectReference Include="../Presentation/authoring/InFalsus.Presentation.Authoring.csproj" />
     <ProjectReference Include="../Addon.Export/InFalsus.Vfx.Addon.Export.csproj" />
     <Reference Include="Assembly-CSharp" HintPath="$(StudioManaged)/Assembly-CSharp.dll" Private="false" />

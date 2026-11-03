@@ -36,6 +36,7 @@
     "agent": "AGENTS.md",
     "contributing": "CONTRIBUTING.md",
     "previewGuide": "docs/vfx/PARAMETER_PREVIEW.md",
+    "effectReference": "docs/vfx/reference/index.md",
     "validation": "docs/vfx/VALIDATION.md",
     "previewBuild": "scripts/Build-Preview.ps1"
   },
@@ -44,8 +45,8 @@
     "testedStudioBinary": "1.0.7 build1030",
     "unityVersion": "6000.3.25f1",
     "coreChecks": 196,
-    "runtimeChecks": 268,
-    "authoredBackgroundChecks": 285,
+    "runtimeChecks": 275,
+    "authoredBackgroundChecks": 292,
     "previewResolutions": ["2560x1440", "1920x1080", "1280x720"],
     "visualAcceptance": "pending",
     "interactiveAcceptance": "pending",

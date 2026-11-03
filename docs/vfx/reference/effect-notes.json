@@ -1,0 +1,461 @@
+{
+  "schemaVersion": 1,
+  "effects": {
+    "builtin": {
+      "summary": "调整底图颜色、位置与轻微波动。",
+      "details": "可在原图和内置程序图案之间混合；时间频率控制连续流动。",
+      "caution": ""
+    },
+    "utility": {
+      "summary": "组合色彩、变形、噪声和遮罩调整。",
+      "details": "这些参数共享一份通用后处理材质；单项入口用于更清楚地独立编排。",
+      "caution": ""
+    },
+    "color-grade": {
+      "summary": "调整整体色调、曝光、对比和饱和度。",
+      "details": "适合慢速换色、段落明暗变化和短促曝光脉冲。",
+      "caution": ""
+    },
+    "transform": {
+      "summary": "围绕画面中心放大、缩小和旋转。",
+      "details": "缩放是取样坐标变换；旋转参数使用弧度。",
+      "caution": ""
+    },
+    "chroma": {
+      "summary": "让高反差边缘出现放射状 RGB 色边。",
+      "details": "红、蓝通道沿不同方向取样，中心影响较小，外围更明显。",
+      "caution": ""
+    },
+    "ripple": {
+      "summary": "让画面沿半径方向连续起伏。",
+      "details": "强度决定变形幅度，频率决定波纹疏密，速度推动传播相位。",
+      "caution": ""
+    },
+    "scanline": {
+      "summary": "叠加交替明暗的细横线。",
+      "details": "通用实现按源纹理像素排列扫描线；不是逐行揭示画面的擦除。",
+      "caution": ""
+    },
+    "noise": {
+      "summary": "给画面添加随时间变化的颗粒。",
+      "details": "通用实现每秒按 120 个逻辑时刻更新噪声；时间暂停后保持一致。",
+      "caution": ""
+    },
+    "pixelate": {
+      "summary": "把图像采样量化成可见色块。",
+      "details": "像素尺寸越大，色块越粗；不改变工程或输出窗口尺寸。",
+      "caution": ""
+    },
+    "vignette": {
+      "summary": "让画面外围变暗，中心更突出。",
+      "details": "这是通用的径向亮度衰减，可与其他效果独立编排。",
+      "caution": ""
+    },
+    "fade": {
+      "summary": "把整个预览画面逐渐压到黑色。",
+      "details": "强度 0 保留画面，1 为黑；输出仍不透明，不是导出透明背景。",
+      "caution": ""
+    },
+    "wipe": {
+      "summary": "用收缩的圆形可见范围遮住画面。",
+      "details": "强度从 0 到 1 时可见半径收缩，边界带有柔和过渡。",
+      "caution": ""
+    },
+    "ring": {
+      "summary": "叠加一圈紫色亮环。",
+      "details": "给半径打关键帧可让光环向外扩散；宽度控制环带厚度。",
+      "caution": ""
+    },
+    "effect-fracture": {
+      "summary": "制造短促的画面破裂与冲击。",
+      "details": "调用现成的 Crash 分支；可用强度包络形成击点。",
+      "caution": "具体空间遮罩和边缘响应随材质组而异。"
+    },
+    "effect-block-glitch": {
+      "summary": "把画面分块错位，形成数字故障感。",
+      "details": "取样含分块、量化和扰动；适合短击点或阶段性失稳。",
+      "caution": ""
+    },
+    "effect-chromatic-zoom": {
+      "summary": "让不同颜色通道产生缩放错位。",
+      "details": "表现为围绕中心的彩色拉伸和边缘分离。",
+      "caution": ""
+    },
+    "effect-uv-warp": {
+      "summary": "通过取样坐标变形扭曲整个画面。",
+      "details": "适合连续拉扯或短促形变；细节和方向由该材质实现决定。",
+      "caution": ""
+    },
+    "effect-digital-glitch": {
+      "summary": "产生随时间变化的数字故障扰动。",
+      "details": "用强度控制出现和消退，效果细节由原有程序分支生成。",
+      "caution": ""
+    },
+    "effect-scanlines": {
+      "summary": "叠加信号式扫描线变化。",
+      "details": "这是已有信号处理材质的分支，可与时间轴区间和混合强度组合。",
+      "caution": ""
+    },
+    "effect-blur-glitch": {
+      "summary": "用模糊扰动制造不稳定的信号质感。",
+      "details": "适合短暂失焦或故障插入。",
+      "caution": "不应把它当作可精确指定半径的通用高斯模糊。"
+    },
+    "effect-warp-zoom": {
+      "summary": "把画面扭曲和缩放联动起来。",
+      "details": "适合推进、吸入或释放方向的短包络；这是图像变换。",
+      "caution": ""
+    },
+    "effect-horizontal-noise": {
+      "summary": "让画面出现沿水平方向的噪声扰动。",
+      "details": "强度控制水平失稳程度，可用于节奏性的横向撕动。",
+      "caution": ""
+    },
+    "effect-chaos": {
+      "summary": "组合不规则取样变形与脉冲变化。",
+      "details": "强度控制整体影响，Phase 改变图案状态，Kick 控制冲击项。",
+      "caution": "已核对参数和程序分支，具体动态观感尚未逐项验收。"
+    },
+    "effect-malfunction": {
+      "summary": "制造信号失常式的跳变和取样扰动。",
+      "details": "调用已有 Malfunction 分支，用区间和强度包络控制发作。",
+      "caution": "没有逐帧复原该分支，不能承诺固定的故障图案。"
+    }
+  },
+  "backgroundControls": {
+    "_EphemeralAmount": {
+      "summary": "连续流场把直线牵动成柔软弯曲。",
+      "details": "变形来自随绝对时间变化的连续 UV 场；适合缓慢流动、拉伸和回收。",
+      "caution": ""
+    },
+    "_FeedbackAmount": {
+      "summary": "让图像形成层层嵌套的缩放与旋转。",
+      "details": "在同一帧反复变换 UV，配合 Rotation 可反向后再复原。",
+      "caution": "此实现不读取上一帧，不需要历史帧纹理。"
+    },
+    "_ChromaZoomAmount": {
+      "summary": "在底图边缘形成缩放型彩色分离。",
+      "details": "不同取样尺度和颜色权重产生放射色边。",
+      "caution": ""
+    },
+    "_SlashDisplaceAmount": {
+      "summary": "把底图沿清楚的切片边界错开。",
+      "details": "适合硬边撕裂、斜向切割和短促错位。",
+      "caution": ""
+    },
+    "_StaticNoiseAmount": {
+      "summary": "以噪声增加底图的不稳定质感。",
+      "details": "调用底图材质的 Static Noise 分支；可用短包络快速收回。",
+      "caution": ""
+    },
+    "_RushAmount": {
+      "summary": "让底图产生朝向中心的径向流动感。",
+      "details": "作用于取样坐标；空间延伸感也取决于原图的透视线索。",
+      "caution": ""
+    },
+    "_CellAmount": {
+      "summary": "引入单元格图案和局部遮罩变化。",
+      "details": "效果依赖材质中的 Cell 图案或取样路径。",
+      "caution": ""
+    },
+    "_AuraAmount": {
+      "summary": "驱动底图 Aura 的局部扰动分支。",
+      "details": "该组使用分段坐标、时间量化与多次取样组织变化。",
+      "caution": "尚未单独验收完整动态，不承诺固定的光晕轮廓。"
+    },
+    "_HMoveAmount": {
+      "summary": "让底图出现分段的横向错位。",
+      "details": "强度控制错位幅度，Seed 改变分段扰动的布局。",
+      "caution": ""
+    },
+    "_ImpactAmount": {
+      "summary": "给底图加入短促形变和冲击变化。",
+      "details": "适合用快起、慢收的强度曲线做击点。",
+      "caution": "不同组的 Impact 不是逐像素相同的效果。"
+    },
+    "_TriDisplaceAmount": {
+      "summary": "用三角分区组织底图的错位。",
+      "details": "相邻分区可产生有边界的几何撕裂，区别于连续流场。",
+      "caution": ""
+    },
+    "_CrashAmount": {
+      "summary": "驱动该底图组的冲击或破裂项。",
+      "details": "这是背景材质内的变化，与独立后处理的 Screen Fracture 分开。",
+      "caution": ""
+    },
+    "_RippleAmount": {
+      "summary": "让底图呈现径向波动。",
+      "details": "配合 Ripple Beat 调整波纹相位或脉冲状态。",
+      "caution": "不要把 Ripple Beat 直接当作项目 BPM。"
+    },
+    "_FirstTransitionPhase": {
+      "summary": "推进预设内置的分阶段开场变化。",
+      "details": "Phase 选择该材质的过渡状态，可用关键帧推进。",
+      "caution": "这是特定材质的进度参数，不是通用透明度。"
+    },
+    "_RedAmount": {
+      "summary": "推进该底图组的红色处理分支。",
+      "details": "可与形变独立编排，具体颜色关系由材质决定。",
+      "caution": ""
+    },
+    "_VerticalCorruptionAmount": {
+      "summary": "在选定位置附近产生纵向损坏感。",
+      "details": "位置与强度分开控制，使用纵向噪声和随位置变化的衰减。",
+      "caution": ""
+    },
+    "_MuteAmount": {
+      "summary": "控制底图的视觉抑制分支。",
+      "details": "只作用画面，不会静音音频。",
+      "caution": "分支已确认，具体衰减形态尚未单独验收。"
+    },
+    "_HackerTransitionAmount": {
+      "summary": "用分块阈值切换材质中的场景图层。",
+      "details": "含量化、哈希和阈值抖动，可让过渡本身呈现图案。",
+      "caution": "依赖自带的 Special、Network 或 Cell 等辅助贴图。"
+    },
+    "_NetworkPhase": {
+      "summary": "推进网络图层的程序状态。",
+      "details": "与网络转场材质中的图层和取样路径联动。",
+      "caution": "不是通用时间或强度；具体动态图案尚未逐项验收。"
+    },
+    "_BlurCell": {
+      "summary": "控制柔化的单元格图层。",
+      "details": "与材质中的 Cell 资源和网络场景组合。",
+      "caution": "不是通用的多次采样模糊，依赖该组素材。"
+    },
+    "_BlurDistort": {
+      "summary": "控制柔化场景中的采样扭曲。",
+      "details": "用于该组场景的柔化与扰动组合。",
+      "caution": "具体形态尚未单独验收，先用小幅变化确认。"
+    },
+    "_BrightAmount": {
+      "summary": "在暗版和亮版底图之间混合。",
+      "details": "可让两张同构图图片中的不同细节逐渐显露。",
+      "caution": "依赖 BrightMap；换主背景图不会自动制作对应亮版。"
+    },
+    "_RipplePhase": {
+      "summary": "推进底图波纹的相位状态。",
+      "details": "可用单调或往返的关键帧改变波纹位置。",
+      "caution": "相位不是强度，也不是项目 BPM。"
+    },
+    "_ChugAmount": {
+      "summary": "让四路空间遮罩分别发生局部脉冲。",
+      "details": "XYZW 对应遮罩 RGBA，四路值和遮罩点乘后驱动局部变化。",
+      "caution": "四路遮罩不是四条游戏轨道。"
+    },
+    "_AltColorAmount": {
+      "summary": "在该组预设的颜色状态间过渡。",
+      "details": "可与局部脉冲独立编排，具体颜色由材质和素材决定。",
+      "caution": ""
+    },
+    "_Hnoise": {
+      "summary": "给底图加入横向噪声扰动。",
+      "details": "作用在底图内部，可与其余兼容参数合并为一次背景绘制。",
+      "caution": ""
+    },
+    "_Monochrome": {
+      "summary": "推进该底图的单色化处理。",
+      "details": "用于彩色与单色视觉状态之间的变化。",
+      "caution": ""
+    },
+    "_EnterEffectZOffset": {
+      "summary": "调整开场空间感变化的偏移项。",
+      "details": "这是材质的输入参数。",
+      "caution": "具体投影形态待确认，不能据此宣称移动了游戏相机。"
+    },
+    "_NeuroAmount": {
+      "summary": "控制 Neuro 程序图案分支的强度。",
+      "details": "已核对该参数及程序路径。",
+      "caution": "具体动态形态尚未单独验收，不根据名称补写观感。"
+    },
+    "_AsanohaDisplaceAmount": {
+      "summary": "以麻叶命名的程序化图案位移。",
+      "details": "用格点、周期或分区数学组织底图取样变形。",
+      "caution": "已确认不是分别加载一张纹样贴图；该分支的完整动态形态未逐项验收。"
+    },
+    "_SeigaihaDisplaceAmount": {
+      "summary": "以青海波命名的程序化图案位移。",
+      "details": "用格点、周期或分区数学组织底图取样变形。",
+      "caution": "已确认不是分别加载一张纹样贴图；该分支的完整动态形态未逐项验收。"
+    },
+    "_KikkouDisplaceAmount": {
+      "summary": "以龟甲命名的程序化图案位移。",
+      "details": "用格点、周期或分区数学组织底图取样变形。",
+      "caution": "已确认不是分别加载一张纹样贴图；该分支的完整动态形态未逐项验收。"
+    },
+    "_ShippouDisplaceAmount": {
+      "summary": "以七宝命名的程序化图案位移。",
+      "details": "用格点、周期或分区数学组织底图取样变形。",
+      "caution": "已确认不是分别加载一张纹样贴图；该分支的完整动态形态未逐项验收。"
+    },
+    "_EgasumiDisplaceAmount": {
+      "summary": "以霞命名的程序化图案位移。",
+      "details": "用格点、周期或分区数学组织底图取样变形。",
+      "caution": "已确认不是分别加载一张纹样贴图；该分支的完整动态形态未逐项验收。"
+    },
+    "_UrokoDisplaceAmount": {
+      "summary": "以鳞命名的程序化图案位移。",
+      "details": "用格点、周期或分区数学组织底图取样变形。",
+      "caution": "已确认不是分别加载一张纹样贴图；该分支的完整动态形态未逐项验收。"
+    },
+    "_YagasuriDisplaceAmount": {
+      "summary": "以矢絣命名的程序化图案位移。",
+      "details": "用格点、周期或分区数学组织底图取样变形。",
+      "caution": "已确认不是分别加载一张纹样贴图；该分支的完整动态形态未逐项验收。"
+    }
+  },
+  "parameters": {
+    "_BaseColor": "RGB 乘色：白色保留原色；大于 1 可增加 HDR 亮度。Alpha 是否有效取决于具体 Shader。",
+    "_Tint": "底图 RGB 乘色；白色保留原色。",
+    "_Brightness": "对 RGB 乘亮度倍数，1 保持原亮度。",
+    "_Exposure": "曝光档位；乘数为 2 的该值次幂，+1 约为亮度翻倍。",
+    "_Contrast": "围绕 0.18 调整对比，1 为中性。",
+    "_Saturation": "0 为灰度，1 为原饱和度；更高会加强色差。",
+    "_Zoom": "围绕画面中心缩放，1 为中性；大于 1 放大。",
+    "_Rotation": "围绕中心旋转，单位为弧度；正负值控制相反方向。",
+    "_Chroma": "红、蓝取样沿径向分开；强度使用 UV 比例。",
+    "_Ripple": "径向 UV 位移幅度，0 为中性。",
+    "_RippleFrequency": "径向波纹的疏密。",
+    "_RippleSpeed": "波动相位随秒变化的速度。",
+    "_Scanline": "扫描线造成的明暗衰减强度。",
+    "_Noise": "颗粒噪声幅度；暂停后按同一绝对时间保持一致。",
+    "_PixelSize": "采样色块相对源纹理像素的大小；1 为中性。",
+    "_Vignette": "径向外围压暗强度。",
+    "_Fade": "0 保留画面，1 压到黑色；输出不透明。",
+    "_Wipe": "控制圆形可见范围收缩；0 为未遮罩状态。",
+    "_Ring": "紫色环带的叠加强度。",
+    "_RingRadius": "中心到亮环的半径，使用当前 Shader 的 UV 尺度。",
+    "_RingWidth": "环带厚度。",
+    "_OffsetX": "底图横向取样偏移，使用 UV 比例。",
+    "_OffsetY": "底图纵向取样偏移，使用 UV 比例。",
+    "_Distortion": "通用底图的正弦 UV 位移强度。",
+    "_Frequency": "通用底图图案和位移的空间频率。",
+    "_Speed": "时间相位推进速度；具体尺度由当前 Shader 决定。",
+    "_PatternMix": "0 取背景图，1 取内置程序图案，中间值混合。",
+    "_FeedbackRotation": "同帧嵌套变换的旋转角，单位弧度；正负可反向，通常与 Nested Scale 配合。",
+    "_HMoveSeed": "改变横移扰动布局；它不是位移幅度。",
+    "_RippleBeat": "该底图的波纹状态/相位控制，不能直接等同于项目 BPM。",
+    "_VerticalCorruptionPosition": "纵向损坏影响区域的位置，使用当前材质坐标。",
+    "_VignetteColor": "原始组的边缘/暗角色彩乘数；HDR 值可能提亮边缘，不能按通用暗角强度解释。",
+    "_BlockGlitchAmount": "分块故障取样的强度。",
+    "_ChromaZoomAmount": "缩放型颜色通道错位强度；具体空间响应随材质组而异。",
+    "_GlitchAmount": "数字故障分支强度。",
+    "_WarpAmount": "UV 扭曲分支强度。",
+    "_DropKickAmount": "该预设的短促冲击分支；具体动态尚未单独验收。",
+    "_ScanlineAmount": "信号扫描线强度。",
+    "_BlurGlitch": "模糊故障分支强度；不是通用模糊半径。",
+    "_WarpZoomAmount": "联动变形与缩放的强度。",
+    "_HnoiseAmount": "后处理的水平噪声扰动强度。",
+    "_ChaosAmount": "不规则图案/坐标变形分支强度。",
+    "_ChaosPhase": "改变 Chaos 的程序状态；不是通用秒数或拍数。",
+    "_ChaosKick": "Chaos 的冲击项。",
+    "_MalfunctionAmount": "信号失常分支强度。",
+    "_Color": "程序图案的 RGB 颜色；透明度是否参与取决于 Shader。",
+    "_Intensity": "该程序化效果的叠加强度。",
+    "_Center": "UV 变换中心；XY 为归一化图像坐标。",
+    "_EphemeralAmount": "连续流场把直线牵动成柔软弯曲。 变形来自随绝对时间变化的连续 UV 场；适合缓慢流动、拉伸和回收。",
+    "_FeedbackAmount": "让图像形成层层嵌套的缩放与旋转。 在同一帧反复变换 UV，配合 Rotation 可反向后再复原。 此实现不读取上一帧，不需要历史帧纹理。",
+    "_SlashDisplaceAmount": "把底图沿清楚的切片边界错开。 适合硬边撕裂、斜向切割和短促错位。",
+    "_StaticNoiseAmount": "以噪声增加底图的不稳定质感。 调用底图材质的 Static Noise 分支；可用短包络快速收回。",
+    "_RushAmount": "让底图产生朝向中心的径向流动感。 作用于取样坐标；空间延伸感也取决于原图的透视线索。",
+    "_CellAmount": "引入单元格图案和局部遮罩变化。 效果依赖材质中的 Cell 图案或取样路径。",
+    "_AuraAmount": "驱动底图 Aura 的局部扰动分支。 该组使用分段坐标、时间量化与多次取样组织变化。 尚未单独验收完整动态，不承诺固定的光晕轮廓。",
+    "_HMoveAmount": "让底图出现分段的横向错位。 强度控制错位幅度，Seed 改变分段扰动的布局。",
+    "_ImpactAmount": "给底图加入短促形变和冲击变化。 适合用快起、慢收的强度曲线做击点。 不同组的 Impact 不是逐像素相同的效果。",
+    "_TriDisplaceAmount": "用三角分区组织底图的错位。 相邻分区可产生有边界的几何撕裂，区别于连续流场。",
+    "_CrashAmount": "冲击或破裂分支强度；具体空间遮罩和响应随材质组而异。",
+    "_RippleAmount": "让底图呈现径向波动。 配合 Ripple Beat 调整波纹相位或脉冲状态。 不要把 Ripple Beat 直接当作项目 BPM。",
+    "_FirstTransitionPhase": "推进预设内置的分阶段开场变化。 Phase 选择该材质的过渡状态，可用关键帧推进。 这是特定材质的进度参数，不是通用透明度。",
+    "_RedAmount": "推进该底图组的红色处理分支。 可与形变独立编排，具体颜色关系由材质决定。",
+    "_VerticalCorruptionAmount": "在选定位置附近产生纵向损坏感。 位置与强度分开控制，使用纵向噪声和随位置变化的衰减。",
+    "_MuteAmount": "控制底图的视觉抑制分支。 只作用画面，不会静音音频。 分支已确认，具体衰减形态尚未单独验收。",
+    "_HackerTransitionAmount": "用分块阈值切换材质中的场景图层。 含量化、哈希和阈值抖动，可让过渡本身呈现图案。 依赖自带的 Special、Network 或 Cell 等辅助贴图。",
+    "_NetworkPhase": "推进网络图层的程序状态。 与网络转场材质中的图层和取样路径联动。 不是通用时间或强度；具体动态图案尚未逐项验收。",
+    "_BlurCell": "控制柔化的单元格图层。 与材质中的 Cell 资源和网络场景组合。 不是通用的多次采样模糊，依赖该组素材。",
+    "_BlurDistort": "控制柔化场景中的采样扭曲。 用于该组场景的柔化与扰动组合。 具体形态尚未单独验收，先用小幅变化确认。",
+    "_BrightAmount": "在暗版和亮版底图之间混合。 可让两张同构图图片中的不同细节逐渐显露。 依赖 BrightMap；换主背景图不会自动制作对应亮版。",
+    "_RipplePhase": "推进底图波纹的相位状态。 可用单调或往返的关键帧改变波纹位置。 相位不是强度，也不是项目 BPM。",
+    "_ChugAmount": "让四路空间遮罩分别发生局部脉冲。 XYZW 对应遮罩 RGBA，四路值和遮罩点乘后驱动局部变化。 四路遮罩不是四条游戏轨道。",
+    "_AltColorAmount": "在该组预设的颜色状态间过渡。 可与局部脉冲独立编排，具体颜色由材质和素材决定。",
+    "_Hnoise": "给底图加入横向噪声扰动。 作用在底图内部，可与其余兼容参数合并为一次背景绘制。",
+    "_Monochrome": "推进该底图的单色化处理。 用于彩色与单色视觉状态之间的变化。",
+    "_EnterEffectZOffset": "调整开场空间感变化的偏移项。 这是材质的输入参数。 具体投影形态待确认，不能据此宣称移动了游戏相机。",
+    "_NeuroAmount": "控制 Neuro 程序图案分支的强度。 已核对该参数及程序路径。 具体动态形态尚未单独验收，不根据名称补写观感。",
+    "_AsanohaDisplaceAmount": "以麻叶命名的程序化图案位移。 用格点、周期或分区数学组织底图取样变形。 已确认不是分别加载一张纹样贴图；该分支的完整动态形态未逐项验收。",
+    "_SeigaihaDisplaceAmount": "以青海波命名的程序化图案位移。 用格点、周期或分区数学组织底图取样变形。 已确认不是分别加载一张纹样贴图；该分支的完整动态形态未逐项验收。",
+    "_KikkouDisplaceAmount": "以龟甲命名的程序化图案位移。 用格点、周期或分区数学组织底图取样变形。 已确认不是分别加载一张纹样贴图；该分支的完整动态形态未逐项验收。",
+    "_ShippouDisplaceAmount": "以七宝命名的程序化图案位移。 用格点、周期或分区数学组织底图取样变形。 已确认不是分别加载一张纹样贴图；该分支的完整动态形态未逐项验收。",
+    "_EgasumiDisplaceAmount": "以霞命名的程序化图案位移。 用格点、周期或分区数学组织底图取样变形。 已确认不是分别加载一张纹样贴图；该分支的完整动态形态未逐项验收。",
+    "_UrokoDisplaceAmount": "以鳞命名的程序化图案位移。 用格点、周期或分区数学组织底图取样变形。 已确认不是分别加载一张纹样贴图；该分支的完整动态形态未逐项验收。",
+    "_YagasuriDisplaceAmount": "以矢絣命名的程序化图案位移。 用格点、周期或分区数学组织底图取样变形。 已确认不是分别加载一张纹样贴图；该分支的完整动态形态未逐项验收。"
+  },
+  "presetFamilies": {
+    "01": {
+      "background": "径向流动与单元格遮罩的组合。",
+      "postprocess": "冲击破裂与边缘乘色的组合。"
+    },
+    "02": {
+      "background": "Aura、分段横移和布局种子的组合。",
+      "postprocess": "分块故障、破裂与边缘乘色的组合。"
+    },
+    "03": {
+      "background": "分阶段开场、三角错位、连续流场和冲击的组合。",
+      "postprocess": "扭曲、缩放色差、冲击和故障分支的组合。"
+    },
+    "04": {
+      "background": "径向流动、三角错位、波纹、冲击和横向噪声的组合。",
+      "postprocess": "缩放色差、分块故障与破裂的组合。"
+    },
+    "05": {
+      "background": "七种命名纹样位移与流场、冲击的组合。",
+      "postprocess": "信号失常、破裂与边缘乘色的组合。"
+    },
+    "06": {
+      "background": "可定位的纵向损坏、流场、红色和视觉抑制的组合。",
+      "postprocess": "数字故障、破裂与边缘乘色的组合。"
+    },
+    "07": {
+      "background": "网络图层、分块转场与柔化单元格的组合。",
+      "postprocess": "扫描线、模糊故障与破裂的组合。"
+    },
+    "08": {
+      "background": "暗/亮双图混合、流场与波纹相位的组合。",
+      "postprocess": "冲击破裂与边缘乘色的组合。"
+    },
+    "09": {
+      "background": "连续流场、同帧嵌套变换、缩放色差和切片的组合。",
+      "postprocess": "数字故障、破裂与边缘乘色的组合。"
+    },
+    "10": {
+      "background": "RGBA 四路局部脉冲、径向流动和颜色变化的组合。",
+      "postprocess": "分块故障、破裂与边缘乘色的组合。"
+    },
+    "11": {
+      "background": "单色化、流场、三角位移与开场图案分支的组合。",
+      "postprocess": "不规则变形、缩放、水平噪声和故障分支的组合。"
+    },
+    "12": {
+      "background": "另一种径向流动、单元格遮罩和冲击组合。",
+      "postprocess": "缩放色差、破裂与边缘乘色的组合。"
+    }
+  },
+  "customMaterials": {
+    "custom/flow-feedback-background": {
+      "summary": "轻量连续扭曲和同帧嵌套缩放旋转。",
+      "details": "Flow Distortion 拉弯直线，Nested Scale 建立嵌套层次，Nested Rotation 可反转，Transform Center 决定旋转与缩放中心。",
+      "caution": "这是已知模板的说明；自定义改写代码后，以实际代码为准。"
+    },
+    "custom/procedural-pulse": {
+      "summary": "在源画面上叠加彩色同心脉冲环。",
+      "details": "Intensity 控制亮度，Frequency 控制环带密度，Speed 控制传播相位；时间相对效果片段起点。",
+      "caution": "模板不分析音频；节奏需要用关键帧编排。"
+    }
+  },
+  "parameterOverrides": {
+    "custom/procedural-pulse": {
+      "_Frequency": "同心脉冲环的空间频率；越大环带越密。",
+      "_Speed": "脉冲相位随效果局部秒数推进的速度，不是 BPM。",
+      "_Color": "脉冲环的 RGB 颜色，模板不使用该颜色的 Alpha。"
+    }
+  }
+}

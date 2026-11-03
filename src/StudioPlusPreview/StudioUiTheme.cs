@@ -17,6 +17,7 @@ internal sealed class StudioUiTheme
     readonly PaintInput paintInput;
     readonly Func<float, int> fontPixels;
     readonly Func<string, string, int, int> measure;
+    readonly Func<string,string,int,float,string[]> wrap;
     delegate void PaintInput(Rect rect, string key, string value, string face, int pixels, int align,
         int padding, bool focused, TextEditor? editor, Color ink, float? anchorTop);
     GUIStyle? input;
@@ -56,6 +57,7 @@ internal sealed class StudioUiTheme
         var raster = type.Assembly.GetType("InFalsusStudio.NativeEditorUI.UiFontRaster")!;
         measure = (Func<string, string, int, int>)Delegate.CreateDelegate(typeof(Func<string, string, int, int>),
             raster.GetMethod("Measure", StudioBridge.Flags)!);
+        wrap=(Func<string,string,int,float,string[]>)Delegate.CreateDelegate(typeof(Func<string,string,int,float,string[]>),raster.GetMethod("Wrap",StudioBridge.Flags)!);
     }
 
     internal void Use() { hostScale = Mathf.Max(.25f, (float)scaleField.GetValue(owner)!); setup(); }
@@ -86,6 +88,10 @@ internal sealed class StudioUiTheme
     }
     internal void Paragraph(Rect rect, string value, float size = 13, string color = "#7c9dad")
         => paragraph(rect, value, DesignSize(size), ColorOf(color));
+    internal float ParagraphHeight(string value,float width,float size=13)
+    {
+        int pixels=fontPixels(DesignSize(size));return Math.Max(1,wrap(value,ChineseFace,pixels,width).Length)*(pixels+3);
+    }
     internal void Panel(Rect rect)
     {
         Fill(rect, "#0c202bfa");

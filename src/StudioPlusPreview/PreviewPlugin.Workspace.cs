@@ -64,7 +64,7 @@ public sealed partial class PreviewPlugin
                 if(imagePath.Length==0&&Surface.BackgroundControlPasses>0&&!model.Definition(model.Document.Runtime.Nodes.Single(n=>n.Target=="background")).Original){StudioUiTheme.Fill(canvas,"#091923");theme.Label(canvas,"请先在背景栏选择图片",16,"#94b6c3",false,2);}}
             catch(Exception e){Error(e);}
         }
-        DrawInspector(layout.Inspector);DrawTimeline(layout.Timeline);HandleLibraryDrop();
+        DrawInspector(layout.Inspector);DrawTimeline(layout.Timeline);HandleLibraryDrop();DrawEffectTooltip();
         if(sliderEditing&&Event.current.rawType==EventType.MouseUp){sliderEditing=false;Queue(()=>model.Commit());}
         if((textParameter!=null||keyTimeDirty)&&!OwnsText&&GUIUtility.hotControl==0&&!textCommitQueued){textCommitQueued=true;Queue(FinishText);}
     }
@@ -111,7 +111,7 @@ public sealed partial class PreviewPlugin
                     var definition=definitions[i];var item=R(0,i*55,w-38,48);StudioUiTheme.Fill(item,libraryCandidate==definition?"#244955":"#102a36");
                     int cardControl=GUIUtility.GetControlID(0x56464c+definition.Id.GetHashCode(),FocusType.Passive,item);
                     theme.Label(R(8,i*55+3,w-82,25),theme.Fit(definition.Label,(w-82)*UiScale),13,"#c9e9ee");
-                    theme.Label(R(8,i*55+27,w-82,17),definition.BackgroundSource.Length>0?"底图效果 · 拖入时间轴":"效果 · 拖入时间轴",11,"#7c9dad");
+                    theme.Label(R(8,i*55+27,w-82,17),theme.Fit(EffectNotes.For(definition).Summary,(w-82)*UiScale,11),11,"#7c9dad");
                     if(theme.Button(R(w-68,i*55+8,27,30),"+",false,false,18))Queue(()=>AddLibraryEffect(definition,CurrentSeconds));
                     if(Event.current.type==EventType.Repaint)RegisterLibraryHit(definition,item,cardControl,rect,w);
                     var e=Event.current;

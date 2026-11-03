@@ -36,11 +36,13 @@ public sealed partial class PreviewPlugin
                     });
                 }
                 float y=node.Target=="postprocess"?239:132;
+                var definition=model.Definition(node);
+                HelpParagraph(EffectNotes.Help(definition),w,ref y);
                 var parameters=model.Catalog.Parameters.Where(p=>p.Binding.Node==node.Id&&!model.Definition(node).Parameters.Single(v=>v.Property==p.Binding.Property).Hidden).ToArray();
                 var parameter=parameters.FirstOrDefault(p=>p.Id==selectedParameter);
                 if(model.Definition(node).SourceDirectory.Length>0) {
                     DrawShaderProperties(parameters,w,ref y);
-                    if(parameter!=null&&model.Keys.Any(k=>k.Id==selectedKey&&k.ParameterId==parameter.Id))DrawParameterInspector(parameter,w,ref y);
+                    if(parameter!=null&&model.Keys.Any(k=>k.Id==selectedKey&&k.ParameterId==parameter.Id))DrawParameterInspector(parameter,w,ref y,false);
                 }else {
                 if(theme.Button(R(16,y,w-32,32),theme.Fit(parameter?.Label??"选择参数",(w-60)*UiScale,14)+"  ▾",parameterPicker,false,14))parameterPicker=!parameterPicker;y+=43;
                 if(parameterPicker) {
@@ -66,6 +68,7 @@ public sealed partial class PreviewPlugin
         foreach(var p in parameters) {
             if(theme.Button(R(16,y,w-70,25),theme.Fit(p.Label,(w-80)*UiScale,13),selectedParameter==p.Id,false,13)){FinishText();model.Commit();selectedParameter=p.Id;selectedKey="";curveComponent=0;}
             if(theme.Button(R(w-48,y,31,25),"◆",false,false,13))Queue(()=>{selectedParameter=p.Id;selectedKey=model.AddKey(p.Id,CurrentSeconds);});y+=32;
+            if(selectedParameter==p.Id)HelpParagraph(EffectNotes.Parameter(model.Definition(model.RenderDocument.Nodes.Single(n=>n.Id==p.Binding.Node)),p.Binding.Property),w,ref y);
             int index=model.Catalog.Parameters.ToList().FindIndex(v=>v.Id==p.Id);var value=model.Values[index].Number;
             int count=p.Binding.Kind==ParameterKind.Float?1:4;
             for(int c=0;c<count;c++) {
@@ -75,9 +78,10 @@ public sealed partial class PreviewPlugin
             theme.Rule(R(16,y,w-32,1));y+=12;
         }
     }
-    void DrawParameterInspector(ParameterDescriptor p,float w,ref float y)
+    void DrawParameterInspector(ParameterDescriptor p,float w,ref float y,bool showHelp=true)
     {
         var theme=ui!;var model=Model!;
+        if(showHelp)HelpParagraph(EffectNotes.Parameter(model.Definition(model.RenderDocument.Nodes.Single(n=>n.Id==p.Binding.Node)),p.Binding.Property),w,ref y);
         if(theme.Button(R(16,y,(w-40)/2,29),"◆ 关键帧",false,false,13))Queue(()=>selectedKey=model.AddKey(p.Id,CurrentSeconds));
         var marker=model.Keys.FirstOrDefault(k=>k.Id==selectedKey&&k.ParameterId==p.Id);
         bool enabled=GUI.enabled;GUI.enabled=enabled&&marker!=null;

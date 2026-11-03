@@ -2,6 +2,8 @@
 
 先读 README.md、docs/vfx/DEVELOPMENT.md、CONTRIBUTING.md 和 vfx-project.json；按当前任务再查宿主或快照的说明。用户在会话中的要求优先于本文。
 
+效果选型、参数含义和工程问答先查 [效果知识卡](docs/vfx/reference/index.md)，按问题读取对应条目，无需预习外部教程。卡片是可自由取舍的参考；区分代码事实、创作用法与尚未确认的动态表现。编辑器说明与卡片共用 `docs/vfx/reference/effect-notes.json`，修改后运行 `scripts/Generate-EffectReference.py` 保持一致。
+
 ## 项目身份与源码
 
 - 本仓库负责 Studio+ 内的异象创作、BG/Shader、关键帧、演出预览与导出。演出核心已迁入 src/Presentation；独立演出视图、关键帧时间轴与预览位于 src/StudioPlusPreview，验证范围见 docs/vfx/VALIDATION.md。

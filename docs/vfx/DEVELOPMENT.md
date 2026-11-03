@@ -25,6 +25,7 @@ Studio+ 源码固定于提交 `2c8c63722948b8e739f0eef6ebd0478cdf8ddd3d`，快�
 | [src/ShaderAssets](../../src/ShaderAssets/) | 独立 Unity Shader 资源工程，不使用上游根工程构建 |
 | [tests](../../tests/) | 67 项参数检查、129 项创作工程检查及通用契约夹具 |
 | [scripts](../../scripts/) | 插件与资源构建、独立副本生成、静音运行检查 |
+| [效果知识卡](reference/index.md) | 效果用途、参数语义、组合预设、源码依据与 agent 问答入口 |
 | [studio_icon_work/Source](../../Mods/StudioPlusSnapshots/1.079-20261102/studio_icon_work/Source/) | 所选增强主插件的 160 个 C# 源文件 |
 
 快照中的开发机路径与历史检查不是本机安装指令。需要修改宿主或增强插件时，先核对实际调用链和文件指纹。
@@ -78,6 +79,7 @@ dotnet run --project tests/Project.Checks/Project.Checks.csproj -c Release -- .
 ## 接入约定
 
 - GUI 只控制 `PreviewModel`；数据求值和事务属于共享层，渲染资源属于 `PreviewSurface`，宿主时间与对话框属于 `StudioBridge`。
+- 效果说明由 `docs/vfx/reference/effect-notes.json` 同时供给插件与知识卡。更新语义后运行 `python scripts/Generate-EffectReference.py`；不把未知自定义 Shader 的同名参数解释为内置含义，也不将未验收的分支补写成确定观感。
 - `StudioUiTheme` 复用当前宿主的 UI 绘制组件和皮肤；字体资源由宿主管理，插件不复制或销毁它们。组件清单和草稿隔离边界见 [UI_COMPONENTS.md](UI_COMPONENTS.md)。
 - 预览使用经 Studio+ 适配的显示时刻，另保留音频偏移信息，避免二次偏移；SV 不是时钟。时间驱动 Shader 不自行累计 `Time.time`。
 - 参数与关键帧拖动松手一次提交，取消恢复；材质在数值变化时复用。材质图替换使用共享事务，公共轨道和身份保留，其余可撤销恢复。
