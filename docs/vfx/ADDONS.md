@@ -53,6 +53,10 @@ ExampleAddon/
 
 `Build-GameRuntime.ps1 -GameReferenceRoot '<匹配的参考游戏>'` 只构建 DLL，不安装到参考游戏。`Build-GameAddonAssets.ps1` 用匹配 Unity 构建资源；`Prepare-GameExport.py` 按实测 Unity/色彩空间准备制作端缓存。脚本不内置开发机路径。
 
+资源构建可选 `-ShaderSource '<背景 Shader>'`，要求提供 `_MainTex`。自定义源码使用内容标识生成独立内部 Bundle 名称和默认输出目录，避免覆盖通用背景资源或与已加载包重名。该入口负责构建，不代表 Studio 的通用导出按钮已支持任意自定义 Shader。
+
+`templates/game-addon/FlowFeedbackBackground.shader` 提供轻量流场与嵌套缩放/旋转参考：一次背景图片采样，可独立驱动三个强度/旋转参数和变换中心，不使用历史帧或附加全屏 Pass。没有性能帧时间验收，单次采样也不等于零成本。
+
 `New-GameSandbox.py` 创建新的物理副本，使用独立产品名和可执行文件名。`Check-GameAddonRuntime.ps1` 只接受有标记的副本；使用真实 IL2CPP/C2D 与合成时钟检查，不模拟键鼠或进入歌曲。测试插件不进入手动验收启动目录。
 
 实际进歌、原生暂停/返回选曲、视觉一致性和全尺寸帧时间仍待人工验收，详见[验证记录](VALIDATION.md)。

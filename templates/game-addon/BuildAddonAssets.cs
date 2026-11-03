@@ -30,14 +30,17 @@ public static class BuildAddonAssets
         if(!material){material=new Material(shader);AssetDatabase.CreateAsset(material,"Assets/Background.mat");}
         material.shader=shader;EditorUtility.SetDirty(material);AssetDatabase.SaveAssets();
         var output=Environment.GetEnvironmentVariable("VFX_GAME_ASSET_OUTPUT");Directory.CreateDirectory(output);
+        var bundleName=Environment.GetEnvironmentVariable("VFX_GAME_BUNDLE_NAME")??"background.bundle";
         var result=BuildPipeline.BuildAssetBundles(output,new[]{new AssetBundleBuild{
-            assetBundleName="background.bundle",assetNames=new[]{"Assets/Background.mat"},addressableNames=new[]{"vfx/addon-background"}}},
+            assetBundleName=bundleName,assetNames=new[]{"Assets/Background.mat"},addressableNames=new[]{"vfx/addon-background"}}},
             BuildAssetBundleOptions.ChunkBasedCompression|BuildAssetBundleOptions.StrictMode|BuildAssetBundleOptions.ForceRebuildAssetBundle,BuildTarget.StandaloneWindows64);
         if(result==null)throw new InvalidOperationException("AssetBundle build failed");
-        var bundle=AssetBundle.LoadFromFile(Path.Combine(output,"background.bundle"));
+        var builtFile=Path.Combine(output,bundleName);
+        var bundle=AssetBundle.LoadFromFile(builtFile);
         if(!bundle)throw new InvalidOperationException("Built bundle did not load");
-        try{var test=bundle.LoadAsset<Material>("vfx/addon-background");if(!test||!test.HasProperty("_GradeOpacity"))throw new InvalidOperationException("Built material contract failed");}
+        try{var test=bundle.LoadAsset<Material>("vfx/addon-background");if(!test||!test.HasProperty("_MainTex"))throw new InvalidOperationException("Built material contract failed");}
         finally{bundle.Unload(true);}
+        if(bundleName!="background.bundle")File.Copy(builtFile,Path.Combine(output,"background.bundle"),true);
         File.WriteAllText(Path.Combine(output,"build-info.json"),"{\"unityVersion\":\""+Application.unityVersion+"\",\"colorSpace\":\""+space+"\",\"platform\":\"StandaloneWindows64\"}");
         Debug.Log("VFX_GAME_ASSETS_VERIFIED "+output);
     }

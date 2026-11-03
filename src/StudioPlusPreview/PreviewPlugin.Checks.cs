@@ -94,6 +94,7 @@ public sealed partial class PreviewPlugin
             CheckCurveEditing(Assert,Path.GetDirectoryName(output)!);
             CheckBackgroundControls(Assert,Path.GetDirectoryName(output)!);
             CheckAddonExport(Assert,Path.GetDirectoryName(output)!);
+            CheckBackgroundProject(Assert,hashes);
             var report=new {ok=true,checks,hashes,unity=Application.unityVersion,colorSpace=QualitySettings.activeColorSpace.ToString(),
                 graphics=SystemInfo.graphicsDeviceType.ToString(),uiVisuallyReviewed=false,audioPlayed=false,gameStarted=false};
             File.WriteAllText(output,JsonConvert.SerializeObject(report,Json));

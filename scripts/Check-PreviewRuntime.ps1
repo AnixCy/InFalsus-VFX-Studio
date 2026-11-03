@@ -4,7 +4,8 @@ param(
     [string]$PluginDirectory,
     [string]$ProjectFixture,
     [string]$EffectFixture,
-    [string]$SourceFixture
+    [string]$SourceFixture,
+    [string]$BackgroundProject
 )
 $ErrorActionPreference='Stop'
 $taskRoot=[IO.Path]::GetFullPath($PreviewPath)
@@ -24,6 +25,7 @@ try{
     if($ProjectFixture){$taskArgs+=@('-vfx-project-fixture',('"'+[IO.Path]::GetFullPath($ProjectFixture)+'"'))}
     if($EffectFixture){$taskArgs+=@('-vfx-effect-fixture',('"'+[IO.Path]::GetFullPath($EffectFixture)+'"'))}
     if($SourceFixture){$taskArgs+=@('-vfx-source-fixture',('"'+[IO.Path]::GetFullPath($SourceFixture)+'"'))}
+    if($BackgroundProject){$taskArgs+=@('-vfx-background-project',('"'+[IO.Path]::GetFullPath($BackgroundProject)+'"'))}
     $taskProcess=Start-Process -FilePath $taskExe -ArgumentList $taskArgs -WorkingDirectory $taskRoot -WindowStyle Hidden -PassThru
     if(-not $taskProcess.WaitForExit(45000)){Stop-Process -Id $taskProcess.Id;throw 'The owned check process exceeded 45 seconds.'}
     if($taskProcess.ExitCode -ne 0){throw ('Runtime checks failed with exit code '+$taskProcess.ExitCode+'; see player.log and checks.json.')}

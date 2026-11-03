@@ -82,7 +82,9 @@ public sealed class Entry:MelonMod
                 case 3:
                     if(!host!.IsActive||bindings!.CurrentMaterial(bindings.Background)==original!.Pointer){if(Wait(10))throw new Exception("Addon did not activate");return;}
                     var active=new Material(bindings.CurrentMaterial(bindings.Background));
-                    Check(active.shader.name=="InFalsusVFX/AddonBackground","actual IL2CPP component uses the exported shader");
+                    var arguments=Environment.GetCommandLineArgs();int expectedAt=Array.IndexOf(arguments,"-vfx-expected-shader");
+                    string expectedShader=expectedAt>=0?arguments[expectedAt+1]:"InFalsusVFX/AddonBackground";
+                    Check(active.shader.name==expectedShader,"actual IL2CPP component uses the exported shader");
                     Check(Math.Abs(active.GetFloat("_Brightness")-.9)<.001,"actual material receives interpolated exported keys");
                     Check(active.GetTexture("_MainTex")!=null&&host.Diagnostics.Images==1,"external addon image loaded and owned");
                     Check(host.Diagnostics.RenderRegistrations==0&&host.Diagnostics.PassesRecorded==0,"background addon registers no postprocess passes");
