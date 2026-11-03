@@ -11,6 +11,7 @@ public sealed class EffectParameter
     public double[] Value { get; set; }=new[]{0.0};
     public double Min { get; set; }
     public double Max { get; set; }=1;
+    public bool Hidden {get;set;}
 }
 public sealed class EffectDefinition
 {
@@ -21,6 +22,8 @@ public sealed class EffectDefinition
     public string Material { get; set; }="vfx/parameter-preview";
     public bool Original { get; set; }
     public string Category { get; set; }="";
+    public string SourceDirectory {get;set;}="";
+    [JsonIgnore] public string LegacyLabel {get;set;}="";
     public string[] Keywords { get; set; }=Array.Empty<string>();
     public EffectParameter[] Parameters { get; set; }=Array.Empty<EffectParameter>();
 }
@@ -79,9 +82,11 @@ public sealed partial class EffectLibrary
                 if(!effect.Original||!effect.Bundle.StartsWith("Effects/",StringComparison.Ordinal)||effect.Parameters.Length>256)
                     throw new InvalidDataException("无效的本地效果目录。");
                 EffectPackage.ResolveAsset(folder,effect.Bundle);
+                effect.Category="预设";NamePreset(effect);
                 library.Effects.Add(effect);
             }
         }
+        library.AddCuratedEffects();
         library.LoadCustom(folder);
         foreach(var effect in library.Effects)Prepare(effect);
         return library;

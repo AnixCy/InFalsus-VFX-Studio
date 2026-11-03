@@ -23,7 +23,9 @@ internal sealed class StudioUiTheme
     string? pointerKey;
     int pointerAnchor;
     float hostScale;
-    internal float Scale => Mathf.Max(.8f, HostScale);
+    internal float? LayoutScale;
+    internal float BaseScale=>Mathf.Max(.8f,HostScale);
+    internal float Scale => LayoutScale??BaseScale;
     float HostScale => hostScale;
     internal GUISkin Skin => (GUISkin)skinField.GetValue(owner)!;
 
@@ -70,6 +72,12 @@ internal sealed class StudioUiTheme
     }
     internal void Label(Rect rect, string value, float size = 16, string color = "#a6c3d1", bool numeric = false, int align = 0)
         => text(rect, value, DesignSize(size), ColorOf(color), numeric ? NumberFace : ChineseFace, align);
+    internal string Fit(string value,float width,float size=13)
+    {
+        int pixels=fontPixels(DesignSize(size));if(measure(value,ChineseFace,pixels)<=width)return value;
+        int lo=0,hi=value.Length;while(lo<hi){int mid=(lo+hi+1)/2;if(measure(value.Substring(0,mid)+"…",ChineseFace,pixels)<=width)lo=mid;else hi=mid-1;}
+        if(lo>0&&char.IsHighSurrogate(value[lo-1]))lo--;return value.Substring(0,lo)+"…";
+    }
     internal bool Button(Rect rect, string value, bool active = false, bool boxed = true, float size = 15)
     {
         bool pressed=button(rect,value,DesignSize(size),active,boxed);

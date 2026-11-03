@@ -53,20 +53,20 @@ public sealed partial class PreviewPlugin
                 if(item.Parameter==null) {
                     StudioUiTheme.Fill(new Rect(0,y,rect.width,row),selectedEffect==node.Id&&selectedParameter.Length==0?"#23424e":"#122d38");
                     theme.Label(new Rect(8*s,y,20*s,row),collapsedEffects.Contains(node.Id)?"▸":"▾",13);
-                    theme.Label(new Rect(30*s,y,names-55*s,row),Model.NodeLabel(node),13,node.Enabled?"#c9e9ee":"#65828d");
+                    theme.Label(new Rect(30*s,y,names-55*s,row),theme.Fit(Model.NodeLabel(node),names-55*s),13,node.Enabled?"#c9e9ee":"#65828d");
                     theme.Label(new Rect(names-22*s,y,20*s,row),node.Enabled?"●":"○",12);
                     float left=Mathf.Max(names,TimeX(node.StartSeconds)-rect.x);
                     float right=node.EndSeconds.HasValue?TimeX(node.EndSeconds.Value)-rect.x:rect.width-12*s;
                     right=Mathf.Min(rect.width-12*s,right);
                     if(right>left) {
                         var clip=new Rect(left,y+4*s,right-left,row-8*s);StudioUiTheme.Fill(clip,node.Enabled?"#426576":"#243c46");
-                        theme.Label(new Rect(left+8*s,y,right-left-12*s,row),node.Target=="background"?"背景":Model.NodeLabel(node),12,"#d3edf0");
+                        if(right-left>28*s)theme.Label(new Rect(left+8*s,y,right-left-12*s,row),theme.Fit(node.Target=="background"?"背景":Model.NodeLabel(node),right-left-12*s,12),12,"#d3edf0");
                         StudioUiTheme.Fill(new Rect(right-3*s,y+6*s,2*s,row-12*s),"#91bac4");
                     }
                 }else {
                     var p=Model.Catalog.Get(item.Parameter);
                     if(p.Id==selectedParameter)StudioUiTheme.Fill(new Rect(0,y,rect.width,row),"#173743");
-                    theme.Label(new Rect(30*s,y,names-40*s,row),p.Label,12);
+                    theme.Label(new Rect(30*s,y,names-40*s,row),theme.Fit(p.Label,names-40*s,12),12);
                     if(p.Id==selectedParameter&&Event.current.type==EventType.Repaint)DrawParameterCurve(p,new Rect(names,y,rect.width-names-12*s,row));
                     foreach(var key in Model.Keys.Where(k=>k.ParameterId==p.Id)) {
                         double seconds=key.Id==selectedKey&&Model.MovingSeconds.HasValue?Model.MovingSeconds.Value:key.Seconds;
@@ -80,7 +80,6 @@ public sealed partial class PreviewPlugin
             float head=TimeX(CurrentSeconds)-rect.x;
             if(head>=names&&head<rect.width)StudioUiTheme.Fill(new Rect(head,0,2*s,timelineBody.height),"#b4efef");
         }finally{GUI.EndGroup();}
-        TimelineInput(rows,row,names);
     }
     void DrawParameterCurve(ParameterDescriptor p,Rect area)
     {
@@ -119,7 +118,6 @@ public sealed partial class PreviewPlugin
     {
         if(libraryCandidate!=null)return;
         var e=Event.current;var point=e.mousePosition;
-        timelineControl=GUIUtility.GetControlID(0x564654,FocusType.Passive);
         if(e.type==EventType.ScrollWheel&&(timelineBody.Contains(point)||timelineRuler.Contains(point))) {
             if(e.control||e.command) {double at=XTime(point.x),fraction=(point.x-timelineRuler.x)/timelineRuler.width;
                 timelineSpan=Math.Clamp(timelineSpan*Math.Pow(1.15,e.delta.y),.1,600);timelineStart=Math.Max(0,at-fraction*timelineSpan);}

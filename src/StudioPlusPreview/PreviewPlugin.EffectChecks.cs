@@ -17,7 +17,7 @@ public sealed partial class PreviewPlugin
             string a=model.AddEffect(ripple,2),b=model.AddEffect(ripple,2);
             check(a!=b&&model.Document.Runtime.Nodes.Length==4,"adding the same effect twice creates independent stack instances");
             check(TimelineRows().Count(r=>r.Parameter!=null)==2,"new effects do not populate the timeline with unused parameter tracks");
-            var rows=TimelineRows().Select(r=>r.Node+":"+r.Parameter).ToArray();libraryFilter="官谱";
+            var rows=TimelineRows().Select(r=>r.Node+":"+r.Parameter).ToArray();libraryFilter="预设";
             check(TimelineRows().Select(r=>r.Node+":"+r.Parameter).SequenceEqual(rows),"library category selection leaves the unified timeline intact");
             var snapshot=Bridge.Snapshot() with{AudioSeconds=1,ChartSeconds=1};
             string before=HashTarget(Surface!.Render(model,snapshot,96,64));

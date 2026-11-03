@@ -26,6 +26,7 @@ public sealed partial class PreviewPlugin
         var previous=GUI.skin;
         try {
             ui.Use();
+            ui.LayoutScale=WorkspaceLayout.ScaleFor(Screen.width,Screen.height,ui.BaseScale);
             if(decision!=PendingDecision.None){DrawDecision();return;}
             if(stopped||Bridge.Exporting||actionRunning||quitPermit)return;
             if(Bridge.AuthoringView){DrawWorkspace();return;}
@@ -39,7 +40,7 @@ public sealed partial class PreviewPlugin
     void Scalar(string id,string label,int component,float value,float min,float max,float y,float width)
     {
         string key=id+":"+component;
-        ui!.Label(R(0,y,width-104,27),label);
+        ui!.Label(R(0,y,width-104,27),ui.Fit(label,(width-104)*UiScale,14),14);
         string control="vfx_number_"+key;
         bool focused=GUI.GetNameOfFocusedControl()==control;
         string current=focused&&drafts.TryGetValue(key,out var draft)?draft:value.ToString("0.###",CI);

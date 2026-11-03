@@ -183,6 +183,15 @@ internal sealed class PreviewSurface:IDisposable
         scene=post=alternate=null;width=height=0;
     }
     internal void Suspend()=>ReleaseTargets();
+    internal void ReleaseSource(string directory)
+    {
+        foreach(var pair in resources.Where(p=>string.Equals(p.Value.Definition.SourceDirectory,directory,StringComparison.OrdinalIgnoreCase)).ToArray()) {
+            Object.DestroyImmediate(pair.Value.Material);resources.Remove(pair.Key);
+        }
+        foreach(var path in bundles.Keys.Where(path=>!resources.Values.Any(r=>r.Definition.Bundle==path)&&path!="preview.bundle").ToArray()) {
+            bundles[path].Unload(true);bundles.Remove(path);
+        }
+    }
     public void Dispose()
     {
         ReleaseTargets();foreach(var r in resources.Values)Object.DestroyImmediate(r.Material);resources.Clear();

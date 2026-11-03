@@ -13,7 +13,7 @@ InFalsus VFX Studio 是 Studio+ 的演出创作扩展。现已迁入共享求值
 | 原版编辑器宿主 | Studio Windows Mono 1.0.10；根目录 `Assets/`、`Packages/`、`ProjectSettings/` |
 | 增强插件源码 | Studio+ 内部 1.079；公开版本 1.0.7，绑定程序集 1.0.7.0 |
 | 本次运行基线 | 已有 Studio+ 1.0.7 build1030 完整应用；未重建完整 1.079 主插件 |
-| 本项目 | 演出编辑插件 0.3.0 原型，尚无正式应用发行版本 |
+| 本项目 | 演出编辑插件 0.4.0 原型，尚无正式应用发行版本 |
 
 Studio+ 源码固定于提交 `2c8c63722948b8e739f0eef6ebd0478cdf8ddd3d`，快照在 [Mods/StudioPlusSnapshots/1.079-20261102](../../Mods/StudioPlusSnapshots/1.079-20261102/README.md)。历史快照用于溯源，不叠加安装。
 
@@ -71,6 +71,8 @@ dotnet run --project tests/Project.Checks/Project.Checks.csproj -c Release -- .
 
 `-EffectFixture '<构建出的 effect.json>'` 额外验证自定义 Shader 导入、缓存、参数、局部时间和旧工程新增效果后的保存；这些检查会在隔离测试安装内写入自定义缓存及一条故意损坏的缓存夹具，不能针对用户正在使用的安装运行。构建入口及格式见 [CUSTOM_EFFECTS.md](CUSTOM_EFFECTS.md)。
 
+运行检查还生成 `SourceFixture` 源码模板。构建两次并调整第二次 Shader 后，传入 `-SourceFixture` 验证多实例更新、关键帧身份与 GPU 撤销/重做。源码构建使用独占锁、版本化输出和带所有权标记的 Unity 缓存；失败保留上次成功输出。
+
 本次结果和未验收范围见 [VALIDATION.md](VALIDATION.md)。实际操作和视觉由人工验收，自动检查不替代它们。
 
 ## 接入约定
@@ -80,7 +82,7 @@ dotnet run --project tests/Project.Checks/Project.Checks.csproj -c Release -- .
 - 预览使用经 Studio+ 适配的显示时刻，另保留音频偏移信息，避免二次偏移；SV 不是时钟。时间驱动 Shader 不自行累计 `Time.time`。
 - 参数与关键帧拖动松手一次提交，取消恢复；材质在数值变化时复用。材质图替换使用共享事务，公共轨道和身份保留，其余可撤销恢复。
 - 演出视图禁用谱面相机、GUI 和编辑更新，返回时恢复并释放预览画布。隔离画布最多 2048×1440；只在演出视图绘制，不处理制谱视图的每帧材质。
-- 演出 OnGUI 隔离前缀必须先于宿主热键捕获；绑定解析直接读取宿主实时 `StudioHotkeys`，不调用制谱动作分发，也不复制第二套持久化设置。数值输入保留文本编辑按键；按住预览需处理释放和失焦。
+- 演出 OnGUI 隔离前缀在入口立即解析按键；实际窗口的 KeyDown 可能到不了后置回调。绑定直接读取宿主实时 `StudioHotkeys`，不调用制谱动作分发，不复制第二套设置。不得全局替换 Layout/Repaint 事件；文本输入保留编辑按键。
 - 退出确认使用单个非阻塞界面，原生文件操作由动作队列互斥执行。`Application.Quit` 延后处理，授权最多消费一次，其他订阅者阻止退出时未用授权会过期；不要在退出回调内启动消息循环或弹窗。
 - 演出工程独立于 SPC；原编辑器的谱面保存逻辑不变。`timinggroup`、`noinput` 等已有扩展不是本项目的演出格式。
 - `MaterialNodeDocument` 的实例身份、名称、启停和区间属于演出核心；区间移动通过 `SetNodeRange` 保留关键帧身份。新实例需声明 `effect.instances`，旧游戏适配器未接入此能力。效果库筛选只影响检索，不能改变时间轴内容。

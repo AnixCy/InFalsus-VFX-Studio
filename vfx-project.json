@@ -40,11 +40,11 @@
     "previewBuild": "scripts/Build-Preview.ps1"
   },
   "preview": {
-    "pluginVersion": "0.3.0",
+    "pluginVersion": "0.4.0",
     "testedStudioBinary": "1.0.7 build1030",
     "unityVersion": "6000.3.25f1",
     "coreChecks": 196,
-    "runtimeChecks": 165,
+    "runtimeChecks": 200,
     "visualAcceptance": "pending",
     "interactiveAcceptance": "pending",
     "full1079PluginVerified": false,
@@ -52,7 +52,9 @@
     "independentAuthoringView": true,
     "officialMaterialPairs": 12,
     "effectInstances": true,
-    "customShaderImport": true
+    "customShaderImport": true,
+    "sourceWorkspace": true,
+    "backgroundSection": true
   },
   "presentationCoreImported": true,
   "presentationUiImplemented": true,

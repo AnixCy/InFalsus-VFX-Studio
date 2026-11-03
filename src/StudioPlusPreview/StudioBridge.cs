@@ -78,5 +78,6 @@ internal sealed class StudioBridge
             seek, true, Time.realtimeSinceStartupAsDouble);
     }
     internal static string Open(string title, string ext) => (string)Dialogs.GetMethod("Open", Flags)!.Invoke(null, new object[] { title, "", ext })!;
+    internal static string Folder(string title)=>(string)Dialogs.GetMethod("Folder",Flags)!.Invoke(null,new object[]{title,""})!;
     internal static string Save(string name) => (string)Dialogs.GetMethod("Save", Flags)!.Invoke(null, new object[] { "保存演出工程", "", name, "json" })!;
 }

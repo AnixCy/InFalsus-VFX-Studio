@@ -75,7 +75,7 @@ public sealed partial class PreviewPlugin
         check(BlackTarget(faded),"utility fade renders to black on the actual GPU");
         timeline.UpdateParameter("adjust/_Fade",new ParameterValue(new NVector4(0,0,0,0)));timeline.Commit();
         check(HashTarget(Surface.Render(timeline,Bridge.Snapshot(),96,64))==normal,"reset utility fade exactly restores the isolated preview");
-        var originals=timeline.Library.Effects.Where(e=>e.Original).ToArray();
+        var originals=timeline.Library.Effects.Where(e=>e.Original&&e.Category=="预设").ToArray();
         string commonKey=timeline.AddKey("adjust/_Exposure",.25);
         check(originals.Length==24,"local library contains twelve original background/postprocess pairs");
         foreach(var background in originals.Where(e=>e.Target=="background")) {

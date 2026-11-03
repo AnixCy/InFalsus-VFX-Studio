@@ -1,14 +1,18 @@
 # 自定义 Shader 与程序化效果
 
-0.3.0 提供效果库“导入自定义效果”入口。导入描述文件后，效果出现在库中，拖到统一时间轴创建独立实例；导入本身不修改当前工程。
+0.4.0 的“自定义”分类提供新建/打开源码模板、外部编辑器与构建更新。已有编译资源仍可通过“导入已编译效果”加入库，拖到统一时间轴创建独立实例。
 
 ## 使用与制作
 
 测试包的 `CustomEffects/SampleCompiled/effect.json` 可直接导入。相邻 Bundle 已构建，使用者无需安装 Unity、Python 或 SDK。
 
-制作新效果时，编辑 `CustomEffects/templates/custom-effect/ProceduralPulse.shader` 与 `effect.json`，运行 `CustomEffects/Build-Sample.bat`。首次选择匹配版本的 Unity Editor，之后保存在本地工具链设置。构建输出使用新目录，保留原输出与源码；导入新输出的 `effect.json`。
+制作新效果：在“自定义”点“新建模板”，选择父目录；生成独立的 `Effect.shader`、`effect.json`、工程标记及 VS Code 构建任务。有 VS Code 时直接打开，否则打开文件夹供任意编辑器使用。
 
-源码构建需要 Unity **6000.3.25f1**。本轮已验证单 Shader 与同目录 `.hlsl/.cginc` 构建、打包脚本副本独立运行及实际 D3D11 导入。当前不提供运行时 HLSL 编译、源码热重载或用户 C# DLL 执行。
+修改后按 Ctrl+Shift+B，或点编辑器“构建并更新”/运行模板中的 Build.cmd。首次定位匹配版本 Unity，之后保存工具链位置。成功构建自动加入效果库并更新当前源码关联实例，保留名称、区间及匹配属性/类型的默认值和关键帧。一次更新一次撤销，旧 Shader 修订仍可恢复。删除或改变类型的参数只在旧修订中保留；不会猜测迁移。
+
+模板的 `.vfx/cache` 是可复用的生成工程，`.vfx/build` 保存编译修订，`.vfx/latest-build.json` 只指向最近成功结果。失败保留原效果，状态和日志在 `.vfx`。重叠构建被独占锁拒绝；不覆盖已有源码目录。自动更新可关闭并持久保存，目前监听所选的一个源码工程。
+
+源码构建需要 Unity **6000.3.25f1**。本轮已验证单 Shader 与同目录 `.hlsl/.cginc` 构建、打包脚本副本独立运行及实际 D3D11 导入。当前不提供游戏运行时 HLSL 编译或用户 C# DLL 执行；编辑器更新以外部 Unity 成功编译为界。
 
 仓库命令：
 

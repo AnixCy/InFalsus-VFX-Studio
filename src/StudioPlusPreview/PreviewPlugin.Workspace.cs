@@ -3,7 +3,7 @@ using UnityEngine;
 namespace InFalsus.Vfx.StudioPlus;
 public sealed partial class PreviewPlugin
 {
-    string selectedParameter="adjust/_Exposure",selectedKey="",selectedEffect="adjust",keyTimeText="",libraryFilter="全部";
+    string selectedParameter="adjust/_Exposure",selectedKey="",selectedEffect="adjust",keyTimeText="",libraryFilter="效果",sidebar="效果库";
     bool autoKey=true,keyTimeDirty,draggingKey,parameterPicker;
     double timelineStart,timelineSpan=20;
     float trackScroll;
@@ -15,23 +15,27 @@ public sealed partial class PreviewPlugin
     Vector2 libraryDragOrigin;
     bool libraryDragging;
     string rangeNode="",rangeStart="",rangeEnd="",rangeName="";
-    void SelectNode(string id){selectedEffect=id;selectedParameter=selectedKey="";parameterPicker=false;rangeNode="";collapsedEffects.Remove(id);}
-    void AddLibraryEffect(EffectDefinition definition,double seconds)
+    float LibraryListTop=>libraryFilter=="自定义"?196:90;
+    void SelectNode(string id){selectedEffect=id;selectedParameter=selectedKey="";parameterPicker=false;rangeNode="";collapsedEffects.Remove(id);
+        var node=Model?.Document.Runtime.Nodes.FirstOrDefault(n=>n.Id==id);if(node!=null){var directory=Model!.Definition(node).SourceDirectory;
+            if(directory.Length>0&&sourceWorkspace?.Root!=directory)try{UseSource(SourceWorkspace.Open(directory));}catch(Exception e){sourceMessage=e.Message;}}}
+    void AddLibraryEffect(EffectDefinition definition,double seconds,int index=-1)
     {
-        SelectNode(Model!.AddEffect(definition,seconds));trackScroll=float.MaxValue;
+        SelectNode(Model!.AddEffect(definition,seconds,index));trackScroll=float.MaxValue;
         if(definition.Target=="postprocess")Bridge.SeekSeconds(Model.Document.Runtime.Nodes.Single(n=>n.Id==selectedEffect).StartSeconds);
         status=definition.Target=="background"?"已替换底图材质；可撤销。":"已添加独立效果；选择参数并打关键帧后加入时间轴。";
     }
     void DrawWorkspace()
     {
         var theme=ui!;var model=Model!;float s=UiScale,w=Screen.width/s,h=Screen.height/s;
+        var layout=WorkspaceLayout.Calculate(Screen.width,Screen.height,s);
         if(!model.Document.Runtime.Nodes.Any(n=>n.Id==selectedEffect))SelectNode(model.Document.Runtime.Nodes.First().Id);
         if(selectedKey.Length>0&&!model.Keys.Any(k=>k.Id==selectedKey)&&model.EditedKey!=selectedKey)selectedKey="";
         if(selectedParameter.Length>0&&!model.Catalog.Parameters.Any(p=>p.Id==selectedParameter))selectedParameter="";
-        WorkspaceKeys();StudioUiTheme.Fill(new Rect(0,0,Screen.width,Screen.height),"#091923");
+        StudioUiTheme.Fill(new Rect(0,0,Screen.width,Screen.height),"#091923");
         if(theme.Button(R(12,10,100,32),"制谱视图",false,false))Queue(()=>{StopHeldPreview();CancelEffectDrag();Model!.Commit();Bridge.SetView(false);Surface?.Suspend();});
         if(theme.Button(R(124,10,70,32),"音频…"))Queue(ChooseWorkspaceAudio);
-        if(theme.Button(R(202,10,70,32),"图片…"))Queue(ChooseImage);
+        if(theme.Button(R(202,10,70,32),"背景")) {sidebar="背景";SelectNode("background");}
         if(theme.Button(R(280,10,70,32),"打开"))Queue(LoadProject);
         if(theme.Button(R(358,10,70,32),Dirty?"保存 *":"保存"))Queue(SaveProject);
         if(theme.Button(R(436,10,70,32),"另存为"))Queue(SaveAs);
@@ -39,21 +43,22 @@ public sealed partial class PreviewPlugin
         if(theme.Button(R(518,10,54,32),"撤销",false,false))Queue(model.Undo);
         GUI.enabled=enabled&&model.Session.CanRedo;
         if(theme.Button(R(578,10,54,32),"重做",false,false))Queue(model.Redo);GUI.enabled=enabled;
-        bool compact=w<1020;float playX=compact?12:646,playY=compact?52:10,top=compact?94:52;
+        bool compact=layout.Compact;float playX=compact?12:646,playY=compact?52:10,top=layout.Top;
         bool playing=Bridge.Snapshot().Transport==TransportState.Running;
         if(theme.Button(R(playX,playY,70,32),playing?"暂停":"播放",playing))Queue(Bridge.TogglePlayback);
         theme.Label(R(playX+80,playY,115,32),CurrentSeconds.ToString("0.000",CI)+" s",20,"#d3edf0",true,2);
         if(theme.Button(R(playX+208,playY,120,32),"自动关键帧",autoKey,false))autoKey=!autoKey;
         theme.Rule(R(0,top,w,1));
-        float left=Mathf.Clamp(w*.18f,180,240),right=Mathf.Clamp(w*.28f,250,320),timelineHeight=Mathf.Clamp(h*.36f,240,400),bottom=h-timelineHeight;
-        DrawLibrary(R(0,top+1,left,bottom-top-1));
-        canvas=R(left+12,top+13,w-left-right-24,bottom-top-25);StudioUiTheme.Fill(canvas,"#000000");
+        DrawLibrary(layout.Library);
+        var stage=layout.Stage;
+        float stageHeight=Mathf.Min(stage.height,stage.width*9/16);canvas=new Rect(stage.center.x-stageHeight*16/9/2,stage.center.y-stageHeight/2,stageHeight*16/9,stageHeight);
+        StudioUiTheme.Fill(stage,"#061119");StudioUiTheme.Fill(canvas,"#000000");
         if(Event.current.type==EventType.Repaint&&Surface!=null) {
             try{var texture=Surface.Render(model,Bridge.Snapshot(),Mathf.RoundToInt(canvas.width),Mathf.RoundToInt(canvas.height));
                 GUI.DrawTexture(canvas,texture,ScaleMode.ScaleToFit,false);RenderedFrames++;}
             catch(Exception e){Error(e);}
         }
-        DrawInspector(R(w-right,top+1,right,bottom-top-1));DrawTimeline(R(0,bottom,w,timelineHeight));HandleLibraryDrop();
+        DrawInspector(layout.Inspector);DrawTimeline(layout.Timeline);HandleLibraryDrop();
         if(sliderEditing&&Event.current.rawType==EventType.MouseUp){sliderEditing=false;Queue(()=>model.Commit());}
         if((textParameter!=null||keyTimeDirty)&&!OwnsText&&GUIUtility.hotControl==0&&!textCommitQueued){textCommitQueued=true;Queue(FinishText);}
     }
@@ -74,30 +79,44 @@ public sealed partial class PreviewPlugin
         if(!Directory.Exists(directory))throw new DirectoryNotFoundException("测试包缺少 CustomEffects 模板目录。");
         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(directory){UseShellExecute=true});
     }
-    string Category(EffectDefinition d)=>d.Original?"官谱":d.Category=="自定义"?"自定义":"通用";
+    string Category(EffectDefinition d)=>d.Category=="预设"?"预设":d.Category=="自定义"?"自定义":"效果";
     void DrawLibrary(Rect rect)
     {
         var theme=ui!;GUI.BeginGroup(rect);
         try {
-            float w=rect.width/UiScale;theme.Panel(new Rect(0,0,rect.width,rect.height));theme.Label(R(16,10,w-32,30),"效果库",20,"#c9e9ee");
-            if(theme.Button(R(12,48,w-24,29),"导入自定义效果…",false,false,14))Queue(ImportCustomEffect);
-            if(theme.Button(R(12,82,w-24,26),"程序化效果模板 / 构建",false,false,13))Queue(OpenCustomTemplates);
-            var filters=new[]{"全部","通用","官谱","自定义"};
-            for(int i=0;i<4;i++)if(theme.Button(R(10+i*(w-20)/4,118,(w-24)/4,27),filters[i],libraryFilter==filters[i],false,12))libraryFilter=filters[i];
-            var definitions=Model!.Library.Effects.Where(d=>d.Id!="utility"&&(libraryFilter=="全部"||Category(d)==libraryFilter)).ToArray();
-            libraryScroll=GUI.BeginScrollView(R(10,157,w-20,Mathf.Max(40,rect.height/UiScale-171)),libraryScroll,R(0,0,w-36,definitions.Length*55));
+            float w=rect.width/UiScale;theme.Panel(new Rect(0,0,rect.width,rect.height));
+            if(theme.Button(R(12,9,(w-28)/2,30),"效果库",sidebar=="效果库",false,14))sidebar="效果库";
+            if(theme.Button(R(16+(w-28)/2,9,(w-28)/2,30),"背景",sidebar=="背景",false,14)){sidebar="背景";SelectNode("background");}
+            if(sidebar=="背景"){DrawBackgroundSettings(w,rect.height/UiScale);return;}
+            var filters=new[]{"全部","效果","预设","自定义"};
+            for(int i=0;i<4;i++)if(theme.Button(R(10+i*(w-20)/4,51,(w-24)/4,27),filters[i],libraryFilter==filters[i],false,12))libraryFilter=filters[i];
+            if(libraryFilter=="自定义") {
+            if(theme.Button(R(12,88,(w-30)/2,29),"新建模板…",false,false,13))Queue(CreateSourceWorkspace);
+            if(theme.Button(R(18+(w-30)/2,88,(w-30)/2,29),"打开模板…",false,false,13))Queue(OpenSourceWorkspace);
+            bool enabled=GUI.enabled;GUI.enabled=enabled&&sourceWorkspace!=null;
+            if(theme.Button(R(12,122,(w-30)/2,29),"打开编辑器",false,false,13))Queue(OpenSourceInEditor);
+            GUI.enabled=enabled&&sourceWorkspace!=null&&sourceBuild==null;
+            if(theme.Button(R(18+(w-30)/2,122,(w-30)/2,29),sourceBuild==null?"构建并更新":"构建中…",false,true,12))Queue(BuildSourceWorkspace);GUI.enabled=enabled;
+            if(theme.Button(R(12,161,w-24,24),"导入已编译效果…",false,false,12))Queue(ImportCustomEffect);
+            }
+            var available=Model!.Library.Effects.Where(d=>d.Target=="postprocess"&&d.Id!="utility");
+            var definitions=available.Where(d=>d.SourceDirectory.Length==0||ReferenceEquals(d,available.Last(v=>string.Equals(v.SourceDirectory,d.SourceDirectory,StringComparison.OrdinalIgnoreCase))))
+                .Where(d=>libraryFilter=="全部"||Category(d)==libraryFilter).ToArray();
+            if(Event.current.type==EventType.Repaint)libraryHits.Clear();
+            libraryScroll=GUI.BeginScrollView(R(10,LibraryListTop,w-20,Mathf.Max(40,rect.height/UiScale-LibraryListTop-14)),libraryScroll,R(0,0,w-36,definitions.Length*55));
             try {
                 for(int i=0;i<definitions.Length;i++) {
                     var definition=definitions[i];var item=R(0,i*55,w-38,48);StudioUiTheme.Fill(item,libraryCandidate==definition?"#244955":"#102a36");
                     int cardControl=GUIUtility.GetControlID(0x56464c+definition.Id.GetHashCode(),FocusType.Passive,item);
-                    theme.Label(R(8,i*55+3,w-82,25),definition.Label,13,"#c9e9ee");
+                    theme.Label(R(8,i*55+3,w-82,25),theme.Fit(definition.Label,(w-82)*UiScale),13,"#c9e9ee");
                     theme.Label(R(8,i*55+27,w-82,17),definition.Target=="background"?"底图材质 · 替换背景":"效果 · 拖入时间轴",11,"#7c9dad");
                     if(theme.Button(R(w-68,i*55+8,27,30),"+",false,false,18))Queue(()=>AddLibraryEffect(definition,CurrentSeconds));
+                    if(Event.current.type==EventType.Repaint)RegisterLibraryHit(definition,item,cardControl,rect,w);
                     var e=Event.current;
                     if(e.type==EventType.MouseDown&&e.button==0&&new Rect(item.x,item.y,item.width-31*UiScale,item.height).Contains(e.mousePosition)) {
                         FinishText();Model.Commit();GUI.FocusControl(null);
                         if(e.clickCount>1)Queue(()=>AddLibraryEffect(definition,CurrentSeconds));
-                        else {libraryCandidate=definition;libraryDragging=false;libraryDragOrigin=GUIUtility.GUIToScreenPoint(e.mousePosition);
+                        else {libraryCandidate=definition;libraryDragging=false;libraryDragOrigin=dragPointer;
                             GUIUtility.hotControl=cardControl;}
                         e.Use();
                     }
@@ -107,16 +126,6 @@ public sealed partial class PreviewPlugin
     }
     void HandleLibraryDrop()
     {
-        if(libraryCandidate==null)return;var e=Event.current;
-        if(e.type==EventType.MouseDrag&&(GUIUtility.GUIToScreenPoint(e.mousePosition)-libraryDragOrigin).magnitude>5*UiScale){libraryDragging=true;e.Use();}
-        if(libraryDragging) {
-            var p=e.mousePosition;var box=new Rect(p.x+12*UiScale,p.y+10*UiScale,210*UiScale,32*UiScale);
-            StudioUiTheme.Fill(box,"#244955");ui!.Label(box,libraryCandidate.Label,13,"#d8faff");
-        }
-        if(e.rawType!=EventType.MouseUp)return;
-        var candidate=libraryCandidate;bool drop=libraryDragging&&(timelineBody.Contains(e.mousePosition)||timelineRuler.Contains(e.mousePosition)||candidate.Target=="background"&&canvas.Contains(e.mousePosition));
-        double seconds=e.mousePosition.x>=timelineRuler.x?XTime(e.mousePosition.x):CurrentSeconds;
-        libraryCandidate=null;libraryDragging=false;GUIUtility.hotControl=0;
-        if(drop)Queue(()=>AddLibraryEffect(candidate,seconds));e.Use();
+        DrawDragFeedback();
     }
 }

@@ -6,7 +6,7 @@ public sealed partial class PreviewModel
 {
     public PackageDocument RenderDocument=>draftTimeline?.Document??Package.Document;
     public EffectDefinition Definition(MaterialNodeDocument node)=>Library.Resolve(node);
-    public string NodeLabel(MaterialNodeDocument node)=>node.Name.Length>0?node.Name:Definition(node).Label;
+    public string NodeLabel(MaterialNodeDocument node){var definition=Definition(node);return node.Name.Length>0&&node.Name!=definition.LegacyLabel?node.Name:definition.Label;}
     double ParameterTime(string id,double seconds)
     {
         var node=Document.Runtime.Nodes.Single(n=>n.Id==Catalog.Get(id).Binding.Node);
@@ -62,6 +62,23 @@ public sealed partial class PreviewModel
     }
     public void SetEffectRange(string id,double start,double? end,bool moveKeys=false)
     {PreviewEffectRange(id,start,end,moveKeys);Commit();}
+    public int ReloadSource(string directory,EffectDefinition definition)
+    {
+        var ids=Document.Runtime.Nodes.Where(n=>string.Equals(Definition(n).SourceDirectory,directory,StringComparison.OrdinalIgnoreCase)).Select(n=>n.Id).ToArray();
+        if(ids.Length==0)return 0;
+        Graph("更新自定义效果",graph=>{
+            foreach(var node in graph.Nodes.Where(n=>ids.Contains(n.Id))) {
+                var old=Definition(node);var channels=Channels(node.Id,definition);
+                foreach(var channel in channels) {
+                    var previous=graph.Channels.FirstOrDefault(c=>c.Node==node.Id&&c.Property==channel.Property&&c.Kind==channel.Kind);
+                    if(previous!=null){channel.Default=previous.Default.ToArray();channel.Keys=previous.Keys.Select(CloneKey).ToArray();}
+                }
+                graph.Channels=graph.Channels.Where(c=>c.Node!=node.Id).Concat(channels).ToArray();
+                if(node.Name==old.Label)node.Name=definition.Label;
+                node.Bundle=definition.Bundle;node.Material=definition.Material;node.EffectId=definition.Id;
+            }
+        });return ids.Length;
+    }
     public bool IsActive(MaterialNodeDocument node,double seconds)=>node.Enabled&&seconds>=node.StartSeconds&&(!node.EndSeconds.HasValue||seconds<node.EndSeconds.Value);
     public float Opacity(string nodeId)
     {

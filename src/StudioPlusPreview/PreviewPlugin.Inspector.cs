@@ -6,14 +6,15 @@ namespace InFalsus.Vfx.StudioPlus;
 public sealed partial class PreviewPlugin
 {
     long rangeRevision=-1;
+    float inspectorContentHeight=650;
     void DrawInspector(Rect rect)
     {
         GUI.BeginGroup(rect);
         try {
             var theme=ui!;var model=Model!;var node=model.RenderDocument.Nodes.Single(n=>n.Id==selectedEffect);
             float w=rect.width/UiScale,h=rect.height/UiScale;
-            theme.Panel(new Rect(0,0,rect.width,rect.height));theme.Label(R(16,10,w-32,30),"效果检查器",20,"#c9e9ee");
-            inspectorScroll=GUI.BeginScrollView(R(0,47,w,Mathf.Max(60,h-110)),inspectorScroll,R(0,47,w-14,850));w-=14;
+            theme.Panel(new Rect(0,0,rect.width,rect.height));theme.Label(R(16,10,w-32,30),node.Target=="background"?"背景参数":"效果检查器",20,"#c9e9ee");
+            inspectorScroll=GUI.BeginScrollView(R(0,47,w,Mathf.Max(60,h-110)),inspectorScroll,R(0,47,w-14,Mathf.Max(h-110,inspectorContentHeight)));w-=14;
             try {
                 if(rangeNode!=node.Id||!OwnsText&&(rangeRevision!=model.Session.Revision||draggingEffect)) {
                     rangeNode=node.Id;rangeRevision=model.Session.Revision;rangeStart=node.StartSeconds.ToString("0.###",CI);
@@ -32,20 +33,22 @@ public sealed partial class PreviewPlugin
                         if(!double.TryParse(rangeStart,System.Globalization.NumberStyles.Float,CI,out var start))throw new FormatException("开始时刻无效。");
                         double? end=rangeEnd.Trim().Length==0?null:double.Parse(rangeEnd,CI);model.SetEffectRange(node.Id,start,end,true);
                     });
-                }else if(theme.Button(R(16,126,w-32,28),"恢复材质底图",false,false,13))Queue(()=>{Surface!.ApplyImage(null);imagePath="";});
-                float y=node.Target=="postprocess"?239:176;
-                var parameters=model.Catalog.Parameters.Where(p=>p.Binding.Node==node.Id).ToArray();
+                }
+                float y=node.Target=="postprocess"?239:132;
+                var parameters=model.Catalog.Parameters.Where(p=>p.Binding.Node==node.Id&&!model.Definition(node).Parameters.Single(v=>v.Property==p.Binding.Property).Hidden).ToArray();
                 var parameter=parameters.FirstOrDefault(p=>p.Id==selectedParameter);
-                if(theme.Button(R(16,y,w-32,32),(parameter?.Label??"选择参数")+"  ▾",parameterPicker,false,14))parameterPicker=!parameterPicker;y+=43;
+                if(theme.Button(R(16,y,w-32,32),theme.Fit(parameter?.Label??"选择参数",(w-60)*UiScale,14)+"  ▾",parameterPicker,false,14))parameterPicker=!parameterPicker;y+=43;
                 if(parameterPicker) {
                     pickerScroll=GUI.BeginScrollView(R(12,y,w-24,155),pickerScroll,R(0,0,w-42,parameters.Length*31));
                     try{for(int i=0;i<parameters.Length;i++) {
-                        var p=parameters[i];if(theme.Button(R(0,i*31,w-44,28),p.Label,selectedParameter==p.Id,false,13))
+                        var p=parameters[i];if(theme.Button(R(0,i*31,w-44,28),theme.Fit(p.Label,(w-60)*UiScale),selectedParameter==p.Id,false,13))
                             {FinishText();model.Commit();selectedParameter=p.Id;selectedKey="";parameterPicker=false;}
                     }}finally{GUI.EndScrollView();}y+=166;
                 }
-                if(parameter==null)theme.Paragraph(R(16,y,w-32,90),"选择参数可调节数值。点击 ◆ 或启用自动关键帧后调整，参数才会加入时间轴。",13);
+                if(parameter==null){theme.Paragraph(R(16,y,w-32,90),"选择参数可调节数值。点击 ◆ 或启用自动关键帧后调整，参数才会加入时间轴。",13);y+=96;}
                 else DrawParameterInspector(parameter,w,ref y);
+                if(libraryFilter=="自定义"||model.Definition(node).SourceDirectory.Length>0)DrawSourceControls(w,ref y);
+                inspectorContentHeight=Mathf.Max(200,y+40-47);
             }finally{GUI.EndScrollView();}
             theme.Rule(R(16,h-59,rect.width/UiScale-32,1));theme.Paragraph(R(16,h-51,rect.width/UiScale-32,46),status,12);
         }finally{GUI.EndGroup();}
@@ -89,5 +92,6 @@ public sealed partial class PreviewPlugin
                 (float)(p.SuggestedMin??0),(float)(p.SuggestedMax??1),0,w-32);}finally{GUI.EndGroup();}y+=56;
         }
         if(theme.Button(R(16,y+8,w-32,28),"移除本参数动画",false,false,12))Queue(()=>{model.ClearTrack(p.Id);selectedKey="";});
+        y+=48;
     }
 }

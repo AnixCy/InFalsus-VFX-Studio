@@ -43,9 +43,10 @@ public sealed partial class EffectLibrary
     void LoadCustom(string folder)
     {
         var directory=Path.Combine(folder,"UserEffects");if(!Directory.Exists(directory))return;
-        foreach(var file in Directory.GetFiles(directory,"effect.json",SearchOption.AllDirectories)) {
+        foreach(var file in Directory.GetFiles(directory,"effect.json",SearchOption.AllDirectories).OrderBy(File.GetLastWriteTimeUtc)) {
             try {
             var document=ReadCustom(file);Validate(document,Application.unityVersion,QualitySettings.activeColorSpace.ToString());
+            if(document.Effect.SourceDirectory.Length>0&&!File.Exists(Path.Combine(document.Effect.SourceDirectory,"workspace.vfxsource.json")))document.Effect.SourceDirectory="";
             EffectPackage.ResolveAsset(folder,document.Effect.Bundle);document.Effect.Original=false;document.Effect.Category="自定义";
             if(Effects.Any(e=>e.Id==document.Effect.Id))throw new InvalidDataException("重复的自定义效果标识。");
             Effects.Add(document.Effect);
@@ -54,7 +55,7 @@ public sealed partial class EffectLibrary
     }
     public EffectDefinition Import(string file,string folder,string version,string colorSpace)
     {
-        var document=ReadCustom(file);Validate(document,version,colorSpace);var effect=document.Effect;
+        var document=ReadCustom(file);document.Effect.SourceDirectory="";Validate(document,version,colorSpace);var effect=document.Effect;
         string bundle=EffectPackage.ResolveAsset(Path.GetDirectoryName(Path.GetFullPath(file))!,effect.Bundle);
         if(new FileInfo(bundle).Length>64*1024*1024)throw new InvalidDataException("自定义效果资源包不能超过 64 MiB。");
         using var digest=SHA256.Create();string hash=BitConverter.ToString(digest.ComputeHash(File.ReadAllBytes(bundle)
@@ -80,5 +81,11 @@ public sealed partial class EffectLibrary
         effect.Id=id;effect.Bundle=relative+"/effect.bundle";effect.Original=false;effect.Category="自定义";
         File.WriteAllText(Path.Combine(destination,"effect.json"),JsonConvert.SerializeObject(document,CustomJson));
         Prepare(effect);Effects.Add(effect);return effect;
+    }
+    internal void LinkSource(EffectDefinition effect,string directory,string folder)
+    {
+        directory=SourceWorkspace.Open(directory).Root;effect.SourceDirectory=directory;
+        string file=Path.Combine(Path.GetDirectoryName(EffectPackage.ResolveAsset(folder,effect.Bundle))!,"effect.json");
+        var cached=ReadCustom(file);cached.Effect.SourceDirectory=directory;File.WriteAllText(file,JsonConvert.SerializeObject(cached,CustomJson));
     }
 }

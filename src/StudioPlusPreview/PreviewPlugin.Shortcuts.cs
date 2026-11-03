@@ -20,6 +20,7 @@ public sealed partial class PreviewPlugin
         bool down=e.type==EventType.KeyDown||e.type==EventType.MouseDown&&e.button>=2;
         if(!down&&!release)return;
         var key=PhysicalKey(e);
+        Probe("route",e,new{textFocused});
         if(release) {
             playbackKeysDown.Remove(key);
             if(heldPreviewKey==key){Queue(StopHeldPreview);e.Use();}
@@ -56,6 +57,7 @@ public sealed partial class PreviewPlugin
                         if(heldPreviewKey!=key||generation!=heldPreviewGeneration)return;
                         heldPreviewStart=Bridge.Snapshot().ChartSeconds;heldPreviewStarted=true;
                         Bridge.SeekSeconds(heldPreviewStart);Bridge.TogglePlayback();
+                        Probe("held-started");
                     });
                 }
                 break;
@@ -71,6 +73,7 @@ public sealed partial class PreviewPlugin
         if(!heldPreviewKey.HasValue)return;
         heldPreviewKey=null;heldPreviewGeneration++;playbackKeysDown.Clear();
         if(heldPreviewStarted){heldPreviewStarted=false;Bridge.SeekSeconds(heldPreviewStart);}
+        Probe("held-stopped");
     }
     void OnApplicationFocus(bool focused)
     {

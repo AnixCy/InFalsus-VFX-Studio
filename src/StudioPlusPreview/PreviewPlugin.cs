@@ -13,7 +13,7 @@ using UColor = UnityEngine.Color;
 
 namespace InFalsus.Vfx.StudioPlus;
 
-[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.3.0")]
+[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.4.0")]
 [BepInDependency("local.infalsusstudio.visualui", "1.0.7")]
 public sealed partial class PreviewPlugin : BaseUnityPlugin
 {
@@ -45,9 +45,11 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
     internal void Awake()
     {
         Instance = this;
+        InitWindowProbe();
         TestMode = Environment.GetCommandLineArgs().Contains("-vfx-self-check");
         if (TestMode) AudioListener.volume = 0;
         folder = Path.GetDirectoryName(GetType().Assembly.Location)!;
+        InitSourceWorkspace();
         harmony = new Harmony("local.infalsus.vfx.preview");
         void Patch(string method, string? prefix = null, string? postfix = null) {
             var target = typeof(StudioBootstrap).GetMethod(method, StudioBridge.Flags)
@@ -107,6 +109,8 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
             CurrentSeconds=Bridge.Snapshot().ChartSeconds;
             if(Bridge.Transport?.Clip&&Bridge.Transport.Playing&&Bridge.Transport.TimeMs>Bridge.Transport.Clip.length*1000)Bridge.Transport.Pause();
         }
+        TickWindowProbe();
+        TickSourceWorkspace();
     }
     void BeforeCamera(ScriptableRenderContext context, Camera camera)
     {
@@ -211,8 +215,17 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         public static bool GuiBefore(StudioBootstrap __instance, out Event? __state)
         {
             __state=null; var p=Instance; var e=Event.current;
+            if(e?.isKey==true)p?.Probe("gui-prefix",e);
             if(p?.Bridge.Owner!=__instance||p.Model==null)return true;
-            if(p.Bridge.AuthoringView)return false;
+            if(p.Bridge.AuthoringView) {
+                if(e!=null) {
+                    // Some native prefixes can abort GUI dispatch before any postfix runs.
+                    // Route input here instead of depending on the final GUI drawing callback.
+                    if(e.isKey||e.isMouse)p.RouteWorkspaceEvent(e,p.OwnsText);
+                    p.RoutePointerEvent(e);
+                }
+                return false;
+            }
             if(e==null)return true;
             if((p.stopped||p.Bridge.Exporting)&&!p.BlocksHostInput)return true;
             if(p.BlocksHostInput) {
@@ -237,13 +250,14 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         public static void Draw(StudioBootstrap __instance, Event? __state)
         {
             if(__state!=null)Event.current=__state;
+            if(Event.current?.rawType is EventType.KeyDown or EventType.KeyUp)Instance?.Probe("gui-postfix",Event.current);
             if (Instance?.Bridge.Owner != __instance) return;
             try { Instance.DrawEditor(); }
             catch (ExitGUIException) { throw; }
             catch (Exception e) { Instance.Error(e); }
         }
         public static Exception? GuiFinally(Exception? __exception, Event? __state)
-        { if(__state!=null)Event.current=__state; return __exception; }
+        { if(__exception!=null)Instance?.Probe("gui-exception",Event.current,__exception.GetType().FullName);if(__state!=null)Event.current=__state; return __exception; }
         public static bool ChartTick()=>Instance?.Bridge.AuthoringView!=true;
         public static void Block(Vector2 __0, ref bool __result) { if (Instance != null) __result |= Instance.Bridge.AuthoringView || Instance.BlocksHostInput || Instance.Captures(__0); }
         public static bool Scene(Event __0) => Instance == null || !(Instance.Bridge.AuthoringView || Instance.BlocksHostInput || Instance.Captures(__0.mousePosition));

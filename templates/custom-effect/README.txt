@@ -1,8 +1,9 @@
 自定义程序化效果
 
-直接体验：在效果库点击“导入自定义效果”，选择 SampleCompiled/effect.json，再拖到时间轴。
+直接体验：在效果库“自定义”点击“导入已编译效果”，选择 SampleCompiled/effect.json，再拖到时间轴。
 
-修改源码：编辑 templates/custom-effect/effect.json（参数、范围、名称）与 ProceduralPulse.shader（HLSL）。
+推荐：在编辑器“自定义→新建模板”生成独立工程，VS Code Ctrl+Shift+B 或“构建并更新”后自动预览。
+备用手动方式：编辑 templates/custom-effect/effect.json（参数、范围、名称）与 ProceduralPulse.shader（HLSL）。
 双击 Build-Sample.bat；首次选择 Unity 6000.3.25f1 的 Unity.exe。
 构建结束后，导入新目录中的 effect.json。已有预览包的使用者不需要安装 Unity。
 
