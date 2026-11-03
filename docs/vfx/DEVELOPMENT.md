@@ -1,55 +1,80 @@
 # 项目开发说明
 
-## 定位与当前任务
+## 当前实现
 
-InFalsus VFX Studio 是 Studio+ 的演出创作扩展，功能范围包括音频区间选择、循环预览、特效参数编辑、关键帧编排和工程保存。当前完成仓库与开发规范准备，演出操作界面尚未实现。
+InFalsus VFX Studio 是 Studio+ 的演出创作扩展。现已迁入共享求值、临时参数、事务、撤销和保存核心，并接入常量参数编辑与实时背景预览。使用方法见[参数预览说明](PARAMETER_PREVIEW.md)。
 
-既有演出求值、临时参数、编辑事务、撤销、关键帧、保存及离线 GPU 预览在独立工作区已有实现，但尚未迁入本仓库。不能把那些结果当作本仓库已能构建或已完成 Studio+ 适配。
+新增代码位于 `src/`，没有改写根宿主工程或增强插件快照。核心有关键帧能力，当前界面尚无关键帧编辑、循环区间编辑或游戏包导出。既有离线渲染器和游戏适配器未在本次迁入。
 
-## 三组版本
+## 版本与源码
 
 | 层次 | 基线与入口 |
 | --- | --- |
 | 原版编辑器宿主 | Studio Windows Mono 1.0.10；根目录 `Assets/`、`Packages/`、`ProjectSettings/` |
-| 增强插件 | Studio+ 内部 1.079；公开版本 1.0.7，绑定程序集 1.0.7.0 |
-| 本项目 | 开发准备阶段，尚无独立应用发行版本 |
+| 增强插件源码 | Studio+ 内部 1.079；公开版本 1.0.7，绑定程序集 1.0.7.0 |
+| 本次运行基线 | 已有 Studio+ 1.0.7 build1030 完整应用；未重建完整 1.079 主插件 |
+| 本项目 | 参数预览插件 0.1.0 原型，尚无正式应用发行版本 |
 
-Studio+ 来源是 `xandp7716-lab/In-Falsus-Studio-plus` 的 `feat/unofficial-editor-visual-mods`，固定提交 `2c8c63722948b8e739f0eef6ebd0478cdf8ddd3d`。所选快照在 [Mods/StudioPlusSnapshots/1.079-20261102](../../Mods/StudioPlusSnapshots/1.079-20261102/README.md)，更早快照保留作历史，不叠加安装。
-
-## 实际源码地图
+Studio+ 源码固定于提交 `2c8c63722948b8e739f0eef6ebd0478cdf8ddd3d`，快照在 [Mods/StudioPlusSnapshots/1.079-20261102](../../Mods/StudioPlusSnapshots/1.079-20261102/README.md)。历史快照用于溯源，不叠加安装。
 
 | 路径 | 用途 |
 | --- | --- |
-| [vfx-project.json](../../vfx-project.json) | 本仓库身份、基线与入口清单，不是演出工程格式 |
-| [studio_icon_work/Source](../../Mods/StudioPlusSnapshots/1.079-20261102/studio_icon_work/Source/) | 所选增强主插件，共 160 个 C# 源文件 |
-| [studio_spectrogram](../../Mods/StudioPlusSnapshots/1.079-20261102/studio_spectrogram/) | 已有独立插件适配的参考 |
-| `Assets/InFalsusStudio/Runtime/` | 原版宿主与渲染模型 |
-| `src/` | 后续本项目独立核心与演出插件；需要时创建，当前尚无代码 |
-| `docs/vfx/` | 本项目设计、接入与验证说明 |
+| [vfx-project.json](../../vfx-project.json) | 仓库身份、基线指纹与构建入口，不是演出工程格式 |
+| [src/Presentation](../../src/Presentation/README.md) | Unity 无关的共享核心与创作层；来源文件哈希记录在 `ORIGIN.json` |
+| [src/StudioPlusPreview](../../src/StudioPlusPreview/) | BepInEx/Harmony 适配、时钟、参数面板、项目文件和渲染资源生命周期 |
+| [src/ShaderAssets](../../src/ShaderAssets/) | 独立 Unity Shader 资源工程，不使用上游根工程构建 |
+| [tests](../../tests/) | 67 项参数检查、117 项创作工程检查及通用契约夹具 |
+| [scripts](../../scripts/) | 插件与资源构建、独立副本生成、静音运行检查 |
+| [studio_icon_work/Source](../../Mods/StudioPlusSnapshots/1.079-20261102/studio_icon_work/Source/) | 所选增强主插件的 160 个 C# 源文件 |
 
-快照中有上游开发机路径、旧版本说明及分阶段验证记录；它们用于溯源，不是本机安装路径或当前统一状态。需要修改时先找实际调用链，核对当前源码和资源指纹。
+快照中的开发机路径与历史检查不是本机安装指令。需要修改宿主或增强插件时，先核对实际调用链和文件指纹。
 
-## 构建边界
+## 构建参数预览
 
-当前没有本项目的构建命令或整合包。整理文档不要求安装新的 Unity，也不修改已有编辑器。
+构建环境：Windows PowerShell、.NET SDK 9、Unity Editor **6000.3.25f1**，以及匹配基线的完整 Studio+ Windows Mono 应用目录。运行测试副本不需要 SDK 或 Unity Editor。
 
-- 根宿主工程：见保留的 [docs/BUILDING.md](../BUILDING.md)，项目设置为 Unity 6000.3.25f1 / URP 17.3。构建宿主不会自动安装增强插件。
-- 增强插件：参考 [studio_icon_work/Build.ps1](../../Mods/StudioPlusSnapshots/1.079-20261102/studio_icon_work/Build.ps1)。参数指定匹配的编辑器目录和编译工具所在 Unity 目录，依赖编辑器 Managed/BepInEx 引用及原运行资源。
-- 快照说明中的 Unity 2022.3.8f1c1 用于其脚本编译工具路径；不能据此把宿主项目改为 Unity 2022。新增材质/Shader 的 Bundle 需按目标运行环境另行验证。
-- 运行资源见快照的分发清单；这里只保留上游已有内容，不把个人运行副本或提取媒体自动复制到仓库。
+以下路径是占位示例，替换为本机完整应用、Unity 编辑器与一个尚不存在的测试目录：
 
-以上是入口核对，未在本次重新编译宿主或插件。
+```powershell
+& .\scripts\Build-Preview.ps1 `
+    -StudioPath '<完整 Studio+ 目录>' `
+    -UnityEditor '<Unity 6000.3.25f1 的 Unity.exe>'
 
-## 初期开发范围
+& .\scripts\New-PreviewCopy.ps1 `
+    -StudioPath '<同一完整 Studio+ 目录>' `
+    -Destination '<新的测试目录>'
+```
 
-初期实现背景材质预览、参数编辑、关键帧编排、片段循环播放，以及工程保存和重新加载。拖动过程中的连续修改合并为一条撤销记录。后续功能根据实际创作需求确定。
+默认构建输出为 `local/build/preview`，包含三个项目 DLL 和 `preview.bundle`。`-SkipShader` 仅用于资源已构建且未变化时的 C# 重建。脚本核对宿主核心 SHA-256，Shader 构建还核对 Unity 版本、编译错误、Bundle 可加载性和资源入口。
 
-时钟需要统一适配 Studio+ 的编辑预览、内置游玩与视频导出；演出使用明确的时间域和一次性偏移，不跟随全局 `Time.time` 自行累计。临时预览与已提交工程分开；导出使用已提交状态。
+生成脚本复制完整运行依赖，排除原日志和常用缓存/用户数据，添加项目插件与 `Start-VFX.bat`；目标必须不存在，不覆盖原安装。启动入口设置副本自己的配置目录。该副本为本地测试用途，脚本不代表获得了重新分发全部依赖和素材的许可。
 
-工程计划独立于 SPC 保存。`timinggroup`、`noinput`、`noclip`、`hidegroup` 是已有增强插件的非官方谱面扩展，不是本项目的 BG 演出格式。原版格式约束见 [docs/COMPATIBILITY.md](../COMPATIBILITY.md)，增强语义以所选快照源码及对应版本验证为准。
+只编译根 Unity 工程不会得到本项目插件。根宿主构建见保留的 [docs/BUILDING.md](../BUILDING.md)；完整增强主插件的构建仍参考快照中的 `Build.ps1`，本次没有重建它。
 
-## 分支、检查与交付
+## 验证命令
 
-本项目默认集成分支为 `vfx`，当前工作分支为 `codex/vfx-editor`；原 `main` 保留上游基线。常规开发从 `vfx` 建立 `codex/<任务名>`，具体提交规范见 [CONTRIBUTING.md](../../CONTRIBUTING.md)。
+在仓库根目录执行：
 
-文档仅做路径、版本、链接和 diff 检查。本项目当前的 GPU/交互/游戏集成未验证；上游文档、独立工作区报告均不替代这些检查。玩家运行端目标为 Loader、必要运行时和预编译 Mod/资源，创作环境与玩家依赖分别管理。
+```powershell
+dotnet run --project tests/Authoring.Checks/Authoring.Checks.csproj -c Release -- .
+dotnet run --project tests/Project.Checks/Project.Checks.csproj -c Release -- .
+
+& .\scripts\Check-PreviewRuntime.ps1 `
+    -PreviewPath '<已生成的测试副本>' `
+    -OutputDirectory '<新的检查输出目录>' `
+    -PluginDirectory '.\local\build\preview'
+```
+
+前两项不启动 Unity。第三项显式启动并退出独立 Studio+ 副本，静音、不播放 transport，在真实 GPU 上读取数值；不会启动游戏。需要可用图形设备，不能使用 `-nographics`。检查报告与配置保存到所选输出目录，不进入源码。
+
+本次结果和未验收范围见 [VALIDATION.md](VALIDATION.md)。实际操作和视觉由人工验收，自动检查不替代它们。
+
+## 接入约定
+
+- GUI 只控制 `PreviewModel`；数据求值和事务属于共享层，渲染资源属于 `PreviewSurface`，宿主时间与对话框属于 `StudioBridge`。
+- 预览使用经 Studio+ 适配的显示时刻，另保留音频偏移信息，避免二次偏移；SV 不是时钟。时间驱动 Shader 不自行累计 `Time.time`。
+- 参数拖动使用临时覆盖，松手一次提交；取消恢复原值。背景材质和 Bundle 在参数变化时复用，不逐帧加载。
+- 演出工程独立于 SPC；原编辑器的谱面保存逻辑不变。`timinggroup`、`noinput` 等已有扩展不是本项目的演出格式。
+- 视频导出时钟通过可选反射适配；导出采样排除临时值，但完整视频导出仍待验证。玩家运行包和创作端依赖分别管理。
+
+默认集成分支是 `vfx`，开发分支使用 `codex/<任务名>`。提交及来源要求见 [CONTRIBUTING.md](../../CONTRIBUTING.md)。

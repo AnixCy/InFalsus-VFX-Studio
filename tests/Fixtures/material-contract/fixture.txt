@@ -1,0 +1,1 @@
+Filesystem validation fixture; not a Unity AssetBundle.

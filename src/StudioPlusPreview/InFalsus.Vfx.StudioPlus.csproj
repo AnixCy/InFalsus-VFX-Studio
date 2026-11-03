@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>InFalsus.Vfx.StudioPlus</AssemblyName>
+    <LangVersion>latest</LangVersion><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings>
+    <UseSharedCompilation>false</UseSharedCompilation><NuGetAudit>false</NuGetAudit>
+    <StudioManaged>$(StudioPath)/InFalsusStudio_Data/Managed</StudioManaged>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Presentation/authoring/InFalsus.Presentation.Authoring.csproj" />
+    <Reference Include="Assembly-CSharp" HintPath="$(StudioManaged)/Assembly-CSharp.dll" Private="false" />
+    <Reference Include="UnityEngine" HintPath="$(StudioManaged)/UnityEngine.dll" Private="false" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(StudioManaged)/UnityEngine.CoreModule.dll" Private="false" />
+    <Reference Include="UnityEngine.IMGUIModule" HintPath="$(StudioManaged)/UnityEngine.IMGUIModule.dll" Private="false" />
+    <Reference Include="UnityEngine.TextRenderingModule" HintPath="$(StudioManaged)/UnityEngine.TextRenderingModule.dll" Private="false" />
+    <Reference Include="UnityEngine.AssetBundleModule" HintPath="$(StudioManaged)/UnityEngine.AssetBundleModule.dll" Private="false" />
+    <Reference Include="UnityEngine.ImageConversionModule" HintPath="$(StudioManaged)/UnityEngine.ImageConversionModule.dll" Private="false" />
+    <Reference Include="UnityEngine.AudioModule" HintPath="$(StudioManaged)/UnityEngine.AudioModule.dll" Private="false" />
+    <Reference Include="UnityEngine.InputLegacyModule" HintPath="$(StudioManaged)/UnityEngine.InputLegacyModule.dll" Private="false" />
+    <Reference Include="Unity.RenderPipelines.Core.Runtime" HintPath="$(StudioManaged)/Unity.RenderPipelines.Core.Runtime.dll" Private="false" />
+    <Reference Include="Unity.RenderPipelines.Universal.Runtime" HintPath="$(StudioManaged)/Unity.RenderPipelines.Universal.Runtime.dll" Private="false" />
+    <Reference Include="Newtonsoft.Json" HintPath="$(StudioManaged)/Newtonsoft.Json.dll" Private="false" />
+    <Reference Include="BepInEx.Core" HintPath="$(StudioPath)/BepInEx/core/BepInEx.Core.dll" Private="false" />
+    <Reference Include="BepInEx.Unity.Mono" HintPath="$(StudioPath)/BepInEx/core/BepInEx.Unity.Mono.dll" Private="false" />
+    <Reference Include="0Harmony" HintPath="$(StudioPath)/BepInEx/core/0Harmony.dll" Private="false" />
+  </ItemGroup>
+  <Target Name="CheckStudio" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(StudioManaged)/Assembly-CSharp.dll')" Text="Set StudioPath to a complete matching Studio+ installation." />
+  </Target>
+</Project>

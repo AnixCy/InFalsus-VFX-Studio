@@ -4,9 +4,9 @@
 
 ## 项目身份与源码
 
-- 本仓库负责 Studio+ 内的异象创作、BG/Shader、关键帧、演出预览与导出。当前处于仓库准备阶段，演出底层尚未迁入。
+- 本仓库负责 Studio+ 内的异象创作、BG/Shader、关键帧、演出预览与导出。演出核心已迁入 src/Presentation；最简常量参数面板与实时预览位于 src/StudioPlusPreview，验证范围见 docs/vfx/VALIDATION.md。
 - 根目录 Assets/Packages/ProjectSettings 是上游 Studio 1.0.10 宿主；所选增强插件基线为 Mods/StudioPlusSnapshots/1.079-20261102。不要将根目录旧 README 或历史检查当成增强插件当前能力。
-- 各版本快照作为溯源基线保留。本项目后续新增源码放 src/；具体适配需要时再建立目录。避免在多个快照中同时修同一个功能。
+- 各版本快照作为溯源基线保留。本项目新增源码放 src/，测试与构建入口见 docs/vfx/DEVELOPMENT.md。避免在多个快照中同时修同一个功能。
 - 命名规范化只更新仓库及文档。修改产品名、公司名、插件 ID、程序集绑定名或用户配置位置需要由具体功能任务决定，防止破坏既有设置。
 
 ## 开发取向

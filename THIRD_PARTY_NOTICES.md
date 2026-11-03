@@ -12,5 +12,8 @@
 | 字体 | 应用使用系统字体回退；仓库不捆绑字体文件 |
 | `Mods/BetterUI/1.2.2/Icons` | Better UI 插件配套的界面图标；随插件源码保留。 |
 | Native Visual 运行资源 | 原版 AssetBundle、字体和游戏界面图未纳入本仓库；配套 mod 发行包从本机 InFalsus Studio 1.0.10 提取并提供，不在此重复分发。 |
+| `src/Presentation` | 从本项目既有演出基础设施迁入的创作端源码，来源哈希见 `src/Presentation/ORIGIN.json`；不包含游戏资源、录制或媒体。 |
+| `src/StudioPlusPreview`、`src/ShaderAssets/Assets` | 本项目新增的适配代码与参数预览 Shader；系统字体回退，不捆绑字体或歌曲素材。 |
+| 参数预览构建依赖 | 引用用户本地 Studio+、BepInEx、Harmony、Unity 和 Newtonsoft.Json 程序集；不在新增源码目录中复制依赖二进制，不改变其许可。 |
 
 原游戏名称、素材及参考谱面仍属于各自权利人。本编辑器的社区维护和壳子扩展不表示官方背书。新增第三方代码、素材或数据时，记录作者、来源、许可证及必要的版权/署名信息；不要把其他项目的代码许可证套用到其素材上。

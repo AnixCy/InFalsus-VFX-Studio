@@ -1,0 +1,22 @@
+{
+  "source": "Existing project presentation core and authoring infrastructure",
+  "importDate": "2026-11-03",
+  "sourceFilesUnmodified": true,
+  "sha256": {
+    "Directory.Build.props": "72a81cfd64d4b4a7c1b565bf1c6ced423b35337d86e23c3fb8148d5b18310761",
+    "portable/Compatibility.cs": "2c057cda34edf4827d914e0efc856564561dabdd0c73e734ae2fa03c26c27048",
+    "portable/InFalsus.Presentation.Portable.csproj": "5cca3e876dfd700becf33366d57cd31bfefd016fb6f3349c59acf084803eb2da",
+    "authoring/InFalsus.Presentation.Authoring.csproj": "b66dc485f029408f4ab82a77f736c32ff0c96686cd275d14c9cfdc99f0251e03",
+    "core/EffectPackage.cs": "1a88743c707bec6df69762b93c2d0fdefdf21a6bfe5a44782633be5d4b151d4a",
+    "core/Playback.cs": "7e8e69586399e5a1449775eb98123c56e7c172dae61625128f86d06ea4142f86",
+    "core/PresentationSession.cs": "c3a6b12feb0fe9573e676a98bd834692621eccbd07d7acfdb7e01cd8f5b7e286",
+    "core/PreviewTransport.cs": "f4e115a9c15970ca3279cbe45d4105c1cd965931e3fe487fbd2deb610a724896",
+    "core/Timeline.cs": "0cc4bb241dd0985d8e49fd04258611ef4e2631784227ed6f4be1d83093b0dd3b",
+    "authoring/AuthoringProject.cs": "04642c0f0a79bb8722a9686baaecd30346b8c33aa10f291e33adce19154f8a62",
+    "authoring/AuthoringSession.cs": "44112aefa5e21100daaa7c2ccd8ce5ffd64736e893a0ac1baad8abd6eed457c0",
+    "authoring/ParameterCatalog.cs": "ada6f509bcc92bf46a8dd6e5e4fa21930cbd96505d925060bed2ec113b57d1cf",
+    "authoring/ParameterPreviewSession.cs": "3a9409ff6a75fc4af82d76f284b1fc92949aca69520a22d3e94bb0876cdf06e3",
+    "authoring/ProjectFileStore.cs": "c1945abc57645543177d9e1bb21dd19efb5dfe84343e052a06733aaece84708b"
+  },
+  "notes": "Creator-side sources only. No game assets, recordings or user settings imported."
+}

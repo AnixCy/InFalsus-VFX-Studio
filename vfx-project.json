@@ -3,7 +3,7 @@
   "id": "infalsus-vfx-studio",
   "name": "InFalsus VFX Studio",
   "repository": "https://github.com/AnixCy/InFalsus-VFX-Studio",
-  "status": "repository-scaffold",
+  "status": "parameter-preview-prototype",
   "projectRelease": null,
   "branches": {
     "integration": "vfx",
@@ -34,10 +34,23 @@
     "readme": "README.md",
     "development": "docs/vfx/DEVELOPMENT.md",
     "agent": "AGENTS.md",
-    "contributing": "CONTRIBUTING.md"
+    "contributing": "CONTRIBUTING.md",
+    "previewGuide": "docs/vfx/PARAMETER_PREVIEW.md",
+    "validation": "docs/vfx/VALIDATION.md",
+    "previewBuild": "scripts/Build-Preview.ps1"
   },
-  "presentationCoreImported": false,
-  "presentationUiImplemented": false,
-  "presentationBuildVerified": false,
+  "preview": {
+    "pluginVersion": "0.1.0",
+    "testedStudioBinary": "1.0.7 build1030",
+    "unityVersion": "6000.3.25f1",
+    "coreChecks": 184,
+    "runtimeChecks": 20,
+    "visualAcceptance": "pending",
+    "interactiveAcceptance": "pending",
+    "full1079PluginVerified": false
+  },
+  "presentationCoreImported": true,
+  "presentationUiImplemented": true,
+  "presentationBuildVerified": true,
   "gameIntegrationVerified": false
 }

@@ -2,7 +2,7 @@
 
 基于 [InFalsus Studio+](https://github.com/xandp7716-lab/In-Falsus-Studio-plus) 的异象演出编辑扩展，面向音乐同步背景、Shader 特效与关键帧编排。
 
-**开发中。当前完成项目仓库初始化与开发规范整理，尚无本项目可运行的演出编辑界面或发行包。**
+**开发中。已接入最简参数编辑与实时背景预览，可在独立 Studio+ 副本中测试；尚无正式发行包。视觉与实际交互待人工验收。**
 
 ## 创作目标
 
@@ -17,14 +17,16 @@
 | 本项目名称、仓库与开发规范 | 已整理 |
 | Studio+ 1.079 增强插件源码 | 已保留为开发基线 |
 | 原版 Studio 1.0.10 Unity 工程 | 继承上游 |
-| 既有演出求值、编辑事务与离线渲染底层 | 在独立工作区已开发；尚未迁入或接入本仓库 |
-| 演出操作面板、新特效、游戏包导出 | 待开发 |
+| 演出求值、参数预览、编辑事务、撤销与可靠保存 | 已迁入 `src/Presentation`，184 项检查通过 |
+| Studio+ 参数面板与实时背景预览 | 已接入，20 项运行检查通过，包含实际 GPU 输出验证 |
+| 关键帧编辑界面、循环区间编辑、游戏包导出 | 待开发 |
 
 上游源码、功能与历史检查记录不等于本项目已经完成对应集成或验收。
 
 ## 开发入口
 
 - [项目开发说明](docs/vfx/DEVELOPMENT.md)：实际源码入口、版本关系、工作顺序与验证边界。
+- [参数预览使用说明](docs/vfx/PARAMETER_PREVIEW.md) · [本次验证范围](docs/vfx/VALIDATION.md)。
 - [贡献规范](CONTRIBUTING.md) · [Agent 工作规范](AGENTS.md) · [本项目更新记录](CHANGELOG.md)。
 - [基线清单](vfx-project.json)：固定提交、版本和源码路径。
 - [Studio+ 1.079 快照](Mods/StudioPlusSnapshots/1.079-20261102/README.md)。
@@ -35,7 +37,9 @@
 
 本项目 fork 自 **xandp7716-lab/In-Falsus-Studio-plus**，后者基于 **Arthas-0/In-Falsus-Studio**。开发基线是 Studio+ 内部版 **1.079**，固定提交 `2c8c63722948b8e739f0eef6ebd0478cdf8ddd3d`；其公开界面和程序集绑定版本仍为 1.0.7 / 1.0.7.0，宿主为 Windows Mono 编辑器 1.0.10。
 
-仓库根目录的 Unity 工程仍属于宿主。直接构建它不会自动得到 Studio+ 增强插件或本项目演出功能。实际构建入口及配套运行资源见[开发说明](docs/vfx/DEVELOPMENT.md)。目前不提供安装本项目的步骤。
+仓库根目录的 Unity 工程仍属于宿主。直接构建它不会自动得到 Studio+ 增强插件或本项目演出功能。本项目独立插件通过 `scripts/Build-Preview.ps1` 构建，再由 `scripts/New-PreviewCopy.ps1` 创建测试副本，步骤见[开发说明](docs/vfx/DEVELOPMENT.md)。
+
+当前运行验证使用已有 **Studio+ 1.0.7 build1030** 二进制副本及匹配的 Unity 6000.3.25f1。1.079 快照仍是后续适配的源码基线，本次未重建或验收其完整主插件。
 
 保留的[上游 README](README.upstream.md)、[上游更新记录](CHANGELOG.upstream.md)和[素材来源记录](THIRD_PARTY_NOTICES.md)用于溯源。上游旧版本说明与当前增强插件有差异时，以明确标注版本的源码、基线清单及实测结果为准。
 
@@ -43,4 +47,4 @@
 
 创作端复用 Studio+，可使用本地构建工具。玩家交付目标是受支持的 Loader、必要运行时、预编译 Mod 和资源包；玩家不需要安装编辑器或创作工具链。该目标尚未在本仓库实现或做安装验收。
 
-演出工程计划独立于 SPC 保存，不把新的演出参数伪装为游戏原生谱面语句。预览、导出和游戏表现分别验证。
+演出参数已独立保存为 `.vfx.json`，图片按本地路径引用，不改写 SPC。预览、导出和游戏表现分别验证；本次只验证 Studio+ 参数预览。
