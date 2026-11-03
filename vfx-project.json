@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "id": "infalsus-vfx-studio",
+  "name": "InFalsus VFX Studio",
+  "repository": "https://github.com/AnixCy/InFalsus-VFX-Studio",
+  "status": "repository-scaffold",
+  "projectRelease": null,
+  "branches": {
+    "integration": "vfx",
+    "development": "codex/vfx-editor",
+    "inheritedMain": "main"
+  },
+  "upstream": {
+    "repository": "https://github.com/xandp7716-lab/In-Falsus-Studio-plus",
+    "branch": "feat/unofficial-editor-visual-mods",
+    "commit": "2c8c63722948b8e739f0eef6ebd0478cdf8ddd3d",
+    "internalVersion": "1.079",
+    "publicVersion": "1.0.7",
+    "assemblyVersion": "1.0.7.0",
+    "snapshot": "Mods/StudioPlusSnapshots/1.079-20261102",
+    "pluginSources": "Mods/StudioPlusSnapshots/1.079-20261102/studio_icon_work/Source",
+    "pluginBuild": "Mods/StudioPlusSnapshots/1.079-20261102/studio_icon_work/Build.ps1",
+    "pluginSourceFileCount": 160,
+    "hostCoreSha256": "C4C3D6118A19F9BCB1F7D33B29C340DB0F33580655744473B23187E9D3C4E417"
+  },
+  "host": {
+    "version": "1.0.10",
+    "platform": "Windows x64 Mono",
+    "unityProject": ".",
+    "unityProjectVersion": "6000.3.25f1",
+    "urpVersion": "17.3.0"
+  },
+  "entrypoints": {
+    "readme": "README.md",
+    "development": "docs/vfx/DEVELOPMENT.md",
+    "agent": "AGENTS.md",
+    "contributing": "CONTRIBUTING.md"
+  },
+  "presentationCoreImported": false,
+  "presentationUiImplemented": false,
+  "presentationBuildVerified": false,
+  "gameIntegrationVerified": false
+}

@@ -27,9 +27,9 @@
 /.idea/
 /.vscode/
 /.vsconfig
-*.csproj
-*.sln
-*.slnx
+/*.csproj
+/*.sln
+/*.slnx
 *.suo
 *.user
 *.userprefs
@@ -59,3 +59,10 @@ Desktop.ini
 *.zip
 *.7z
 *.unitypackage
+
+# VFX project: track authored SDK project files; keep local inputs and outputs local.
+**/bin/
+**/obj/
+/local/
+/outputs/
+/releases/
