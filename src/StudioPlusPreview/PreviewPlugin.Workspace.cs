@@ -20,7 +20,7 @@ public sealed partial class PreviewPlugin
         if(!parameters.Any(p=>p.Id==selectedParameter))selectedParameter=parameters.FirstOrDefault()?.Id??"";
         WorkspaceKeys();
         StudioUiTheme.Fill(new Rect(0,0,Screen.width,Screen.height),"#091923");
-        if(theme.Button(R(12,10,100,32),"制谱视图",false,false))Queue(()=>{Model!.Commit();Bridge.SetView(false);Surface?.Suspend();});
+        if(theme.Button(R(12,10,100,32),"制谱视图",false,false))Queue(()=>{StopHeldPreview();playbackKeysDown.Clear();Model!.Commit();Bridge.SetView(false);Surface?.Suspend();});
         if(theme.Button(R(124,10,70,32),"音频…"))Queue(ChooseWorkspaceAudio);
         if(theme.Button(R(202,10,70,32),"图片…"))Queue(ChooseImage);
         if(theme.Button(R(280,10,70,32),"打开"))Queue(LoadProject);
@@ -124,11 +124,15 @@ public sealed partial class PreviewPlugin
                     else if(Event.current.keyCode==KeyCode.Escape){model.Cancel();keyTimeDirty=false;GUI.FocusControl(null);Event.current.Use();}
                 }
                 y+=44;
+                if(PreviewModel.IsSwitch(p.Id)) {
+                    theme.Paragraph(R(16,y,w-32,66),"离散开关：在关键帧处切换。渐变请调整对应 Amount 强度参数。",13);
+                }else {
                 var modes=new[]{Easing.Linear,Easing.Smooth,Easing.Hold,Easing.SineInOut,Easing.CubicInOut,Easing.BackOut};
                 string[] names={"线性","平滑","保持","正弦","三次","回弹"};
                 for(int i=0;i<modes.Length;i++) {
                     var mode=modes[i];if(theme.Button(R(16+(i%3)*(w-32)/3,y+(i/3)*34,(w-38)/3,28),names[i],marker.Ease==mode,false,13))
                         Queue(()=>model.SetEase(marker.Id,mode));
+                }
                 }
                 y+=78;
             } else {theme.Paragraph(R(16,y,w-32,48),autoKey?"调整数值会在当前时刻建立关键帧。":"当前编辑默认值；动画参数请先选择关键帧。",13);y+=62;}
@@ -150,14 +154,5 @@ public sealed partial class PreviewPlugin
             }finally{GUI.EndScrollView();}
             theme.Rule(R(16,h-70,rect.width/UiScale-32,1));theme.Paragraph(R(16,h-60,rect.width/UiScale-32,54),status,13);
         }finally{GUI.EndGroup();}
-    }
-    void WorkspaceKeys()
-    {
-        var e=Event.current;if(e.type!=EventType.KeyDown||OwnsText||BlocksHostInput)return;
-        if((e.control||e.command)&&e.keyCode==KeyCode.S){Queue(SaveProject);e.Use();}
-        else if((e.control||e.command)&&e.keyCode==KeyCode.Z){Queue(e.shift?Model!.Redo:Model!.Undo);e.Use();}
-        else if(e.keyCode==KeyCode.Space){Queue(Bridge.TogglePlayback);e.Use();}
-        else if((e.keyCode==KeyCode.Delete||e.keyCode==KeyCode.Backspace)&&selectedKey.Length>0){Queue(()=>{Model!.DeleteKey(selectedKey);selectedKey="";});e.Use();}
-        else if(e.keyCode==KeyCode.Escape&&Model!.IsEditing){Model.Cancel();draggingKey=sliderEditing=keyTimeDirty=false;textParameter=textKey=null;GUIUtility.hotControl=0;e.Use();}
     }
 }

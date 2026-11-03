@@ -26,6 +26,9 @@ public sealed class PreviewModel
     EffectPackage? draftTimeline;
     string? dragId,editedKey;
     long sequence;
+    EditorKey[] missingStarts=Array.Empty<EditorKey>();
+    public int MissingAnimationStarts=>missingStarts.Length;
+    public static bool IsSwitch(string id)=>id.Contains("/_KW_",StringComparison.Ordinal);
     public bool IsEditing=>drag!=null;
     public string? EditedKey=>editedKey;
     public double? MovingSeconds {get;private set;}
@@ -49,6 +52,10 @@ public sealed class PreviewModel
                 Seconds=k.Seconds??Package.Tempo.ToSeconds(k.Beat!.Value),Value=Number(k.Value),Ease=k.Ease});}
         }
         Keys=keys.ToArray();
+        missingStarts=Catalog.Parameters.Where(p=>!IsSwitch(p.Id)&&p.Binding.Kind!=ParameterKind.Choice)
+            .Select(p=>(Parameter:p,Key:Keys.Where(k=>k.ParameterId==p.Id).OrderBy(k=>k.Seconds).FirstOrDefault()))
+            .Where(p=>p.Key!=null&&p.Key.Seconds>0&&p.Key.Ease!=Easing.Hold&&p.Key.Value!=p.Parameter.DefaultValue)
+            .Select(p=>p.Key!).ToArray();
     }
     public void Sample(double seconds,bool committedOnly=false)
     {
@@ -72,7 +79,10 @@ public sealed class PreviewModel
         if(editedKey==null) {
             var existing=Keys.FirstOrDefault(k=>k.ParameterId==id&&(k.Id==selectedKey||Math.Abs(k.Seconds-seconds)<.00001));
             if(existing!=null)editedKey=existing.Id;
-            else if(autoKey)editedKey=drag!.AddKey(id,KeyPosition.Seconds(Math.Round(seconds,3)),value,id.Contains("/_KW_")?Easing.Hold:Easing.Linear);
+            else if(autoKey) {
+                seconds=Math.Round(seconds,3);AddAnimationStart(drag!,id,seconds);
+                editedKey=drag!.AddKey(id,KeyPosition.Seconds(seconds),value,IsSwitch(id)?Easing.Hold:Easing.Linear);
+            }
             else if(Keys.Any(k=>k.ParameterId==id)){Cancel();throw new InvalidOperationException("请选择关键帧，或启用自动关键帧。");}
         }
         if(editedKey!=null)drag!.SetKeyValue(editedKey,value);else drag!.SetDefaultValue(id,value);
@@ -85,7 +95,22 @@ public sealed class PreviewModel
         if(existing!=null)return existing.Id;
         Sample(seconds);int index=Catalog.Parameters.ToList().FindIndex(p=>p.Id==id);
         using var edit=Session.BeginEdit(Session.Revision,"添加关键帧");
-        var key=edit.AddKey(id,KeyPosition.Seconds(seconds),Values[index],id.Contains("/_KW_")?Easing.Hold:Easing.Linear);edit.Commit();Refresh();return key;
+        AddAnimationStart(edit,id,seconds);
+        var key=edit.AddKey(id,KeyPosition.Seconds(seconds),Values[index],IsSwitch(id)?Easing.Hold:Easing.Linear);edit.Commit();Refresh();return key;
+    }
+    void AddAnimationStart(AuthoringEdit edit,string id,double seconds)
+    {
+        var parameter=Catalog.Parameters.Single(p=>p.Id==id);
+        if(seconds>0&&!IsSwitch(id)&&parameter.Binding.Kind!=ParameterKind.Choice&&!Keys.Any(k=>k.ParameterId==id))
+            edit.AddKey(id,KeyPosition.Seconds(0),parameter.DefaultValue,Easing.Linear);
+    }
+    public int RepairAnimationStarts()
+    {
+        Commit();int count=missingStarts.Length;if(count==0)return 0;
+        using var edit=Session.BeginEdit(Session.Revision,"补齐连续动画起点");
+        foreach(var key in missingStarts)edit.AddKey(key.ParameterId,KeyPosition.Seconds(0),
+            Catalog.Parameters.Single(p=>p.Id==key.ParameterId).DefaultValue,Easing.Linear);
+        edit.Commit();Refresh();return count;
     }
     public void MoveKey(string key,double seconds)
     {
@@ -93,7 +118,7 @@ public sealed class PreviewModel
         editedKey=key;MovingSeconds=seconds;draftTimeline=drag.CompilePreview();
     }
     public void DeleteKey(string key){Commit();using var e=Session.BeginEdit(Session.Revision,"删除关键帧");e.RemoveKey(key);e.Commit();Refresh();}
-    public void SetEase(string key,Easing ease){Commit();using var e=Session.BeginEdit(Session.Revision,"设置缓动");e.SetKeyEase(key,ease);e.Commit();Refresh();}
+    public void SetEase(string key,Easing ease){Commit();using var e=Session.BeginEdit(Session.Revision,"设置缓动");e.SetKeyEase(key,IsSwitch(Keys.Single(k=>k.Id==key).ParameterId)?Easing.Hold:ease);e.Commit();Refresh();}
     public void ClearTrack(string id){Commit();using var e=Session.BeginEdit(Session.Revision,"清空参数轨道");foreach(var k in Keys.Where(k=>k.ParameterId==id))e.RemoveKey(k.Id);e.Commit();Refresh();}
     public void Commit()
     {

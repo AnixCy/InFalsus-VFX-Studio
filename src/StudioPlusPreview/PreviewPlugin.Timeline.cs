@@ -17,7 +17,13 @@ public sealed partial class PreviewPlugin
         if(theme.Button(new Rect(180*s,rect.y+4*s,32*s,26*s),"−",false,false))timelineSpan=Math.Min(600,timelineSpan*1.5);
         if(theme.Button(new Rect(218*s,rect.y+4*s,32*s,26*s),"+",false,false))timelineSpan=Math.Max(.1,timelineSpan/1.5);
         if(theme.Button(new Rect(262*s,rect.y+4*s,70*s,26*s),"跟随",false,false))timelineStart=Math.Max(0,CurrentSeconds-timelineSpan*.2);
-        theme.Label(new Rect(350*s,rect.y+4*s,rect.width-360*s,26*s),"双击添加 · 拖动移动 · Ctrl+滚轮缩放 · Shift+滚轮平移",12,"#7c9dad");
+        float helpX=350;
+        if(Model!.MissingAnimationStarts>0) {
+            if(theme.Button(new Rect(344*s,rect.y+4*s,126*s,26*s),"补齐起点",false,true,13))
+                Queue(()=>{int count=Model!.RepairAnimationStarts();status=$"已补齐 {count} 条连续动画的 0 秒起点；可撤销，保存后才写入文件。";});
+            helpX=486;
+        }
+        theme.Label(new Rect(helpX*s,rect.y+4*s,rect.width-(helpX+10)*s,26*s),"双击添加 · 拖动移动 · Ctrl+滚轮缩放 · Shift+滚轮平移",12,"#7c9dad");
         double step=NiceStep(timelineSpan/10);
         for(double t=Math.Ceiling(timelineStart/step)*step;t<=timelineStart+timelineSpan;t+=step) {
             float x=TimeX(t);theme.Label(new Rect(x+3, timelineRuler.y,75*s,ruler),t.ToString("0.###",CI),12,"#7c9dad",true);

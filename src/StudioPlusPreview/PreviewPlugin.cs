@@ -13,7 +13,7 @@ using UColor = UnityEngine.Color;
 
 namespace InFalsus.Vfx.StudioPlus;
 
-[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.2.0")]
+[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.2.1")]
 [BepInDependency("local.infalsusstudio.visualui", "1.0.7")]
 public sealed partial class PreviewPlugin : BaseUnityPlugin
 {
@@ -52,7 +52,7 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         void Patch(string method, string? prefix = null, string? postfix = null) {
             var target = typeof(StudioBootstrap).GetMethod(method, StudioBridge.Flags)
                 ?? throw new MissingMethodException(typeof(StudioBootstrap).FullName, method);
-            harmony.Patch(target, prefix == null ? null : new HarmonyMethod(typeof(Hooks).GetMethod(prefix)!) { priority = Priority.First },
+            harmony.Patch(target, prefix == null ? null : new HarmonyMethod(typeof(Hooks).GetMethod(prefix)!) { priority = method=="OnGUI"?Priority.First+4000:Priority.First },
                 postfix == null ? null : new HarmonyMethod(typeof(Hooks).GetMethod(postfix)!) { priority = Priority.Last });
         }
         try {
@@ -184,7 +184,8 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         audioPath=savedAudioPath=data.AudioPath;
         if(audioPath.Length!=0)Bridge.LoadAudio(audioPath);
         selectedKey="";selectedParameter="";
-        projectFile = file; fileVersion = opened.FileVersion; drafts.Clear(); status = "工程已打开。";
+        projectFile = file; fileVersion = opened.FileVersion; drafts.Clear();
+        status = Model.MissingAnimationStarts>0?$"工程已打开；{Model.MissingAnimationStarts} 条动画缺少起点，可点时间轴“补齐起点”。":"工程已打开。";
     }
     void ChooseImage()
     {
@@ -200,7 +201,7 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
     void OnDestroy()
     {
         stopped = true; RenderPipelineManager.beginCameraRendering -= BeforeCamera;
-        Bridge.SetView(false);
+        StopHeldPreview();Bridge.SetView(false);
         Application.wantsToQuit -= MayQuit; harmony?.UnpatchSelf();
         Model?.Cancel(); Surface?.Dispose(); ReleaseStyle();
         if (Instance == this) Instance = null;

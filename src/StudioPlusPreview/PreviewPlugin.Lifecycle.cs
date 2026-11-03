@@ -30,6 +30,7 @@ public sealed partial class PreviewPlugin
     void ShowDecision(PendingDecision intent)
     {
         if (decision != PendingDecision.None) return;
+        StopHeldPreview();
         decision = intent; decisionOpenings++;
         decisionError = ""; decisionNeedsFocus = true;
         actions.Clear();

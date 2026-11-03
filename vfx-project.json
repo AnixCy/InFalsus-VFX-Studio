@@ -40,11 +40,11 @@
     "previewBuild": "scripts/Build-Preview.ps1"
   },
   "preview": {
-    "pluginVersion": "0.2.0",
+    "pluginVersion": "0.2.1",
     "testedStudioBinary": "1.0.7 build1030",
     "unityVersion": "6000.3.25f1",
     "coreChecks": 184,
-    "runtimeChecks": 100,
+    "runtimeChecks": 131,
     "visualAcceptance": "pending",
     "interactiveAcceptance": "pending",
     "full1079PluginVerified": false,
