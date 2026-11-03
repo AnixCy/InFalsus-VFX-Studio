@@ -22,6 +22,7 @@ Studio+ 源码固定于提交 `2c8c63722948b8e739f0eef6ebd0478cdf8ddd3d`，快�
 | [vfx-project.json](../../vfx-project.json) | 仓库身份、基线指纹与构建入口，不是演出工程格式 |
 | [src/Presentation](../../src/Presentation/README.md) | Unity 无关的共享核心与创作层；原始导入及后续扩展哈希记录在 `ORIGIN.json` |
 | [src/AudioReactive](../../src/AudioReactive/README.md) | 独立创作端频段分析、包络、参数调制与烘焙；未接入宿主或玩家依赖 |
+| [src/CreatorWorkspace](../../src/CreatorWorkspace/README.md) | 可搬迁资源、独立创作容器、recipe/人工源/派生结果关联；未接入应用层 |
 | [src/StudioPlusPreview](../../src/StudioPlusPreview/) | BepInEx/Harmony 适配、时钟、参数面板、项目文件和渲染资源生命周期 |
 | [src/ShaderAssets](../../src/ShaderAssets/) | 独立 Unity Shader 资源工程，不使用上游根工程构建 |
 | [tests](../../tests/) | 67 项参数检查、129 项创作工程检查及通用契约夹具 |
@@ -78,6 +79,8 @@ dotnet run --project tests/Project.Checks/Project.Checks.csproj -c Release -- .
 音频驱动基础设施另用 `scripts/Check-AudioReactive.ps1 -OutputDirectory '<新目录>'` 验证，无需 Unity 或游戏。它生成合成 WAV、分析缓存、recipe、烘焙曲线、可手动打开的预览工程及数值报告；接口和边界见 [AUDIO_REACTIVE.md](AUDIO_REACTIVE.md)。本库尚未被 Studio/玩家项目引用。
 
 缓存、批量烘焙和导出字节预算使用 `scripts/Check-Infra.ps1 -OutputDirectory '<新目录>'`。该夹具仅验证数值、文件、序列化和已有导出契约，资源文件是明确标注的测试数据，不代表实际 GPU 或游戏加载。整体缺口、部署状态与接入顺序见 [INFRASTRUCTURE.md](INFRASTRUCTURE.md)。
+
+可搬迁工程与 recipe 关联使用 `scripts/Check-Workspace.ps1 -OutputDirectory '<新目录>'`。独立库与 `.vfxwork.json` 格式见 [CREATOR_WORKSPACE.md](CREATOR_WORKSPACE.md)；不会改写现有 Studio `.vfx.json` 或部署 DLL。夹具断开原目录验证回读，并报告实际链接测试的跳过情况。
 
 本次结果和未验收范围见 [VALIDATION.md](VALIDATION.md)。实际操作和视觉由人工验收，自动检查不替代它们。
 

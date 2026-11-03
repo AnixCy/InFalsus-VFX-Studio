@@ -68,6 +68,7 @@ def main():
 | 不规则实体骨架、倒角亮边、建模思路与遮挡归因 | [程序结构知识卡](procedural-geometry.md)与[上方远点模板](../../../templates/perspective-cells/README.md) |
 | 音频频段电平驱动参数、缓存、平滑与烘焙 | [音频驱动基础设施](../AUDIO_REACTIVE.md)，当前无界面接入 |
 | 底层是否齐备、哪些尚未接入或部署 | [基础设施状态手册](../INFRASTRUCTURE.md) |
+| 搬迁创作工程、保存 recipe 与原动画、避免重复烘焙 | [创作工程契约](../CREATOR_WORKSPACE.md)，当前为独立容器 |
 
 ## 回答时的确认边界
 

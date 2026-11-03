@@ -49,7 +49,7 @@ public sealed class EnvelopeSettings
     public double ReleaseSeconds { get; set; } = .15;
     public double Exponent { get; set; } = 1;
     internal EnvelopeSettings Copy() => (EnvelopeSettings)MemberwiseClone();
-    internal void Validate()
+    public void Validate()
     {
         if (!Guard.Finite(FloorDb, CeilingDb, GainDb, AttackSeconds, ReleaseSeconds, Exponent)
             || FloorDb < -240 || CeilingDb > 120 || CeilingDb <= FloorDb || Math.Abs(GainDb) > 120
@@ -67,7 +67,7 @@ public sealed class ParameterMapping
     public double Maximum { get; set; } = 1;
     public AudioBlend Blend { get; set; } = AudioBlend.Add;
     internal ParameterMapping Copy() => (ParameterMapping)MemberwiseClone();
-    internal void Validate()
+    public void Validate()
     {
         if (!Guard.Finite(Minimum, Maximum) || Math.Abs(Minimum) > float.MaxValue || Math.Abs(Maximum) > float.MaxValue
             || !Enum.IsDefined(typeof(AudioBlend), Blend)) throw new ArgumentException("Invalid output mapping.");
@@ -97,7 +97,7 @@ public sealed class BakeSettings
     public int MaximumSamples { get; set; } = 200_000;
     public int MaximumKeys { get; set; } = 100_000;
     internal BakeSettings Copy() => (BakeSettings)MemberwiseClone();
-    internal void Validate()
+    public void Validate()
     {
         if (!Guard.Finite(StartSeconds, EndSeconds, SamplesPerSecond, MaximumError) || StartSeconds < 0
             || EndSeconds <= StartSeconds || SamplesPerSecond < 1 || SamplesPerSecond > 1000 || MaximumError <= 0

@@ -8,6 +8,8 @@
 
 基础设施审查和后续接入先查 [状态手册](docs/vfx/INFRASTRUCTURE.md)。区分源码验证、已部署安装与人工验收；用户暂不能反馈时，优先可独立验证的数据/文件/预算契约，不将底层接口描述为已上线的应用功能。
 
+资源搬迁与 recipe 来源先查 [创作工程契约](docs/vfx/CREATOR_WORKSPACE.md)。`.vfxwork.json` 是独立制作端容器，不是 Studio `.vfx.json` 或 addon。始终从 ManualProject 重烘焙；保留稳定 TrackId 和原关键帧身份，不能将派生输出写回原动画。搬迁默认复制到新目录，不移动原件或递归收集整个素材目录。
+
 ## 项目身份与源码
 
 - 本仓库负责 Studio+ 内的异象创作、BG/Shader、关键帧、演出预览与导出。演出核心已迁入 src/Presentation；独立演出视图、关键帧时间轴与预览位于 src/StudioPlusPreview，验证范围见 docs/vfx/VALIDATION.md。

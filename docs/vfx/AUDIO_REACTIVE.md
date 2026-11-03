@@ -2,6 +2,8 @@
 
 当前为无界面的底层与验证 demo。Studio 仍为 0.7.5，既有安装、设置和游戏入口不变。尚未将音频驱动 recipe 写入 Studio 工程格式或接入界面；demo 只用已烘焙曲线在现有预览器中表现亮度变化。
 
+recipe 与原人工动画现可共同保存在独立创作容器，按 TrackId、原音频文件 SHA、解码 PCM 指纹和完整输入摘要关联；修改后标为过时，重烘焙始终读取原动画。接口见 [CREATOR_WORKSPACE.md](CREATOR_WORKSPACE.md)，不代表已接入 Studio 工程管理。
+
 ## 组件与调用
 
 | 组件 | 职责 |

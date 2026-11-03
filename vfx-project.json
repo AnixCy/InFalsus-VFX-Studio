@@ -91,6 +91,18 @@
     "installedStudioUpdated": false,
     "appIntegration": false
   },
+  "creatorWorkspace": {
+    "source": "src/CreatorWorkspace",
+    "guide": "docs/vfx/CREATOR_WORKSPACE.md",
+    "format": "workspace.vfxwork.json",
+    "checks": 62,
+    "skippedLinkFixture": 1,
+    "targetFramework": "netstandard2.1",
+    "resourceRelocation": true,
+    "manualAndBakeSeparated": true,
+    "appIntegration": false,
+    "installedStudioUpdated": false
+  },
   "addonRuntime": {
     "version": "0.7.1",
     "loader": "MelonLoader IL2CPP",

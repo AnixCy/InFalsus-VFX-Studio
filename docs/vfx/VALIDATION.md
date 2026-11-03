@@ -171,3 +171,13 @@ Unity 构建退出码与返回的 Bundle 清单不足以证明 Shader 有效。�
 未改演出 core、Studio 插件或工程格式；未部署新的导出 DLL。已安装编辑器仍为 0.7.5，现有 demo 和主力游戏保持原样。未启动 Unity/游戏、播放音频或调用视觉工具，视觉调用与截图均为 0。新音频 demo 的听感/画面、应用层 UI 和真实游戏结果继续待验收；先前程序化背景 demo 的效果基线用户已认可，不能扩展成所有功能已验收。
 
 基础设施审查清单及后续优先级见 [INFRASTRUCTURE.md](INFRASTRUCTURE.md)，用户入口说明同步在 [PARAMETER_PREVIEW.md](PARAMETER_PREVIEW.md)。
+
+## 可搬迁创作容器与来源关联（2026-11-04）
+
+新增独立 `netstandard2.1` CreatorWorkspace 库，不被 Studio/玩家工程引用。`.vfxwork.json` 保留完整人工源工程、相对资源清单、稳定 TrackId 与音频/PCM/recipe 关联，以及独立的派生结果和输入/输出摘要；没有改动现有 `.vfx.json`、演出 core、安装或游戏。AudioReactive 的三个配置 Validate 方法仅提升为公开接口，校验规则不变。
+
+62 项针对性检查通过：新目录发布和搬迁、断开原输入与第一份副本后的完整回读、原关键帧身份与曲线保留、重复烘焙不叠加、recipe/曲线修改失效、输出数值篡改、轨道重排与显式重新关联、资源缺失/同大小变更、路径/大小写/文件目录/锁命名空间冲突、外部修改、codec 失真、写锁、取消与半成品清理。另有 1 项实际符号链接夹具因创建失败跳过，未计入通过数；未宣称已实际验证链接阻断。
+
+重新执行 83 项音频检查和 48 项基础设施检查通过，合计 193 项通过、1 项跳过，编译零警告错误。夹具使用合成 WAV、占位 Bundle/图片与显式 Shader/include，资源回读只验证文件与数据契约；不代表媒体解码、GPU、Unity/Mono 或 macOS 已验收。
+
+无 GUI/游戏启动、音频播放、视觉调用或截图；没有搬迁用户现有工程。生成的独立容器尚不能直接在 Studio 打开。格式、资源与摘要边界见 [CREATOR_WORKSPACE.md](CREATOR_WORKSPACE.md)，待接入项同步在 [INFRASTRUCTURE.md](INFRASTRUCTURE.md)。
