@@ -55,7 +55,7 @@ public sealed partial class EffectLibrary
     }
     public EffectDefinition Import(string file,string folder,string version,string colorSpace)
     {
-        var document=ReadCustom(file);document.Effect.SourceDirectory="";Validate(document,version,colorSpace);var effect=document.Effect;
+        var document=ReadCustom(file);document.Effect.SourceDirectory="";document.Effect.BackgroundSource="";document.Effect.StrengthProperty="";Validate(document,version,colorSpace);var effect=document.Effect;
         string bundle=EffectPackage.ResolveAsset(Path.GetDirectoryName(Path.GetFullPath(file))!,effect.Bundle);
         if(new FileInfo(bundle).Length>64*1024*1024)throw new InvalidDataException("自定义效果资源包不能超过 64 MiB。");
         using var digest=SHA256.Create();string hash=BitConverter.ToString(digest.ComputeHash(File.ReadAllBytes(bundle)

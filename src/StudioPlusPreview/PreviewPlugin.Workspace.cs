@@ -3,6 +3,7 @@ using UnityEngine;
 namespace InFalsus.Vfx.StudioPlus;
 public sealed partial class PreviewPlugin
 {
+    string librarySearch="";
     string selectedParameter="adjust/_Exposure",selectedKey="",selectedEffect="adjust",keyTimeText="",libraryFilter="效果",sidebar="效果库";
     bool autoKey=true,keyTimeDirty,draggingKey,parameterPicker;
     double timelineStart,timelineSpan=20;
@@ -15,15 +16,16 @@ public sealed partial class PreviewPlugin
     Vector2 libraryDragOrigin;
     bool libraryDragging;
     string rangeNode="",rangeStart="",rangeEnd="",rangeName="";
-    float LibraryListTop=>libraryFilter=="自定义"?(sourceWorkspace==null?(sourceAdvanced?292:246):sourceAdvanced?352:304):90;
+    float LibraryListTop=>libraryFilter=="自定义"?(sourceWorkspace==null?(sourceAdvanced?292:246):sourceAdvanced?352:304):128;
     void SelectNode(string id){selectedEffect=id;selectedParameter=selectedKey="";parameterPicker=false;rangeNode="";collapsedEffects.Remove(id);
         var node=Model?.Document.Runtime.Nodes.FirstOrDefault(n=>n.Id==id);if(node!=null){var directory=Model!.Definition(node).SourceDirectory;
             if(directory.Length>0&&sourceWorkspace?.Root!=directory)try{UseSource(SourceWorkspace.Open(directory));}catch(Exception e){sourceMessage=e.Message;}}}
     void AddLibraryEffect(EffectDefinition definition,double seconds,int index=-1)
     {
         SelectNode(Model!.AddEffect(definition,seconds,index));trackScroll=float.MaxValue;
+        if(definition.BackgroundSource.Length>0&&definition.StrengthProperty.Length>0)selectedParameter=selectedEffect+"/"+definition.StrengthProperty;
         if(definition.Target=="postprocess")Bridge.SeekSeconds(Model.Document.Runtime.Nodes.Single(n=>n.Id==selectedEffect).StartSeconds);
-        status=definition.Target=="background"?"已替换底图材质；可撤销。":"已添加独立效果；选择参数并打关键帧后加入时间轴。";
+        status=definition.BackgroundSource.Length>0?"已添加底图效果；组合冲突会在预览中提示。":definition.Target=="background"?"已替换底图材质；可撤销。":"已添加独立效果；选择参数并打关键帧后加入时间轴。";
     }
     void DrawWorkspace()
     {
@@ -55,7 +57,9 @@ public sealed partial class PreviewPlugin
         StudioUiTheme.Fill(stage,"#061119");StudioUiTheme.Fill(canvas,"#000000");
         if(Event.current.type==EventType.Repaint&&Surface!=null) {
             try{var texture=Surface.Render(model,Bridge.Snapshot(),Mathf.RoundToInt(canvas.width),Mathf.RoundToInt(canvas.height));
-                GUI.DrawTexture(canvas,texture,ScaleMode.ScaleToFit,false);RenderedFrames++;}
+                GUI.DrawTexture(canvas,texture,ScaleMode.ScaleToFit,false);RenderedFrames++;
+                if(Surface.BackgroundGroupConflicts>0){var hint=new Rect(canvas.x,canvas.yMax-28*s,canvas.width,28*s);StudioUiTheme.Fill(hint,"#382c28dd");theme.Label(hint,"不同底图效果组重叠：以下方组为准",12,"#f2d4b1",false,2);}
+                if(imagePath.Length==0&&Surface.BackgroundControlPasses>0&&!model.Definition(model.Document.Runtime.Nodes.Single(n=>n.Target=="background")).Original){StudioUiTheme.Fill(canvas,"#091923");theme.Label(canvas,"请先在背景栏选择图片",16,"#94b6c3",false,2);}}
             catch(Exception e){Error(e);}
         }
         DrawInspector(layout.Inspector);DrawTimeline(layout.Timeline);HandleLibraryDrop();
@@ -91,9 +95,12 @@ public sealed partial class PreviewPlugin
             var filters=new[]{"全部","效果","预设","自定义"};
             for(int i=0;i<4;i++)if(theme.Button(R(10+i*(w-20)/4,51,(w-24)/4,27),filters[i],libraryFilter==filters[i],false,12))libraryFilter=filters[i];
             if(libraryFilter=="自定义")DrawSourceCard(w);
-            var available=Model!.Library.Effects.Where(d=>d.Target=="postprocess"&&d.Id!="utility");
+            else{librarySearch=theme.Text(R(12,88,w-24,28),"vfx_library_search",librarySearch);if(librarySearch.Length==0)theme.Label(R(19,88,w-38,28),"搜索效果…",12,"#668795");}
+            var available=Model!.Library.Effects.Where(d=>(d.Target=="postprocess"||d.Category=="自定义"&&d.Target=="background")&&d.Id!="utility");
             var definitions=available.Where(d=>d.SourceDirectory.Length==0||ReferenceEquals(d,available.Last(v=>string.Equals(v.SourceDirectory,d.SourceDirectory,StringComparison.OrdinalIgnoreCase))))
-                .Where(d=>libraryFilter=="全部"||Category(d)==libraryFilter).ToArray();
+                .Where(d=>libraryFilter=="全部"||Category(d)==libraryFilter)
+                .Where(d=>libraryFilter=="自定义"||librarySearch.Split(new[]{' '},StringSplitOptions.RemoveEmptyEntries).All(q=>(d.Label+" "+d.Id).IndexOf(q,StringComparison.OrdinalIgnoreCase)>=0))
+                .OrderBy(d=>d.Id=="bg-control-ephemeralamount"?0:d.Id=="bg-control-feedbackamount"?1:d.BackgroundSource.Length>0?2:3).ThenBy(d=>d.Label,StringComparer.OrdinalIgnoreCase).ToArray();
             if(Event.current.type==EventType.Repaint)libraryHits.Clear();
             if(rect.height/UiScale-LibraryListTop-14<30)return;
             libraryScroll=GUI.BeginScrollView(R(10,LibraryListTop,w-20,Mathf.Max(40,rect.height/UiScale-LibraryListTop-14)),libraryScroll,R(0,0,w-36,definitions.Length*55));
@@ -102,7 +109,7 @@ public sealed partial class PreviewPlugin
                     var definition=definitions[i];var item=R(0,i*55,w-38,48);StudioUiTheme.Fill(item,libraryCandidate==definition?"#244955":"#102a36");
                     int cardControl=GUIUtility.GetControlID(0x56464c+definition.Id.GetHashCode(),FocusType.Passive,item);
                     theme.Label(R(8,i*55+3,w-82,25),theme.Fit(definition.Label,(w-82)*UiScale),13,"#c9e9ee");
-                    theme.Label(R(8,i*55+27,w-82,17),definition.Target=="background"?"底图材质 · 替换背景":"效果 · 拖入时间轴",11,"#7c9dad");
+                    theme.Label(R(8,i*55+27,w-82,17),definition.BackgroundSource.Length>0?"底图效果 · 拖入时间轴":"效果 · 拖入时间轴",11,"#7c9dad");
                     if(theme.Button(R(w-68,i*55+8,27,30),"+",false,false,18))Queue(()=>AddLibraryEffect(definition,CurrentSeconds));
                     if(Event.current.type==EventType.Repaint)RegisterLibraryHit(definition,item,cardControl,rect,w);
                     var e=Event.current;

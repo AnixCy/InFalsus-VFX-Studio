@@ -23,6 +23,8 @@ public sealed class EffectDefinition
     public bool Original { get; set; }
     public string Category { get; set; }="";
     public string SourceDirectory {get;set;}="";
+    [JsonIgnore] public string BackgroundSource {get;set;}="";
+    [JsonIgnore] public string StrengthProperty {get;set;}="";
     [JsonIgnore] public string LegacyLabel {get;set;}="";
     public string[] Keywords { get; set; }=Array.Empty<string>();
     public EffectParameter[] Parameters { get; set; }=Array.Empty<EffectParameter>();
@@ -68,6 +70,7 @@ public sealed partial class EffectLibrary
     {
         if(effect.Target=="postprocess"&&!effect.Parameters.Any(p=>p.Property=="_VfxOpacity"))
             effect.Parameters=effect.Parameters.Append(Opacity()).ToArray();
+        if(effect.BackgroundSource.Length>0)effect.Parameters.Single(p=>p.Property=="_VfxOpacity").Label="效果强度";
         foreach(var parameter in effect.Parameters)if(parameter.Property.StartsWith("_KW_",StringComparison.Ordinal))parameter.Min=-1;
     }
     static EffectParameter P(string name,string label,double value,double min,double max)=>new(){Property=name,Label=label,Value=new[]{value},Min=min,Max=max};
@@ -87,6 +90,7 @@ public sealed partial class EffectLibrary
             }
         }
         library.AddCuratedEffects();
+        library.AddBackgroundControls();
         library.LoadCustom(folder);
         foreach(var effect in library.Effects)Prepare(effect);
         return library;

@@ -77,7 +77,7 @@ public sealed partial class PreviewPlugin
     }
     void OnApplicationFocus(bool focused)
     {
-        if(focused)return;
+        if(focused)return;SetPointer(PointerShape.Default);
         StopHeldPreview();playbackKeysDown.Clear();
         CancelEffectDrag();
     }

@@ -25,7 +25,7 @@ public sealed partial class PreviewPlugin
     void DrawTimeline(Rect rect)
     {
         var theme=ui!;float s=UiScale,names=205*s,ruler=35*s;
-        var rows=TimelineRows();
+        var rows=TimelineRows();var hoverResize=ResizeRow(rows,Event.current.mousePosition);
         if(Event.current.type==EventType.Repaint) {
             if(curveSamples.Length!=97||curveSamples[0].Length!=Model!.Values.Length)curveSamples=Enumerable.Range(0,97).Select(_=>new ParameterValue[Model!.Values.Length]).ToArray();
             for(int n=0;n<=96;n++)Model!.SampleCurve(timelineStart+timelineSpan*n/96,curveSamples[n]);
@@ -81,7 +81,10 @@ public sealed partial class PreviewPlugin
                     }
                     var range=PlotRange(p.Id);
                     if(row>=60*s){theme.Label(new Rect(30*s,y+29*s,72*s,19*s),range.High.ToString("0.###",CI),10,"#6b8e9b",true);theme.Label(new Rect(110*s,y+29*s,80*s,19*s),range.Low.ToString("0.###",CI),10,"#6b8e9b",true);}
-                    StudioUiTheme.Fill(new Rect(70*s,y+row-5*s,45*s,2*s),"#628390");
+                    bool resizeHover=resizingChannel&&resizedChannel==p.Id||hoverResize?.Parameter==p.Id;
+                    StudioUiTheme.Fill(new Rect(0,y+row-8*s,timelineBody.width,16*s),resizeHover?"#62b5c22e":"#00000000");
+                    StudioUiTheme.Fill(new Rect(0,y+row-2*s,timelineBody.width,resizeHover?3*s:1),resizeHover?"#a5e5eb":"#385565");
+                    theme.Label(new Rect(34*s,y+row-24*s,150*s,20*s),resizeHover?"↕ 拖动调高度 · 双击恢复":"↕",11,resizeHover?"#d1f5f7":"#7295a2");
                     foreach(var key in Model.Keys.Where(k=>k.ParameterId==p.Id)) {
                         double seconds=key.Id==selectedKey&&Model.MovingSeconds.HasValue?Model.MovingSeconds.Value:key.Seconds;
                         if(draggingEffect&&item.Node==draggedEffect&&!resizingEffect)seconds+=node.StartSeconds-effectDragStart;

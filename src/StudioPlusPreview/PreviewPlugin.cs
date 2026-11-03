@@ -13,7 +13,7 @@ using UColor = UnityEngine.Color;
 
 namespace InFalsus.Vfx.StudioPlus;
 
-[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.5.0")]
+[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.6.0")]
 [BepInDependency("local.infalsusstudio.visualui", "1.0.7")]
 public sealed partial class PreviewPlugin : BaseUnityPlugin
 {
@@ -200,6 +200,7 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         Surface.ApplyImage(image); imagePath = Path.GetFullPath(path);
         if(Model.Catalog.Parameters.Any(p=>p.Id=="background/_PatternMix")) {
             Model.UpdateParameter("background/_PatternMix", new ParameterValue(new System.Numerics.Vector4(0,0,0,0)));Model.Commit();
+            Model.UpdateParameter("background/_Distortion",new ParameterValue(System.Numerics.Vector4.Zero));Model.Commit();
         }
         status = "背景已载入；参数修改实时预览。";
     }
@@ -208,7 +209,7 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         stopped = true; RenderPipelineManager.beginCameraRendering -= BeforeCamera;
         StopHeldPreview();Bridge.SetView(false);
         Application.wantsToQuit -= MayQuit; harmony?.UnpatchSelf();
-        Model?.Cancel(); Surface?.Dispose(); ReleaseStyle();
+        Model?.Cancel(); Surface?.Dispose();ReleasePointers(); ReleaseStyle();
         if (Instance == this) Instance = null;
     }
     public static class Hooks

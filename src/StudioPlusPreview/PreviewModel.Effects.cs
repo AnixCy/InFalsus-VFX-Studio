@@ -30,6 +30,7 @@ public sealed partial class PreviewModel
                 Material=definition.Material,EffectId=definition.Id,Name=definition.Label,StartSeconds=start,EndSeconds=start+5};
             int at=index<0?nodes.Count:Math.Clamp(index,1,nodes.Count);nodes.Insert(at,node);graph.Nodes=nodes.ToArray();
             graph.Channels=graph.Channels.Concat(Channels(id,definition)).ToArray();
+            if(definition.BackgroundSource.Length>0)graph.Requires=graph.Requires.Append(EffectLibrary.BackgroundCapability).Distinct().ToArray();
         });return id;
     }
     public void SetBackground(EffectDefinition definition)

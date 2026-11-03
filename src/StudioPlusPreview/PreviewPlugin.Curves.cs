@@ -74,12 +74,14 @@ public sealed partial class PreviewPlugin
             if(e.rawType==EventType.MouseUp){draggingCurve=false;frozenPlot="";GUIUtility.hotControl=0;Model!.Commit();e.Use();return true;}
         }
         if(e.type!=EventType.MouseDown||e.button!=0||!timelineBody.Contains(point))return false;
-        int index=RowAt(rows,point.y);if(index<0)return false;var item=rows[index];
-        if(item.Parameter!=null&&Math.Abs(point.y-(timelineBody.y+item.Top+item.Height-trackScroll))<6*UiScale) {
-            if(e.clickCount>1){channelHeights.Remove(item.Parameter);Queue(SaveTimelinePreferences);}
-            else{resizingChannel=true;resizedChannel=item.Parameter;resizeStartHeight=ChannelHeight(item.Parameter);resizeStartY=point.y;GUIUtility.hotControl=timelineControl;}
+        var resize=ResizeRow(rows,point);
+        if(resize!=null) {
+            var target=resize;
+            if(e.clickCount>1){channelHeights.Remove(target.Parameter!);Queue(SaveTimelinePreferences);}
+            else{resizingChannel=true;resizedChannel=target.Parameter!;resizeStartHeight=ChannelHeight(target.Parameter!);resizeStartY=point.y;GUIUtility.hotControl=timelineControl;}
             e.Use();return true;
         }
+        int index=RowAt(rows,point.y);if(index<0)return false;var item=rows[index];
         if(item.Parameter!=selectedParameter||point.x<timelineRuler.x||CurveSegment() is not { } pair)return false;
         if(Math.Abs(Component(pair.Right.Value.Number,PlotComponent(pair.Right.ParameterId))-Component(pair.Left.Value.Number,PlotComponent(pair.Left.ParameterId)))<.000001)return false;
         var curve=BezierCurve.From(pair.Left);var plot=CurveArea(item);

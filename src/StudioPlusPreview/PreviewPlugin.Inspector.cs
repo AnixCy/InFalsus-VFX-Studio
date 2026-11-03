@@ -9,6 +9,7 @@ public sealed partial class PreviewPlugin
     float inspectorContentHeight=650;
     void DrawInspector(Rect rect)
     {
+        if(sidebar=="背景"){DrawImageInspector(rect);return;}
         GUI.BeginGroup(rect);
         try {
             var theme=ui!;var model=Model!;var node=model.RenderDocument.Nodes.Single(n=>n.Id==selectedEffect);

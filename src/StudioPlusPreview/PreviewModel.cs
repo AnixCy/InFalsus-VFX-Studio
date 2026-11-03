@@ -14,7 +14,7 @@ public sealed class EditorKey
 }
 public sealed partial class PreviewModel
 {
-    public static readonly string[] Capabilities={"clock.chart","clock.audio","background.material","shader.bundle","postprocess.blit.experimental","effect.instances"};
+    public static readonly string[] Capabilities={"clock.chart","clock.audio","background.material","shader.bundle","postprocess.blit.experimental","effect.instances",EffectLibrary.BackgroundCapability};
     public AuthoringSession Session {get;private set;}
     public ParameterCatalog Catalog {get;private set;}=null!;
     public EffectPackage Package {get;private set;}=null!;
@@ -189,7 +189,7 @@ public sealed partial class PreviewModel
     {
         var defs=new List<(string Id,EffectDefinition Def)>{("background",bg)};
         if(post!=null)defs.Add(("post",post));defs.Add(("adjust",EffectLibrary.Utility));
-        return new PackageDocument{Id="studio-background-preview",UnityVersion=version,ColorSpace=colorSpace,TimeDomain=TimeDomain.Chart,Requires=Capabilities,
+        return new PackageDocument{Id="studio-background-preview",UnityVersion=version,ColorSpace=colorSpace,TimeDomain=TimeDomain.Chart,Requires=Capabilities.Where(c=>c!=EffectLibrary.BackgroundCapability).ToArray(),
             Nodes=defs.Select(d=>new MaterialNodeDocument{Id=d.Id,Target=d.Def.Target,Bundle=d.Def.Bundle,Material=d.Def.Material}).ToArray(),
             Channels=defs.SelectMany(d=>d.Def.Parameters.Select(p=>new ChannelDocument{Node=d.Id,Property=p.Property,Kind=p.Kind,Default=p.Value.ToArray()})).ToArray()};
     }

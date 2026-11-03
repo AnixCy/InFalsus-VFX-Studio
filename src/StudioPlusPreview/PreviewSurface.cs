@@ -7,7 +7,7 @@ using Object=UnityEngine.Object;
 
 namespace InFalsus.Vfx.StudioPlus;
 
-internal sealed class PreviewSurface:IDisposable
+internal sealed partial class PreviewSurface:IDisposable
 {
     sealed class Resource {public string Path="";public Material Material=null!;public EffectDefinition Definition=null!;public readonly HashSet<string> Integers=new();}
     readonly string folder;
@@ -29,6 +29,7 @@ internal sealed class PreviewSurface:IDisposable
     internal bool Enabled {get;set;}=true;
     internal Material Material=>resources["background"].Material;
     internal int ResourceCount=>resources.Count;
+    internal int LastPostProcessDraws {get;private set;}
     internal Material NodeMaterial(string id)=>resources[id].Material;
     internal PreviewSurface(Camera view,string folder)
     {
@@ -62,9 +63,11 @@ internal sealed class PreviewSurface:IDisposable
         for(int i=0;i<material.shader.GetPropertyCount();i++)if(material.shader.GetPropertyType(i)==ShaderPropertyType.Int)resource.Integers.Add(material.shader.GetPropertyName(i));
         return resource;
     }
-    void Ensure(PackageDocument document,EffectLibrary library,Func<MaterialNodeDocument,bool>? active=null)
+    void Ensure(PackageDocument document,EffectLibrary library,Func<MaterialNodeDocument,bool>? active=null,MaterialNodeDocument? backgroundOverride=null)
     {
-        foreach(var node in document.Nodes) {
+        foreach(var original in document.Nodes) {
+            var node=original.Target=="background"?backgroundOverride??original:original;
+            if(library.Resolve(node).BackgroundSource.Length>0)continue;
             if(active!=null&&!active(node))continue;
             var path=node.Bundle+":"+node.Material;
             if(resources.TryGetValue(node.Id,out var old)&&old.Path==path){old.Definition=library.Resolve(node);continue;}
@@ -88,8 +91,9 @@ internal sealed class PreviewSurface:IDisposable
     {
         var frame=clock.Sample(snapshot,model.Package.Tempo,model.Package.Document.TimeDomain,model.Package.Document.OffsetSeconds,model.Package.Document.Seed);
         var document=model.RenderDocument;
-        Ensure(document,model.Library,n=>model.IsActive(n,frame.Seconds));
         model.Sample(frame.Seconds,committedOnly);
+        backgroundFrame=ResolveBackgroundControls(model,frame.Seconds);
+        Ensure(document,model.Library,n=>model.IsActive(n,frame.Seconds),backgroundFrame?.Node);
         for(int i=0;i<model.Values.Length;i++) {
             var p=model.Catalog.Parameters[i];if(!resources.TryGetValue(p.Binding.Node,out var resource))continue;
             var m=resource.Material;var v=model.Values[i].Number;
@@ -122,6 +126,7 @@ internal sealed class PreviewSurface:IDisposable
             if(r.Definition.Original)m.SetVector("_Aspect",new Vector4(aspect,1/aspect,0,0));else m.SetFloat("_Aspect",aspect);
             m.SetVector("_R2",new Vector4((float)(frame.VisualTick*.754877666%1),(float)(frame.VisualTick*.569840296%1),0,0));
         }
+        ApplyBackgroundControls(model);
         return frame;
     }
     internal RenderTexture Render(PreviewModel model,in PlaybackSnapshot snapshot,int requestedWidth,int requestedHeight)
@@ -139,11 +144,12 @@ internal sealed class PreviewSurface:IDisposable
         RenderTexture result=scene!;int index=0;
         command.Clear();command.SetGlobalVector("_BlitTexture_TexelSize",new Vector4(1f/w,1f/h,w,h));
         bool hasCommands=false;
+        LastPostProcessDraws=0;
         double seconds=frame.Seconds;
-        foreach(var node in model.RenderDocument.Nodes.Where(n=>n.Target=="postprocess"&&model.IsActive(n,seconds))) {
+        foreach(var node in model.RenderDocument.Nodes.Where(n=>n.Target=="postprocess"&&model.Definition(n).BackgroundSource.Length==0&&model.IsActive(n,seconds))) {
             float opacity=model.Opacity(node.Id);if(opacity<=0)continue;
             int before=index;index=(index+1)%3;command.SetRenderTarget(targets[index]);
-            Blitter.BlitTexture(command,handles[before],new Vector4(1,1,0,0),resources[node.Id].Material,0);hasCommands=true;
+            Blitter.BlitTexture(command,handles[before],new Vector4(1,1,0,0),resources[node.Id].Material,0);hasCommands=true;LastPostProcessDraws++;
             if(opacity<.99999f) {
                 if(!blendMaterial) {
                     if(!bundles.TryGetValue("preview.bundle",out var bundle)){bundle=AssetBundle.LoadFromFile(Path.Combine(folder,"preview.bundle"));bundles.Add("preview.bundle",bundle);}
@@ -152,6 +158,7 @@ internal sealed class PreviewSurface:IDisposable
                 int effected=index;index=(index+1)%3;command.SetRenderTarget(targets[index]);
                 command.SetGlobalTexture("_VfxBeforeTexture",targets[before]);command.SetGlobalFloat("_VfxBlend",opacity);
                 Blitter.BlitTexture(command,handles[effected],new Vector4(1,1,0,0),blendMaterial,0);
+                LastPostProcessDraws++;
             }
             result=targets[index];
         }
@@ -175,7 +182,8 @@ internal sealed class PreviewSurface:IDisposable
     {
         if(!resources.TryGetValue("background",out var r))return;
         string property=r.Definition.Original?"_BaseMap":"_MainTex";
-        if(imageOverride)r.Material.SetTexture(property,ownedTexture);
+        if(backgroundFrame!=null)r.Material.SetTexture(property,BackgroundInputTexture());
+        else if(imageOverride)r.Material.SetTexture(property,ownedTexture);
         else if(!r.Definition.Original)r.Material.SetTexture(property,Texture2D.whiteTexture);
         else if(bundles.TryGetValue(r.Definition.Bundle,out var bundle))r.Material.SetTexture(property,bundle.LoadAsset<Material>(r.Definition.Material).GetTexture(property));
     }

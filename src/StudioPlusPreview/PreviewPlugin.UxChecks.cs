@@ -20,7 +20,7 @@ public sealed partial class PreviewPlugin
         var model=new PreviewModel(folder,Application.unityVersion,QualitySettings.activeColorSpace.ToString());
         var curated=model.Library.Effects.Where(e=>e.Id.StartsWith("effect-",StringComparison.Ordinal)).ToArray();
         check(curated.Length==11&&curated.All(e=>e.Category=="效果"&&e.Parameters.Any(p=>!p.Hidden&&p.Label=="Strength")),"eleven focused effects expose named strengths independently of presets");
-        check(model.Library.Effects.Count(e=>e.Category=="预设")==24&&model.Library.Effects.All(e=>!e.Label.Contains("官谱")),"preset catalog has descriptive labels and a separate background target");
+        check(model.Library.Effects.Count(e=>e.Category=="预设"&&e.Target=="postprocess")==24&&model.Library.Effects.All(e=>!e.Label.Contains("官谱")),"preset catalog exposes background and postprocess combinations together under descriptive labels");
         var snapshot=Bridge.Snapshot() with{ChartSeconds=2.75,AudioSeconds=2.75};
         string neutral=HashTarget(Surface!.Render(model,snapshot,128,96));
         foreach(var effect in curated) {

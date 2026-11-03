@@ -35,7 +35,7 @@ public sealed partial class PreviewPlugin
             button=new Rect(Mathf.Clamp(viewport.xMax-Mathf.Max(52,104*layout)-112*s,12,Screen.width-110*s),
                 Mathf.Max(12,Screen.height-viewport.yMax+205*layout+8*s),100*s,32*s);
             if(ui.Button(button,"演出视图",false,false))Queue(()=>{Model.Commit();Bridge.SetView(true);});
-        }finally{GUI.skin=previous;}
+        }finally{UpdatePointer();GUI.skin=previous;}
     }
     void Scalar(string id,string label,int component,float value,float min,float max,float y,float width)
     {
