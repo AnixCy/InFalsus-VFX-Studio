@@ -13,7 +13,7 @@ public sealed partial class PreviewPlugin
     Func<string, string> saveDialog = StudioBridge.Save;
     Func<string, string, string> openDialog = StudioBridge.Open;
     Action quitApplication = () => Application.Quit();
-    bool BlocksHostInput => actionRunning || quitPermit || decision != PendingDecision.None;
+    bool BlocksHostInput => actionRunning || quitPermit || decision != PendingDecision.None || addonDialog;
 
     // wantsToQuit must return without any dialog, file IO, or nested message pump.
     bool MayQuit()
@@ -21,6 +21,7 @@ public sealed partial class PreviewPlugin
         quitCallbacks++;
         if (quitPermit && Time.frameCount <= quitPermitExpiresAfter) { quitPermit = false; return true; }
         quitPermit = false;
+        if (addonDialog) { addonDialog=false; return false; }
         if (BlocksHostInput) return false;
         if (!Dirty) return true;
         ShowDecision(PendingDecision.Quit);

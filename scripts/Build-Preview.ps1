@@ -24,7 +24,7 @@ $taskProject = Join-Path $taskRepo 'src/StudioPlusPreview/InFalsus.Vfx.StudioPlu
 & dotnet build $taskProject -c Release --nologo --ignore-failed-sources -m:1 -p:BuildInParallel=false ('-p:StudioPath=' + $taskStudio)
 if ($LASTEXITCODE -ne 0) { throw 'Preview plugin build failed.' }
 $taskBin = Join-Path $taskRepo 'src/StudioPlusPreview/bin/Release/netstandard2.1'
-foreach ($taskName in @('InFalsus.Vfx.StudioPlus.dll','InFalsus.Presentation.Core.dll','InFalsus.Presentation.Authoring.dll')) {
+foreach ($taskName in @('InFalsus.Vfx.StudioPlus.dll','InFalsus.Presentation.Core.dll','InFalsus.Presentation.Authoring.dll','InFalsus.Vfx.Addon.dll','InFalsus.Vfx.Addon.Export.dll')) {
     Copy-Item -LiteralPath (Join-Path $taskBin $taskName) -Destination $taskOutput -Force
 }
 if (-not $SkipShader) {

@@ -8,6 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Presentation/authoring/InFalsus.Presentation.Authoring.csproj" />
+    <ProjectReference Include="../Addon.Export/InFalsus.Vfx.Addon.Export.csproj" />
     <Reference Include="Assembly-CSharp" HintPath="$(StudioManaged)/Assembly-CSharp.dll" Private="false" />
     <Reference Include="UnityEngine" HintPath="$(StudioManaged)/UnityEngine.dll" Private="false" />
     <Reference Include="UnityEngine.CoreModule" HintPath="$(StudioManaged)/UnityEngine.CoreModule.dll" Private="false" />

@@ -1,0 +1,26 @@
+{
+  "source": "local presentation/game-il2cpp baseline",
+  "migratedOn": "2026-11-03",
+  "files": [
+    {
+      "name": "NativeGameBridge.cs",
+      "baselineSha256": "dc0472f38fb6947138690b4da01b767e556fae7af6ab2375e84c118f868d8aab",
+      "adaptedSha256": "813b7813994fdbab2d6ba2a43a4cb5454984993229aa61e9a704de26d6951554"
+    },
+    {
+      "name": "UnityRenderBackend.cs",
+      "baselineSha256": "c48046775ae5e5d07978bcdf9178055588cc835b333f588019ebe103d839789a",
+      "adaptedSha256": "ac5151748a12962b391b40f7f1ec73f76be5c0891b2b15810534762fbfca611a"
+    },
+    {
+      "name": "RenderDiagnostics.cs",
+      "baselineSha256": "064f7cb2b42fdee9bc5cd695b8f31f9cf9017ada19bd64db4fac01658b9c95b2",
+      "adaptedSha256": "ad815a67ad0a5c27ae8a6506bd1dbf60f1f0a75c44ed9add03ea88bdebfb7fb2"
+    },
+    {
+      "name": "RuntimeHost.cs",
+      "baselineSha256": "1f0dbf568d69516878e251c9d8e4ac76a9bd7e4f98c3bd6b29eb722ccb904bcb",
+      "adaptedSha256": "8b707354e12929a21fef6b15f3b9f9e81ac593c3fcbb233f7b7e26568c9da0f5"
+    }
+  ]
+}

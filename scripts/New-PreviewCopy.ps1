@@ -11,7 +11,7 @@ $taskDestination=[IO.Path]::GetFullPath($Destination).TrimEnd('\')
 if(Test-Path -LiteralPath $taskDestination){throw 'Destination already exists; existing installations are never overwritten.'}
 if($taskDestination.StartsWith($taskSource+'\',[StringComparison]::OrdinalIgnoreCase)){throw 'Destination cannot be inside the source installation.'}
 if(-not (Test-Path -LiteralPath (Join-Path $taskSource 'InFalsusStudio.exe'))){throw 'Studio executable missing.'}
-$taskRequired=@('InFalsus.Vfx.StudioPlus.dll','InFalsus.Presentation.Core.dll','InFalsus.Presentation.Authoring.dll','preview.bundle')
+$taskRequired=@('InFalsus.Vfx.StudioPlus.dll','InFalsus.Presentation.Core.dll','InFalsus.Presentation.Authoring.dll','InFalsus.Vfx.Addon.dll','InFalsus.Vfx.Addon.Export.dll','preview.bundle')
 foreach($taskName in $taskRequired){if(-not(Test-Path -LiteralPath (Join-Path $PluginDirectory $taskName))){throw ('Build output missing: '+$taskName)}}
 New-Item -ItemType Directory -Path $taskDestination | Out-Null
 Get-ChildItem -LiteralPath $taskSource -Recurse -File | ForEach-Object {
@@ -25,6 +25,7 @@ $taskPlugins=Join-Path $taskDestination 'BepInEx/plugins/InFalsusVfx'
 New-Item -ItemType Directory -Path $taskPlugins -Force | Out-Null
 foreach($taskName in $taskRequired){Copy-Item -LiteralPath (Join-Path $PluginDirectory $taskName) -Destination $taskPlugins}
 if(Test-Path -LiteralPath (Join-Path $PluginDirectory 'Effects')){Copy-Item -LiteralPath (Join-Path $PluginDirectory 'Effects') -Destination (Join-Path $taskPlugins 'Effects') -Recurse}
+if(Test-Path -LiteralPath (Join-Path $PluginDirectory 'GameExport')){Copy-Item -LiteralPath (Join-Path $PluginDirectory 'GameExport') -Destination (Join-Path $taskPlugins 'GameExport') -Recurse}
 $taskCustom=Join-Path $taskDestination 'CustomEffects'
 New-Item -ItemType Directory -Path (Join-Path $taskCustom 'scripts') -Force|Out-Null
 New-Item -ItemType Directory -Path (Join-Path $taskCustom 'templates/custom-effect') -Force|Out-Null
@@ -40,7 +41,7 @@ if(Test-Path -LiteralPath (Join-Path $taskRepo 'local/custom-effect-sample/effec
 $taskLauncher='@echo off'+"`r`n"+'setlocal'+"`r`n"+'cd /d "%~dp0"'+"`r`n"+'set "INFSTUDIO_CONFIG_ROOT=%~dp0UserData\studio"'+"`r`n"+'set "VFX_WORK_ROOT=%~dp0UserData\vfx"'+"`r`n"+'start "" "%~dp0InFalsusStudio.exe"'+"`r`n"
 [IO.File]::WriteAllText((Join-Path $taskDestination 'Start-VFX.bat'),$taskLauncher,[Text.Encoding]::ASCII)
 $taskGuide=@'
-VFX 背景效果与拖动反馈测试版 0.6.0
+VFX Addon 测试版 0.7.0
 
 双击 Start-VFX.bat，点击右上“演出视图”；左上“制谱视图”返回。
 演出编辑期间停止谱面编辑输入；可直接加载本地音频和 PNG/JPEG，不必打开谱面。
@@ -65,7 +66,10 @@ VFX 背景效果与拖动反馈测试版 0.6.0
 关闭时未保存确认仅显示一个；取消保存或保存失败不会退出。
 
 本版为独立测试副本，旧版保留。视觉、实际操作和听感由用户验收。
-尚无游戏包导出；并未复制原始演出的完整事件编排。
+“导出 addon”支持通用背景图片及一个“色彩与曝光”效果；其他启用效果会阻止导出。
+选目标谱面、选择输出目录后生成独立 addon 文件夹，不包含 SPC 或音乐。
+将整个文件夹放进隔离游戏的 UserData/InFalsusPresentation/Addons，再重启测试游戏。
+游戏接入当前只验证了匹配配置的 Windows IL2CPP 社区壳；未复制原始演出的完整事件编排。
 '@
 [IO.File]::WriteAllText((Join-Path $taskDestination '使用说明.txt'),$taskGuide,[Text.UTF8Encoding]::new($false))
 Write-Output $taskDestination

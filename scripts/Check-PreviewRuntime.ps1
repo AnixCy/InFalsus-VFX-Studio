@@ -13,7 +13,7 @@ $taskPlugin=Join-Path $taskRoot 'BepInEx/plugins/InFalsusVfx'
 if(-not(Test-Path -LiteralPath (Join-Path $taskPlugin 'InFalsus.Vfx.StudioPlus.dll'))){throw 'Not a prepared VFX preview copy.'}
 if(Get-Process -Name InFalsusStudio -ErrorAction SilentlyContinue|Where-Object {$_.Path -eq $taskExe}){throw 'Preview copy is already running.'}
 if(Test-Path -LiteralPath $OutputDirectory){throw 'Use a new check output directory.'}
-if($PluginDirectory){foreach($taskName in @('InFalsus.Vfx.StudioPlus.dll','InFalsus.Presentation.Core.dll','InFalsus.Presentation.Authoring.dll','preview.bundle')){Copy-Item -LiteralPath (Join-Path $PluginDirectory $taskName) -Destination $taskPlugin -Force}}
+if($PluginDirectory){foreach($taskName in @('InFalsus.Vfx.StudioPlus.dll','InFalsus.Presentation.Core.dll','InFalsus.Presentation.Authoring.dll','InFalsus.Vfx.Addon.dll','InFalsus.Vfx.Addon.Export.dll','preview.bundle')){Copy-Item -LiteralPath (Join-Path $PluginDirectory $taskName) -Destination $taskPlugin -Force}}
 $taskOut=[IO.Path]::GetFullPath($OutputDirectory)
 New-Item -ItemType Directory -Path $taskOut|Out-Null
 $taskOldStudio=$env:INFSTUDIO_CONFIG_ROOT;$taskOldVfx=$env:VFX_WORK_ROOT

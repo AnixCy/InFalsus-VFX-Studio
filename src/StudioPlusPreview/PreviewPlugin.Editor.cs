@@ -28,6 +28,7 @@ public sealed partial class PreviewPlugin
             ui.Use();
             ui.LayoutScale=WorkspaceLayout.ScaleFor(Screen.width,Screen.height,ui.BaseScale);
             if(decision!=PendingDecision.None){DrawDecision();return;}
+            if(addonDialog){DrawAddonExport();return;}
             if(stopped||Bridge.Exporting||actionRunning||quitPermit)return;
             if(Bridge.AuthoringView){DrawWorkspace();return;}
             float s=UiScale,layout=Mathf.Min(Screen.width/2560f,Screen.height/1351f);

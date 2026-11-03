@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>netstandard2.1</TargetFramework><LangVersion>latest</LangVersion><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><TreatWarningsAsErrors>true</TreatWarningsAsErrors></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../Addon/InFalsus.Vfx.Addon.csproj" /><ProjectReference Include="../Presentation/authoring/InFalsus.Presentation.Authoring.csproj" /></ItemGroup>
+</Project>
