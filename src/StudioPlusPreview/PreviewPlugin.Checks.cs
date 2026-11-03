@@ -20,6 +20,7 @@ public sealed partial class PreviewPlugin
         void Assert(bool value,string name){if(!value)throw new Exception(name);checks.Add(name);}
         try {
             Assert(Model!=null&&Surface!=null,"plugin bound to Studio camera");
+            Assert(!Dirty&&MayQuit(),"unchanged project exits without a confirmation");
             RenderStageForCheck();
             Assert(RenderedFrames>0,"stage camera rendering callback ran");
             var model=Model!;var surface=Surface!;int material=surface.Material.GetInstanceID();
@@ -81,6 +82,7 @@ public sealed partial class PreviewPlugin
                 .Invoke(Bridge.Owner,new object[]{new Vector2(window.center.x,window.center.y)})!;
             Assert(blocked,"editor panel blocks host authoring input");
             Assert(!Bridge.Transport!.Playing,"checks never started audio transport");
+            CheckLifecycle(Assert,Path.GetDirectoryName(output)!);
             var report=new {ok=true,checks,hashes,unity=Application.unityVersion,colorSpace=QualitySettings.activeColorSpace.ToString(),
                 graphics=SystemInfo.graphicsDeviceType.ToString(),uiVisuallyReviewed=false,audioPlayed=false,gameStarted=false};
             File.WriteAllText(output,JsonConvert.SerializeObject(report,Json));
@@ -92,7 +94,100 @@ public sealed partial class PreviewPlugin
         }
         stopped=true;Surface?.Dispose();Surface=null;
         yield return null;
-        Application.Quit(failure==null?0:2);
+        if(failure==null) {
+            // Finish through the actual asynchronous quit path, not a test-mode bypass.
+            MayQuit();ResolveDecision(DecisionChoice.Discard);
+        } else {
+            quitPermit=true;quitPermitExpiresAfter=Time.frameCount+1;Application.Quit(2);
+        }
+    }
+    void CheckLifecycle(Action<bool,string> assert,string output)
+    {
+        var savedSaveDialog=saveDialog;var savedOpenDialog=openDialog;var savedQuit=quitApplication;
+        int quits=0;
+        void Edit(float value) {
+            Model!.UpdateParameter("background/_Brightness",new ParameterValue(new NVector4(value,0,0,0)));
+            Model.Commit();
+        }
+        void Decide(DecisionChoice choice) { QueueDecision(choice);Update(); }
+        try {
+            quitApplication=()=>{quits++;assert(MayQuit(),"approved quit consumes a single permit");};
+            Edit(1.25f);
+            int before=decisionOpenings,callbacks=quitCallbacks;
+            // Invoke the same managed dispatcher used by native Unity, without queueing process shutdown.
+            var dispatch=typeof(Application).GetMethod("Internal_ApplicationWantsToQuit",StudioBridge.Flags)!;
+            bool dispatcherVetoed=true;
+            for(int i=0;i<3;i++)dispatcherVetoed&=!(bool)dispatch.Invoke(null,null)!;
+            assert(dispatcherVetoed&&quitCallbacks>=callbacks+3,"Unity quit dispatcher reaches the nonblocking veto");
+            bool allVetoed=true;
+            for(int i=0;i<200;i++)allVetoed&=!MayQuit();
+            assert(allVetoed,"200 repeated dirty quit requests are vetoed");
+            assert(decision==PendingDecision.Quit&&decisionOpenings==before+1,"repeated close requests retain one confirmation");
+            Queue(SaveProject);
+            assert(actions.Count==0,"confirmation blocks underlying editor actions");
+            bool blocked=false;Hooks.Block(Vector2.zero,ref blocked);
+            assert(blocked&&!Hooks.Keys(new Event{type=EventType.KeyDown,keyCode=KeyCode.Space})&&!Hooks.TextInput(),
+                "confirmation blocks host mouse keyboard and text handlers");
+            QueueDecision(DecisionChoice.Cancel);QueueDecision(DecisionChoice.Cancel);
+            assert(actions.Count==1,"confirmation buttons queue at most one resolution");Update();
+            assert(decision==PendingDecision.None&&!BlocksHostInput&&Dirty,"cancel returns to editing without discarding changes");
+
+            MayQuit();projectFile="";fileVersion=null;int saves=0;
+            saveDialog=_=>{
+                saves++;Update();Queue(SaveProject);
+                assert(!MayQuit(),"close during a native picker is vetoed without another prompt");
+                return "";
+            };
+            before=decisionOpenings;Decide(DecisionChoice.Save);
+            assert(saves==1&&actions.Count==0&&decisionOpenings==before,"nested message pumping cannot reenter file actions");
+            assert(decision==PendingDecision.Quit&&Dirty&&quits==0,"canceled save keeps confirmation and changes intact");
+
+            var protectedFile=Path.Combine(output,"protected-"+Guid.NewGuid().ToString("N")+".json");
+            File.WriteAllText(protectedFile,"external content");projectFile=protectedFile;fileVersion=null;
+            Decide(DecisionChoice.Save);
+            assert(decision==PendingDecision.Quit&&decisionError.Length>0&&quits==0&&File.ReadAllText(protectedFile)=="external content",
+                "failed save keeps confirmation open and preserves external data");
+
+            textParameter="background/_Brightness";textKey=textParameter+":0";drafts[textKey]="-";
+            Decide(DecisionChoice.Save);
+            assert(decision==PendingDecision.Quit&&quits==0&&Dirty,"invalid numeric draft cannot be discarded by save and quit");
+            Decide(DecisionChoice.Cancel);
+            assert(decision==PendingDecision.None&&textParameter!=null,"cancel quit preserves an invalid numeric draft");
+            textParameter=textKey=null;drafts.Clear();textCommitQueued=false;
+
+            var saveFile=Path.Combine(output,"quit-save-"+Guid.NewGuid().ToString("N")+".vfx.json");
+            projectFile=saveFile;fileVersion=null;MayQuit();Decide(DecisionChoice.Save);
+            assert(quits==1&&!Dirty&&decision==PendingDecision.None&&!quitPermit,
+                "successful save authorizes exactly one quit and clears dirty state");
+            var savedBytes=File.ReadAllBytes(saveFile);
+            Edit(1.75f);assert(!MayQuit()&&decision==PendingDecision.Quit,"quit authorization does not leak into later edits");
+            Decide(DecisionChoice.Discard);
+            assert(quits==2&&Dirty&&File.ReadAllBytes(saveFile).SequenceEqual(savedBytes),"discard quit never overwrites the saved project");
+
+            quitApplication=()=>{};MayQuit();Decide(DecisionChoice.Discard);
+            assert(quitPermit&&BlocksHostInput,"a deferred quit temporarily gates editing");
+            quitPermitExpiresAfter=Time.frameCount-1;Update();
+            assert(!quitPermit&&!BlocksHostInput&&!MayQuit()&&decision==PendingDecision.Quit,
+                "an unconsumed quit permit expires after another subscriber vetoes");
+            Decide(DecisionChoice.Cancel);
+
+            LoadProject();before=decisionOpenings;LoadProject();
+            assert(decision==PendingDecision.OpenProject&&decisionOpenings==before,"open project reuses a single unsaved confirmation");
+            int opens=0;var content=Model!.Session.Snapshot().ContentId;
+            openDialog=(_,__)=>{
+                opens++;Update();Queue(LoadProject);return "";
+            };
+            Decide(DecisionChoice.Discard);
+            assert(opens==1&&actions.Count==0&&decision==PendingDecision.None&&Dirty&&Model.Session.Snapshot().ContentId==content,
+                "canceled project picker preserves current artwork and cannot reenter the queue");
+            LoadProject();openDialog=(_,__)=>throw new IOException("simulated picker failure");
+            Decide(DecisionChoice.Discard);
+            assert(decision==PendingDecision.OpenProject&&decisionError.Length>0&&Dirty,"picker errors preserve artwork and leave a usable confirmation");
+            Decide(DecisionChoice.Cancel);
+        } finally {
+            saveDialog=savedSaveDialog;openDialog=savedOpenDialog;quitApplication=savedQuit;
+            decision=PendingDecision.None;decisionQueued=false;quitPermit=false;actions.Clear();
+        }
     }
     void RenderStageForCheck()
     {

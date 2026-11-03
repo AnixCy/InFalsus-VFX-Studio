@@ -38,8 +38,10 @@ public sealed partial class PreviewPlugin
     }
     void DrawEditor()
     {
-        if (Model == null || stopped || Bridge.Exporting) return;
+        if (Model == null) return;
         EnsureStyle();
+        if (decision != PendingDecision.None) { DrawDecision(); return; }
+        if (stopped || Bridge.Exporting || actionRunning || quitPermit) return;
         var viewport=Bridge.Owner!.ViewCamera.pixelRect;
         button=new Rect(Mathf.Clamp(viewport.xMax-90,12,Screen.width-86),Mathf.Max(10,Screen.height-viewport.yMax+12),76,28);
         if (!positioned) { window.x=button.xMax-window.width; window.y=button.yMax+8; positioned=true; }

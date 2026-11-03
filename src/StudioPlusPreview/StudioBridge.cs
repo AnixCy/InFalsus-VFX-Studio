@@ -40,6 +40,4 @@ internal sealed class StudioBridge
     }
     internal static string Open(string title, string ext) => (string)Dialogs.GetMethod("Open", Flags)!.Invoke(null, new object[] { title, "", ext })!;
     internal static string Save(string name) => (string)Dialogs.GetMethod("Save", Flags)!.Invoke(null, new object[] { "保存演出工程", "", name, "json" })!;
-    internal static bool Confirm(string text) => (bool)Dialogs.GetMethod("Confirm", Flags)!.Invoke(null,
-        new object[] { "演出工程", text, "继续", "取消" })!;
 }

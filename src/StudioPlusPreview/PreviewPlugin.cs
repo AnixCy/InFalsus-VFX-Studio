@@ -13,7 +13,7 @@ using UColor = UnityEngine.Color;
 
 namespace InFalsus.Vfx.StudioPlus;
 
-[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.1.0")]
+[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.1.1")]
 [BepInDependency("local.infalsusstudio.visualui", "1.0.7")]
 public sealed partial class PreviewPlugin : BaseUnityPlugin
 {
@@ -26,7 +26,7 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
     string folder = "", imagePath = "", savedImagePath = "", projectFile = "";
     ProjectFileVersion? fileVersion;
     string status = "参数修改实时显示；数值可输入后按回车应用。";
-    bool previewEnabled = true, stopped;
+    bool previewEnabled = true, stopped, actionRunning;
     internal bool TestMode;
     internal int RenderedFrames;
     internal double CurrentSeconds;
@@ -40,7 +40,7 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         public AuthoringProjectDocument Project { get; set; } = null!;
         public string BackgroundPath { get; set; } = "";
     }
-    bool Dirty => Model != null && (Model.Session.IsDirty || Model.IsEditing || imagePath != savedImagePath);
+    bool Dirty => Model != null && (Model.Session.IsDirty || Model.IsEditing || textParameter != null || imagePath != savedImagePath);
     internal void Awake()
     {
         Instance = this;
@@ -76,7 +76,10 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
     }
     void Update()
     {
-        if (stopped) return;
+        // A veto by another subscriber must not leave authorization for a later attempt.
+        if (quitPermit && Time.frameCount > quitPermitExpiresAfter) quitPermit = false;
+        // Native file dialogs may pump window messages. Never re-enter the action queue.
+        if (stopped || actionRunning || quitPermit) return;
         if (!Bridge.Owner) {
             Bridge.Owner = UnityEngine.Object.FindFirstObjectByType<StudioBootstrap>();
             if (Bridge.Owner && Bridge.Owner!.ViewCamera) {
@@ -89,8 +92,11 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         }
         while (actions.Count != 0) {
             var action = actions.Dequeue();
-            try { FinishText(); action(); drafts.Clear(); }
+            actionRunning = true;
+            try { action(); }
             catch (Exception e) { Error(e); }
+            finally { actionRunning = false; }
+            if (decision != PendingDecision.None) { actions.Clear(); break; }
         }
     }
     void BeforeCamera(ScriptableRenderContext context, Camera camera)
@@ -101,12 +107,17 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         try { CurrentSeconds = Surface.Draw(Model, Bridge.Snapshot(), Bridge.Exporting).Seconds; RenderedFrames++; }
         catch (Exception e) { Error(e); previewEnabled = false; Surface.Enabled = false; }
     }
-    void Queue(Action action) => actions.Enqueue(action);
+    void Queue(Action action)
+    {
+        if (BlocksHostInput) return;
+        actions.Enqueue(() => { FinishText(); action(); drafts.Clear(); });
+    }
     void Error(Exception e)
     {
         while (e is TargetInvocationException && e.InnerException != null) e = e.InnerException;
         status = e is AuthoringEditException edit && edit.Code == AuthoringEditError.FileConflict
             ? "文件已存在或被其他程序修改，请另存为其他文件。" : e.Message;
+        if (decision != PendingDecision.None) decisionError = status;
         Logger.LogWarning("VFX: " + e);
     }
     ProjectFileStore Store() => new(p => JsonConvert.SerializeObject(new ProjectFile { Project = p, BackgroundPath = imagePath }, Json),
@@ -118,20 +129,23 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
             throw new InvalidDataException("不是受支持的演出参数工程。");
         return p;
     }
-    void SaveProject()
+    void SaveProject() => TrySaveProject();
+    bool TrySaveProject()
     {
-        if (Model == null) return;
+        if (Model == null) return false;
+        FinishText();
         Model.Commit();
-        string target = projectFile.Length == 0 ? StudioBridge.Save("演出工程.vfx.json") : projectFile;
-        if (target.Length == 0) return;
+        string target = projectFile.Length == 0 ? saveDialog("演出工程.vfx.json") : projectFile;
+        if (target.Length == 0) return false;
         var result = Store().Save(Model.Session, target, Model.Session.Revision, fileVersion);
         projectFile = target; fileVersion = result.FileVersion; savedImagePath = imagePath;
         status = "工程已保存。";
+        return true;
     }
     void SaveAs()
     {
         if (Model == null) return;
-        Model.Commit(); var target = StudioBridge.Save("演出工程.vfx.json"); if (target.Length == 0) return;
+        Model.Commit(); var target = saveDialog("演出工程.vfx.json"); if (target.Length == 0) return;
         var result = Store().Save(Model.Session, target, Model.Session.Revision,
             string.Equals(target, projectFile, StringComparison.OrdinalIgnoreCase) ? fileVersion : null);
         projectFile = target; fileVersion = result.FileVersion; savedImagePath = imagePath; status = "工程已另存。";
@@ -139,8 +153,13 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
     void LoadProject()
     {
         if (Model == null || Surface == null) return;
-        if (Dirty && !StudioBridge.Confirm("当前演出工程有未保存修改。是否放弃修改并打开其他工程？")) return;
-        var file = StudioBridge.Open("打开演出参数工程", "json"); if (file.Length == 0) return;
+        if (Dirty) { ShowDecision(PendingDecision.OpenProject); return; }
+        OpenProjectFile();
+    }
+    void OpenProjectFile()
+    {
+        if (Model == null || Surface == null) return;
+        var file = openDialog("打开演出参数工程", "json"); if (file.Length == 0) return;
         if (new FileInfo(file).Length > 4*1024*1024) throw new InvalidDataException("工程超过 4 MiB。");
         var data = Decode(File.ReadAllText(file));
         var opened = Store().Open(file);
@@ -155,13 +174,12 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
     void ChooseImage()
     {
         if (Model == null || Surface == null) return;
-        var path = StudioBridge.Open("选择背景图片", "png,jpg,jpeg"); if (path.Length == 0) return;
+        var path = openDialog("选择背景图片", "png,jpg,jpeg"); if (path.Length == 0) return;
         var image = Surface.PrepareImage(path);
         Surface.ApplyImage(image); imagePath = Path.GetFullPath(path);
         Model.UpdateParameter("background/_PatternMix", new ParameterValue(new System.Numerics.Vector4(0,0,0,0)));
         Model.Commit(); status = "背景已载入；参数修改实时预览。";
     }
-    bool MayQuit() => TestMode || !Dirty || StudioBridge.Confirm("演出工程有未保存修改，是否仍然退出？");
     void OnDestroy()
     {
         stopped = true; RenderPipelineManager.beginCameraRendering -= BeforeCamera;
@@ -174,7 +192,14 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         public static void GuiBefore(StudioBootstrap __instance, out Event? __state)
         {
             __state=null; var p=Instance; var e=Event.current;
-            if(p?.Bridge.Owner!=__instance||p.Model==null||p.stopped||p.Bridge.Exporting||e==null)return;
+            if(p?.Bridge.Owner!=__instance||p.Model==null||e==null)return;
+            if((p.stopped||p.Bridge.Exporting)&&!p.BlocksHostInput)return;
+            if(p.BlocksHostInput) {
+                if(e.isMouse||e.isKey||e.type==EventType.ScrollWheel) {
+                    __state=e; Event.current=new Event(e){type=EventType.Ignore};
+                }
+                return;
+            }
             bool ownText=p.OwnsText;
             if(ownText&&e.type==EventType.MouseDown&&!p.Captures(e.mousePosition)&&GUIUtility.hotControl==0) {
                 GUI.FocusControl(null); ownText=false;
@@ -197,18 +222,19 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         }
         public static Exception? GuiFinally(Exception? __exception, Event? __state)
         { if(__state!=null)Event.current=__state; return __exception; }
-        public static void Block(Vector2 __0, ref bool __result) { if (Instance != null) __result |= Instance.Captures(__0); }
-        public static bool Scene(Event __0) => Instance == null || !Instance.Captures(__0.mousePosition);
+        public static void Block(Vector2 __0, ref bool __result) { if (Instance != null) __result |= Instance.BlocksHostInput || Instance.Captures(__0); }
+        public static bool Scene(Event __0) => Instance == null || !(Instance.BlocksHostInput || Instance.Captures(__0.mousePosition));
         public static bool Keys(Event __0)
         {
             var p = Instance;
+            if (p?.BlocksHostInput == true) return false;
             if (p == null || !p.OwnsText) return true;
             if (__0.type == EventType.KeyDown && (__0.control || __0.command) && __0.keyCode == KeyCode.S) {
                 p.Queue(p.SaveProject); __0.Use();
             }
             return false;
         }
-        public static bool TextInput() => Instance == null || !Instance.OwnsText;
+        public static bool TextInput() => Instance == null || !(Instance.BlocksHostInput || Instance.OwnsText);
         public static void Seek(StudioTransport __instance) => Instance?.Bridge.Seeked(__instance);
         public static bool Preferences(ref string __result)
         {
