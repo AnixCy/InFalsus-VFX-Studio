@@ -18,6 +18,7 @@ public sealed class AddonTarget
 }
 public static class AddonPackage
 {
+    public const int MaximumDocumentBytes = 4 * 1024 * 1024;
     public const string ImageCapability = "texture.image-file";
     public const string MaterialPath = "vfx/addon-background";
     public static readonly string[] Capabilities = { "clock.chart", "clock.audio", "background.material", "shader.bundle", ImageCapability };
@@ -29,7 +30,7 @@ public static class AddonPackage
     public static EffectPackage Load(string manifestFile, Func<string,AddonManifest> decodeManifest,
         Func<string,PackageDocument> decodeRuntime, IReadOnlyCollection<string> capabilities)
     {
-        if(new FileInfo(manifestFile).Length>4*1024*1024)throw new InvalidDataException("Addon manifest exceeds 4 MiB.");
+        if(new FileInfo(manifestFile).Length>MaximumDocumentBytes)throw new InvalidDataException("Addon manifest exceeds 4 MiB.");
         var manifest=decodeManifest(File.ReadAllText(manifestFile));var root=Path.GetDirectoryName(Path.GetFullPath(manifestFile))!;
         if(manifest==null||manifest.AddonVersion!=1||manifest.Files==null||manifest.Files.Count==0||manifest.Files.Count>32)
             throw new InvalidDataException("Unsupported addon manifest.");
@@ -40,7 +41,7 @@ public static class AddonPackage
                 throw new InvalidDataException("Addon integrity mismatch: "+item.Key);
         }
         var runtimePath=EffectPackage.ResolveAsset(root,manifest.Runtime);
-        if(new FileInfo(runtimePath).Length>4*1024*1024)throw new InvalidDataException("Runtime exceeds 4 MiB.");
+        if(new FileInfo(runtimePath).Length>MaximumDocumentBytes)throw new InvalidDataException("Runtime exceeds 4 MiB.");
         var package=EffectPackage.FromDocument(decodeRuntime(File.ReadAllText(runtimePath)),root,capabilities);
         foreach(var node in package.Document.Nodes) {
             if(!manifest.Files.ContainsKey(node.Bundle))throw new InvalidDataException("Bundle is not covered by addon hashes.");

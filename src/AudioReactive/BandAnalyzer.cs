@@ -7,6 +7,14 @@ public static class BandAnalyzer
 {
     public const string Algorithm = "centered-periodic-hann-band-rms-v1";
 
+    /// <summary>Compute the lookup key before analysis. Fingerprint must describe the decoded PCM, not the container file.</summary>
+    public static string GetCacheKey(string decodedPcmFingerprint, int sampleRate, int channels, long frameCount, AnalysisSettings settings)
+    {
+        if (!Guard.IsDigest(decodedPcmFingerprint)) throw new ArgumentException("Invalid decoded PCM fingerprint.");
+        Guard.Source(sampleRate, channels, frameCount); Guard.Settings(settings, sampleRate, frameCount);
+        return CacheKey(decodedPcmFingerprint, sampleRate, channels, frameCount, settings);
+    }
+
     public static AudioAnalysis Analyze(IPcmSource source, AnalysisSettings settings,
         CancellationToken cancellation = default, IProgress<double>? progress = null)
     {

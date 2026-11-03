@@ -76,9 +76,9 @@ public static class BackgroundExport
                     DefaultChoice="image"}).ToArray();runtime.Requires=runtime.Requires.Append(AddonPackage.ImageCapability).ToArray();
             }
             EffectPackage.FromDocument(runtime,staging,AddonPackage.Capabilities);
-            var runtimePath=Path.Combine(staging,manifest.Runtime);File.WriteAllText(runtimePath,encode(runtime));
+            var runtimePath=Path.Combine(staging,manifest.Runtime);WriteDocument(runtimePath,encode(runtime));
             manifest.Files.Add(manifest.Runtime,AddonPackage.Hash(runtimePath));
-            File.WriteAllText(Path.Combine(staging,"addon.json"),encode(manifest));
+            WriteDocument(Path.Combine(staging,"addon.json"),encode(manifest));
             Directory.Move(staging,destination);return Path.Combine(destination,"addon.json");
         } finally {
             if(Directory.Exists(staging)) {
@@ -89,5 +89,12 @@ public static class BackgroundExport
                 Directory.Delete(cleanup,true);
             }
         }
+    }
+    static void WriteDocument(string path,string text)
+    {
+        if(string.IsNullOrWhiteSpace(text))throw new InvalidDataException("导出编码器没有生成有效内容。");
+        if(System.Text.Encoding.UTF8.GetByteCount(text)>AddonPackage.MaximumDocumentBytes)
+            throw new InvalidDataException("导出文档超过玩家端 4 MiB 限制；请精简关键帧或提高烘焙容差。");
+        File.WriteAllText(path,text,new System.Text.UTF8Encoding(false));
     }
 }

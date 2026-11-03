@@ -8,5 +8,6 @@
 - 分析缓存按解码内容指纹、分析算法版本、采样率/通道数、窗口、hop 和频段区分。改变包络、映射或目标参数可复用频段 RMS，不必重新 FFT。
 - 预览是可随机定位的函数，平滑提前算在整段包络中；采样不依赖上次播放、音量、设备、帧率或 SV。
 - 烘焙生成既有 Float 通道；保存来源关键帧和 recipe，允许无损返回创作设置。库不改写工程、撤销栈、音频或谱面。
+- `AudioAnalysisStore` 提供可回读校验、checksum、写锁与原子保存；`AudioBakeBatch` 验证整组目标和总关键帧预算，保留未驱动通道。两者仍未接入应用层。
 
 详细定义、示例与接入边界见 [AUDIO_REACTIVE.md](../../docs/vfx/AUDIO_REACTIVE.md)。运行 [验证脚本](../../scripts/Check-AudioReactive.ps1) 生成合成测试音、缓存、recipe、CSV 和可手动打开的演出工程；不自动播放、不启动 Studio 或游戏。

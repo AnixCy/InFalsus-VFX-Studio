@@ -77,6 +77,8 @@ dotnet run --project tests/Project.Checks/Project.Checks.csproj -c Release -- .
 
 音频驱动基础设施另用 `scripts/Check-AudioReactive.ps1 -OutputDirectory '<新目录>'` 验证，无需 Unity 或游戏。它生成合成 WAV、分析缓存、recipe、烘焙曲线、可手动打开的预览工程及数值报告；接口和边界见 [AUDIO_REACTIVE.md](AUDIO_REACTIVE.md)。本库尚未被 Studio/玩家项目引用。
 
+缓存、批量烘焙和导出字节预算使用 `scripts/Check-Infra.ps1 -OutputDirectory '<新目录>'`。该夹具仅验证数值、文件、序列化和已有导出契约，资源文件是明确标注的测试数据，不代表实际 GPU 或游戏加载。整体缺口、部署状态与接入顺序见 [INFRASTRUCTURE.md](INFRASTRUCTURE.md)。
+
 本次结果和未验收范围见 [VALIDATION.md](VALIDATION.md)。实际操作和视觉由人工验收，自动检查不替代它们。
 
 ## 接入约定

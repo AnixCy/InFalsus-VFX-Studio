@@ -82,6 +82,15 @@
     "playerDspDependency": false,
     "bakedChannelKind": "Float"
   },
+  "infrastructure": {
+    "guide": "docs/vfx/INFRASTRUCTURE.md",
+    "checks": 48,
+    "atomicAudioCache": true,
+    "batchAudioBake": true,
+    "addonDocumentBudgetSource": true,
+    "installedStudioUpdated": false,
+    "appIntegration": false
+  },
   "addonRuntime": {
     "version": "0.7.1",
     "loader": "MelonLoader IL2CPP",

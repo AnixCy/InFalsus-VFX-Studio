@@ -108,6 +108,7 @@ public sealed class BakeSettings
 
 internal static class Guard
 {
+    internal static bool IsDigest(string? value) => value != null && value.Length == 64 && value.All(c => c is >= '0' and <= '9' or >= 'a' and <= 'f');
     internal static bool Finite(params double[] values) => values.All(double.IsFinite);
     internal static void Source(int rate, int channels, long frames)
     {

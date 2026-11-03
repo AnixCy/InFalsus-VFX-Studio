@@ -21,6 +21,7 @@
 | 细发光曲线、径向波动、三角网格穿行 | [Wave Lines 模板](../../../templates/wave-lines/README.md)与[参数说明](custom-templates.md) |
 | 不规则实体骨架、倒角亮边、建模思路与遮挡归因 | [程序结构知识卡](procedural-geometry.md)与[上方远点模板](../../../templates/perspective-cells/README.md) |
 | 音频频段电平驱动参数、缓存、平滑与烘焙 | [音频驱动基础设施](../AUDIO_REACTIVE.md)，当前无界面接入 |
+| 底层是否齐备、哪些尚未接入或部署 | [基础设施状态手册](../INFRASTRUCTURE.md) |
 
 ## 回答时的确认边界
 

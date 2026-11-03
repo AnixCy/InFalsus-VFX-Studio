@@ -6,6 +6,8 @@
 
 音频频段驱动与烘焙先查 [音频驱动契约](docs/vfx/AUDIO_REACTIVE.md)。`src/AudioReactive` 仅属于创作基础设施；目前没有音频驱动 UI 或游戏 DSP。复用 PCM 缓存和随机定位求值，明确 AudioOriginSeconds，只向玩家输出既有曲线，不将分析库带入运行包。
 
+基础设施审查和后续接入先查 [状态手册](docs/vfx/INFRASTRUCTURE.md)。区分源码验证、已部署安装与人工验收；用户暂不能反馈时，优先可独立验证的数据/文件/预算契约，不将底层接口描述为已上线的应用功能。
+
 ## 项目身份与源码
 
 - 本仓库负责 Studio+ 内的异象创作、BG/Shader、关键帧、演出预览与导出。演出核心已迁入 src/Presentation；独立演出视图、关键帧时间轴与预览位于 src/StudioPlusPreview，验证范围见 docs/vfx/VALIDATION.md。
