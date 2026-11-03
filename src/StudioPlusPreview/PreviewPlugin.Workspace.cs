@@ -15,7 +15,7 @@ public sealed partial class PreviewPlugin
     Vector2 libraryDragOrigin;
     bool libraryDragging;
     string rangeNode="",rangeStart="",rangeEnd="",rangeName="";
-    float LibraryListTop=>libraryFilter=="自定义"?196:90;
+    float LibraryListTop=>libraryFilter=="自定义"?(sourceWorkspace==null?(sourceAdvanced?292:246):sourceAdvanced?352:304):90;
     void SelectNode(string id){selectedEffect=id;selectedParameter=selectedKey="";parameterPicker=false;rangeNode="";collapsedEffects.Remove(id);
         var node=Model?.Document.Runtime.Nodes.FirstOrDefault(n=>n.Id==id);if(node!=null){var directory=Model!.Definition(node).SourceDirectory;
             if(directory.Length>0&&sourceWorkspace?.Root!=directory)try{UseSource(SourceWorkspace.Open(directory));}catch(Exception e){sourceMessage=e.Message;}}}
@@ -90,19 +90,12 @@ public sealed partial class PreviewPlugin
             if(sidebar=="背景"){DrawBackgroundSettings(w,rect.height/UiScale);return;}
             var filters=new[]{"全部","效果","预设","自定义"};
             for(int i=0;i<4;i++)if(theme.Button(R(10+i*(w-20)/4,51,(w-24)/4,27),filters[i],libraryFilter==filters[i],false,12))libraryFilter=filters[i];
-            if(libraryFilter=="自定义") {
-            if(theme.Button(R(12,88,(w-30)/2,29),"新建模板…",false,false,13))Queue(CreateSourceWorkspace);
-            if(theme.Button(R(18+(w-30)/2,88,(w-30)/2,29),"打开模板…",false,false,13))Queue(OpenSourceWorkspace);
-            bool enabled=GUI.enabled;GUI.enabled=enabled&&sourceWorkspace!=null;
-            if(theme.Button(R(12,122,(w-30)/2,29),"打开编辑器",false,false,13))Queue(OpenSourceInEditor);
-            GUI.enabled=enabled&&sourceWorkspace!=null&&sourceBuild==null;
-            if(theme.Button(R(18+(w-30)/2,122,(w-30)/2,29),sourceBuild==null?"构建并更新":"构建中…",false,true,12))Queue(BuildSourceWorkspace);GUI.enabled=enabled;
-            if(theme.Button(R(12,161,w-24,24),"导入已编译效果…",false,false,12))Queue(ImportCustomEffect);
-            }
+            if(libraryFilter=="自定义")DrawSourceCard(w);
             var available=Model!.Library.Effects.Where(d=>d.Target=="postprocess"&&d.Id!="utility");
             var definitions=available.Where(d=>d.SourceDirectory.Length==0||ReferenceEquals(d,available.Last(v=>string.Equals(v.SourceDirectory,d.SourceDirectory,StringComparison.OrdinalIgnoreCase))))
                 .Where(d=>libraryFilter=="全部"||Category(d)==libraryFilter).ToArray();
             if(Event.current.type==EventType.Repaint)libraryHits.Clear();
+            if(rect.height/UiScale-LibraryListTop-14<30)return;
             libraryScroll=GUI.BeginScrollView(R(10,LibraryListTop,w-20,Mathf.Max(40,rect.height/UiScale-LibraryListTop-14)),libraryScroll,R(0,0,w-36,definitions.Length*55));
             try {
                 for(int i=0;i<definitions.Length;i++) {

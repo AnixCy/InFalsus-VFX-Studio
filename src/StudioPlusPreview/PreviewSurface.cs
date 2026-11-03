@@ -9,7 +9,7 @@ namespace InFalsus.Vfx.StudioPlus;
 
 internal sealed class PreviewSurface:IDisposable
 {
-    sealed class Resource {public string Path="";public Material Material=null!;public EffectDefinition Definition=null!;}
+    sealed class Resource {public string Path="";public Material Material=null!;public EffectDefinition Definition=null!;public readonly HashSet<string> Integers=new();}
     readonly string folder;
     readonly Camera hostCamera,previewCamera;
     readonly GameObject root,quad;
@@ -58,7 +58,9 @@ internal sealed class PreviewSurface:IDisposable
         Material material=asset is Shader shader?new Material(shader):asset is Material original?new Material(original):
             throw new InvalidDataException("找不到效果材质："+node.Material);
         if(!material.shader.isSupported){Object.DestroyImmediate(material);throw new NotSupportedException("当前设备不支持该效果。");}
-        return new Resource{Path=node.Bundle+":"+node.Material,Material=material,Definition=library.Resolve(node)};
+        var resource=new Resource{Path=node.Bundle+":"+node.Material,Material=material,Definition=library.Resolve(node)};
+        for(int i=0;i<material.shader.GetPropertyCount();i++)if(material.shader.GetPropertyType(i)==ShaderPropertyType.Int)resource.Integers.Add(material.shader.GetPropertyName(i));
+        return resource;
     }
     void Ensure(PackageDocument document,EffectLibrary library,Func<MaterialNodeDocument,bool>? active=null)
     {
@@ -94,6 +96,7 @@ internal sealed class PreviewSurface:IDisposable
             if(p.Binding.Property.StartsWith("_KW_",StringComparison.Ordinal)||!m.HasProperty(Id(p.Binding.Property)))continue;
             if(p.Binding.Kind==ParameterKind.Color)m.SetColor(Id(p.Binding.Property),new Color(v.X,v.Y,v.Z,v.W));
             else if(p.Binding.Kind==ParameterKind.Vector)m.SetVector(Id(p.Binding.Property),new Vector4(v.X,v.Y,v.Z,v.W));
+            else if(resource.Integers.Contains(p.Binding.Property))m.SetInteger(Id(p.Binding.Property),Mathf.RoundToInt(v.X));
             else m.SetFloat(Id(p.Binding.Property),v.X);
         }
         foreach(var pair in resources) {

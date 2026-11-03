@@ -14,7 +14,7 @@ public sealed partial class PreviewPlugin
     int textComponent;
     StudioUiTheme? ui;
     static readonly CultureInfo CI = CultureInfo.InvariantCulture;
-    float UiScale => ui!.Scale;
+    float UiScale => ui?.Scale??1;
     Rect R(float x,float y,float width,float height) => new(x*UiScale,y*UiScale,width*UiScale,height*UiScale);
     bool OwnsText => GUI.GetNameOfFocusedControl().StartsWith("vfx_",StringComparison.Ordinal);
     internal bool Captures(Vector2 point) => Model != null && (Bridge.AuthoringView || button.Contains(point));
@@ -65,6 +65,7 @@ public sealed partial class PreviewPlugin
     void Change(string id,int component,float value)
     {
         var model=Model!;model.Sample(CurrentSeconds);
+        if(Bridge.AuthoringView&&selectedParameter!=id){selectedParameter=id;if(!model.Keys.Any(k=>k.Id==selectedKey&&k.ParameterId==id))selectedKey="";curveComponent=0;}
         int index=0;while(model.Catalog.Parameters[index].Id!=id)index++;
         var v=model.Values[index].Number;
         if(Bridge.AuthoringView) {

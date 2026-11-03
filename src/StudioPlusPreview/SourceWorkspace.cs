@@ -7,6 +7,7 @@ internal sealed class SourceWorkspace
     public string Name {get;set;}="My Effect";
     public string Shader {get;set;}="Effect.shader";
     public string Descriptor {get;set;}="effect.json";
+    public int CompilerVersion {get;set;}
     [JsonIgnore] internal string Root="";
     internal static SourceWorkspace Open(string root)
     {
@@ -21,12 +22,13 @@ internal sealed class SourceWorkspace
     internal static SourceWorkspace Create(string root,string tools)
     {
         root=Path.GetFullPath(root);if(Directory.Exists(root)||File.Exists(root))throw new IOException("目标目录已存在；不会覆盖已有源码。");
-        Directory.CreateDirectory(root);var workspace=new SourceWorkspace{Root=root,Name=Path.GetFileName(root)};
+        Directory.CreateDirectory(root);var workspace=new SourceWorkspace{Root=root,Name=Path.GetFileName(root),CompilerVersion=2};
         Directory.CreateDirectory(Path.Combine(root,".vfx/scripts"));Directory.CreateDirectory(Path.Combine(root,".vfx/templates/custom-effect"));
         File.Copy(Path.Combine(tools,"templates/custom-effect/ProceduralPulse.shader"),Path.Combine(root,"Effect.shader"));
         File.Copy(Path.Combine(tools,"templates/custom-effect/effect.json"),Path.Combine(root,"effect.json"));
         var descriptor=Newtonsoft.Json.Linq.JObject.Parse(File.ReadAllText(Path.Combine(root,"effect.json")));
         descriptor["Effect"]!["Id"]="source-"+Guid.NewGuid().ToString("N");descriptor["Effect"]!["Label"]=workspace.Name;
+        descriptor["AutoParameters"]=true;descriptor["Effect"]!["Parameters"]=new Newtonsoft.Json.Linq.JArray();
         File.WriteAllText(Path.Combine(root,"effect.json"),descriptor.ToString(Formatting.Indented));
         File.Copy(Path.Combine(tools,"templates/custom-effect/BuildCustomEffect.cs"),Path.Combine(root,".vfx/templates/custom-effect/BuildCustomEffect.cs"));
         File.Copy(Path.Combine(tools,"scripts/Build-CustomEffect.ps1"),Path.Combine(root,".vfx/scripts/Build-CustomEffect.ps1"));
@@ -38,11 +40,29 @@ internal sealed class SourceWorkspace
             version="2.0.0",tasks=new[]{new{label="Build VFX",type="process",command="powershell.exe",
                 args=new[]{"-NoProfile","-ExecutionPolicy","Bypass","-File","${workspaceFolder}/.vfx/Build.ps1"},
                 group=new{kind="build",isDefault=true},problemMatcher=Array.Empty<string>(),runOptions=new{instanceLimit=1}}}},Formatting.Indented));
-        File.WriteAllText(Path.Combine(root,"README.txt"),"Edit Effect.shader and effect.json in any editor.\r\nVS Code: Ctrl+Shift+B builds the effect. Build.cmd works with other editors.\r\nThe VFX editor watches completed builds and updates linked instances while preserving matching animation parameters.\r\n.vfx/cache is a generated Unity build project; .vfx/build contains compiled revisions used by preview and undo.\r\n");
+        File.WriteAllText(Path.Combine(root,"README.txt"),"Edit Effect.shader in any editor and save. The VFX editor builds and updates it automatically.\r\nDeclare animatable Float, Range, Color and Vector fields in Shader Properties; labels, defaults and ranges are discovered automatically.\r\nCompiler errors keep the previous working preview. Matching animation parameters survive reload.\r\nAdvanced: effect.json controls effect identity/target; AutoParameters=false enables manual parameter descriptions. Build.cmd or VS Code Ctrl+Shift+B can build without the VFX editor.\r\n.vfx/cache and .vfx/build are generated compiler files and revisions.\r\n");
         return workspace;
+    }
+    internal void UpgradeCompiler(string tools)
+    {
+        if(CompilerVersion>=2)return;
+        string backup=Path.Combine(Root,".vfx/tool-backups",DateTime.UtcNow.Ticks.ToString());Directory.CreateDirectory(backup);
+        foreach(var pair in new[]{("scripts/Build-CustomEffect.ps1","scripts/Build-CustomEffect.ps1"),("templates/custom-effect/BuildCustomEffect.cs","templates/custom-effect/BuildCustomEffect.cs")}) {
+            string target=Path.Combine(Root,".vfx",pair.Item1);if(File.Exists(target))File.Copy(target,Path.Combine(backup,Path.GetFileName(target)));
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);File.Copy(Path.Combine(tools,pair.Item2),target,true);
+        }
+        string descriptor=Path.Combine(Root,Descriptor);var json=Newtonsoft.Json.Linq.JObject.Parse(File.ReadAllText(descriptor));
+        if(json["AutoParameters"]==null){File.Copy(descriptor,Path.Combine(backup,"effect.json"));json["AutoParameters"]=true;File.WriteAllText(descriptor,json.ToString());}
+        CompilerVersion=2;File.WriteAllText(Path.Combine(Root,"workspace.vfxsource.json"),JsonConvert.SerializeObject(this,Formatting.Indented));
     }
     internal string LatestFile=>Path.Combine(Root,".vfx/latest-build.json");
     internal string StatusFile=>Path.Combine(Root,".vfx/build-status.json");
+    internal bool HasCurrentBuild=>File.Exists(LatestFile)&&SourceFiles().All(p=>File.GetLastWriteTimeUtc(p)<=File.GetLastWriteTimeUtc(LatestFile));
+    internal string[] SourceFiles()
+    {
+        var shader=Path.Combine(Root,Shader);return Directory.GetFiles(Path.GetDirectoryName(shader)!).Where(p=>Path.GetExtension(p).ToLowerInvariant() is ".hlsl" or ".cginc")
+            .Append(shader).Append(Path.Combine(Root,Descriptor)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(p=>p,StringComparer.Ordinal).ToArray();
+    }
     internal string? LatestDescriptor()
     {
         if(!File.Exists(LatestFile))return null;

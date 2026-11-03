@@ -48,7 +48,7 @@ public sealed partial class PreviewPlugin
     double DropTime(Vector2 point)=>point.x>=timelineRuler.x?XTime(point.x):CurrentSeconds;
     int DropIndex(Vector2 point)
     {
-        var rows=TimelineRows();int row=(int)((point.y-timelineBody.y+trackScroll)/(31*UiScale));
+        var rows=TimelineRows();int row=RowAt(rows,point.y);
         if(row<0||row>=rows.Count)return Model!.Document.Runtime.Nodes.Length;
         return Array.FindIndex(Model!.Document.Runtime.Nodes,n=>n.Id==rows[row].Node)+1;
     }
@@ -61,8 +61,9 @@ public sealed partial class PreviewPlugin
             title=libraryCandidate.Label;valid=DropTarget(dragPointer);start=DropTime(dragPointer);end=start+5;
             detail=valid?$"新增轨道  {start:0.000} — {end:0.000} s":"拖到时间轴放置 · Esc 取消";
             if(valid) {
-                var rows=TimelineRows();int row=Math.Clamp((int)((dragPointer.y-timelineBody.y+trackScroll)/(31*s))+1,0,rows.Count);
-                float y=Mathf.Clamp(timelineBody.y+row*31*s-trackScroll,timelineBody.y,timelineBody.yMax-3*s);
+                var rows=TimelineRows();int row=RowAt(rows,dragPointer.y);
+                float endOfRow=row<0?(rows.Count==0?0:rows[^1].Top+rows[^1].Height):rows[row].Top+rows[row].Height;
+                float y=Mathf.Clamp(timelineBody.y+endOfRow-trackScroll,timelineBody.y,timelineBody.yMax-3*s);
                 StudioUiTheme.Fill(new Rect(timelineBody.x,y,timelineBody.width,2*s),"#b4f2f5");
                 float x=Mathf.Clamp(TimeX(start),timelineRuler.x,timelineRuler.xMax),right=Mathf.Clamp(TimeX(end),x,timelineRuler.xMax);
                 StudioUiTheme.Fill(new Rect(x,Mathf.Min(y+3*s,timelineBody.yMax-24*s),Mathf.Max(4*s,right-x),22*s),"#63b7d455");

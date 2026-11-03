@@ -27,7 +27,7 @@ public sealed partial class PreviewPlugin
             return;
         }
         if(e.keyCode==KeyCode.Escape) {
-            if(libraryCandidate!=null||draggingEffect){CancelEffectDrag();e.Use();}
+            if(libraryCandidate!=null||draggingEffect||draggingCurve||draggingKey||resizingChannel){CancelEffectDrag();e.Use();}
             else if(heldPreviewKey.HasValue){Queue(StopHeldPreview);e.Use();}
             else if(Model!.IsEditing) {
                 Model.Cancel();draggingKey=sliderEditing=keyTimeDirty=false;textParameter=textKey=null;

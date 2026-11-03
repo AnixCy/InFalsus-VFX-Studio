@@ -57,10 +57,10 @@ public sealed partial class PreviewPlugin
         var previousModel=Model;var previousSource=sourceWorkspace;bool previousAuto=autoSourceUpdate;
         string previousFingerprint=sourceFingerprint,previousStatus=sourceStatusFingerprint;double previousPoll=sourcePoll;
         try {
-            Model=model;sourceWorkspace=workspace;autoSourceUpdate=true;sourceFingerprint=sourceStatusFingerprint="";sourcePoll=0;
+            Model=model;sourceWorkspace=workspace;autoSourceUpdate=false;sourceFingerprint=sourceStatusFingerprint="";sourcePoll=0;
             TickSourceWorkspace();
         }finally{Model=previousModel;sourceWorkspace=previousSource;autoSourceUpdate=previousAuto;sourceFingerprint=previousFingerprint;sourceStatusFingerprint=previousStatus;sourcePoll=previousPoll;}
-        check(model.Session.Revision==revision+1&&model.Document.Runtime.Nodes.Count(n=>n.EffectId==second.Id)==2,"completed-build watcher updates all linked instances as one undo transaction");
+        check(model.Session.Revision==revision+1&&model.Document.Runtime.Nodes.Count(n=>n.EffectId==second.Id)==2,"completed manual build updates all instances as one undo transaction even when automatic compilation is disabled");
         check(model.Document.Runtime.Nodes.Select(n=>(n.Id,n.StartSeconds,n.EndSeconds)).SequenceEqual(original)&&model.Keys.Any(k=>k.Id==key&&k.ParameterId==a+"/_Intensity"&&k.Seconds==3),"shader reload preserves instance identities ranges and animated parameter keys");
         string after=HashTarget(Surface.Render(model,snapshot,128,96));check(before!=after,"updated shader code replaces GPU output without restarting the editor");
         model.Undo();check(HashTarget(Surface.Render(model,snapshot,128,96))==before,"undo of source reload restores the exact previous shader and animation");

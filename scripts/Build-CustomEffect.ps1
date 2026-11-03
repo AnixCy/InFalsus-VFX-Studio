@@ -59,7 +59,12 @@ try {
     $taskArguments=@('-batchmode','-quit','-nographics','-buildTarget','Win64','-projectPath',('"'+$taskWork+'"'),'-executeMethod','BuildCustomEffect.Build','-logFile',('"'+(Join-Path $taskOutput 'build.log')+'"'))
     $taskProcess=Start-Process -FilePath $UnityEditor -ArgumentList $taskArguments -WindowStyle Hidden -PassThru
     $taskProcess.WaitForExit()
-    if($taskProcess.ExitCode -ne 0 -or -not(Test-Path -LiteralPath (Join-Path $taskOutput 'build-ok.txt'))){throw 'Custom shader build failed; see build.log.'}
+    if($taskProcess.ExitCode -ne 0 -or -not(Test-Path -LiteralPath (Join-Path $taskOutput 'build-ok.txt'))){
+        $taskErrorFile=Join-Path $taskOutput 'compile-error.txt'
+        if(Test-Path -LiteralPath $taskErrorFile){throw ([IO.File]::ReadAllText($taskErrorFile))}
+        throw ('Custom shader build failed; see '+(Join-Path $taskOutput 'build.log'))
+    }
+    if($taskDefinition.AutoParameters){$taskDefinition.Effect.Parameters=@((Get-Content -Raw -LiteralPath (Join-Path $taskOutput 'shader-properties.json') -Encoding UTF8|ConvertFrom-Json).Parameters)}
     $taskDefinition.Effect.Bundle='effect.bundle'
     $taskDefinition | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath (Join-Path $taskOutput 'effect.json') -Encoding UTF8
     Write-Output $taskOutput

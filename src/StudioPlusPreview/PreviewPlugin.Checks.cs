@@ -91,6 +91,7 @@ public sealed partial class PreviewPlugin
             CheckShortcutsAndStarts(Assert,Path.GetDirectoryName(output)!);
             CheckEffectInstances(Assert,Path.GetDirectoryName(output)!);
             CheckAuthoringWorkflow(Assert,Path.GetDirectoryName(output)!);
+            CheckCurveEditing(Assert,Path.GetDirectoryName(output)!);
             var report=new {ok=true,checks,hashes,unity=Application.unityVersion,colorSpace=QualitySettings.activeColorSpace.ToString(),
                 graphics=SystemInfo.graphicsDeviceType.ToString(),uiVisuallyReviewed=false,audioPlayed=false,gameStarted=false};
             File.WriteAllText(output,JsonConvert.SerializeObject(report,Json));

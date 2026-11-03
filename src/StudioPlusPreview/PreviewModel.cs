@@ -10,6 +10,7 @@ public sealed class EditorKey
     public double Seconds;
     public ParameterValue Value;
     public Easing Ease;
+    public CurvePointDocument[]? Curve;
 }
 public sealed partial class PreviewModel
 {
@@ -57,7 +58,7 @@ public sealed partial class PreviewModel
         foreach(var track in Document.Tracks) {
             var c=Document.Runtime.Channels.Single(c=>ParameterDescriptor.MakeId(c.Node,c.Property)==track.ParameterId);
             for(int i=0;i<c.Keys.Length;i++) {var k=c.Keys[i];keys.Add(new EditorKey{ParameterId=track.ParameterId,Id=track.KeyIds[i],
-                Seconds=k.Seconds??Package.Tempo.ToSeconds(k.Beat!.Value),Value=Number(k.Value),Ease=k.Ease});}
+                Seconds=k.Seconds??Package.Tempo.ToSeconds(k.Beat!.Value),Value=Number(k.Value),Ease=k.Ease,Curve=k.Curve?.Select(v=>new CurvePointDocument{X=v.X,Y=v.Y}).ToArray()});}
         }
         Keys=keys.ToArray();
         missingStarts=Catalog.Parameters.Where(p=>!IsSwitch(p.Id)&&p.Binding.Kind!=ParameterKind.Choice)

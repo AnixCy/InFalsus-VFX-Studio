@@ -37,6 +37,10 @@ public sealed partial class PreviewPlugin
                 float y=node.Target=="postprocess"?239:132;
                 var parameters=model.Catalog.Parameters.Where(p=>p.Binding.Node==node.Id&&!model.Definition(node).Parameters.Single(v=>v.Property==p.Binding.Property).Hidden).ToArray();
                 var parameter=parameters.FirstOrDefault(p=>p.Id==selectedParameter);
+                if(model.Definition(node).SourceDirectory.Length>0) {
+                    DrawShaderProperties(parameters,w,ref y);
+                    if(parameter!=null&&model.Keys.Any(k=>k.Id==selectedKey&&k.ParameterId==parameter.Id))DrawParameterInspector(parameter,w,ref y);
+                }else {
                 if(theme.Button(R(16,y,w-32,32),theme.Fit(parameter?.Label??"选择参数",(w-60)*UiScale,14)+"  ▾",parameterPicker,false,14))parameterPicker=!parameterPicker;y+=43;
                 if(parameterPicker) {
                     pickerScroll=GUI.BeginScrollView(R(12,y,w-24,155),pickerScroll,R(0,0,w-42,parameters.Length*31));
@@ -47,11 +51,28 @@ public sealed partial class PreviewPlugin
                 }
                 if(parameter==null){theme.Paragraph(R(16,y,w-32,90),"选择参数可调节数值。点击 ◆ 或启用自动关键帧后调整，参数才会加入时间轴。",13);y+=96;}
                 else DrawParameterInspector(parameter,w,ref y);
+                }
                 if(libraryFilter=="自定义"||model.Definition(node).SourceDirectory.Length>0)DrawSourceControls(w,ref y);
                 inspectorContentHeight=Mathf.Max(200,y+40-47);
             }finally{GUI.EndScrollView();}
             theme.Rule(R(16,h-59,rect.width/UiScale-32,1));theme.Paragraph(R(16,h-51,rect.width/UiScale-32,46),status,12);
         }finally{GUI.EndGroup();}
+    }
+    void DrawShaderProperties(ParameterDescriptor[] parameters,float w,ref float y)
+    {
+        var theme=ui!;var model=Model!;model.Sample(CurrentSeconds);
+        theme.Label(R(16,y,w-32,28),"Shader 参数",15,"#c9e9ee");y+=37;
+        foreach(var p in parameters) {
+            if(theme.Button(R(16,y,w-70,25),theme.Fit(p.Label,(w-80)*UiScale,13),selectedParameter==p.Id,false,13)){FinishText();model.Commit();selectedParameter=p.Id;selectedKey="";curveComponent=0;}
+            if(theme.Button(R(w-48,y,31,25),"◆",false,false,13))Queue(()=>{selectedParameter=p.Id;selectedKey=model.AddKey(p.Id,CurrentSeconds);});y+=32;
+            int index=model.Catalog.Parameters.ToList().FindIndex(v=>v.Id==p.Id);var value=model.Values[index].Number;
+            int count=p.Binding.Kind==ParameterKind.Float?1:4;
+            for(int c=0;c<count;c++) {
+                float n=Component(value,c);string label=count==1?"数值":(p.Binding.Kind==ParameterKind.Color?"RGBA":"XYZW")[c].ToString();
+                GUI.BeginGroup(R(16,y,w-32,52));try{Scalar(p.Id,label,c,n,(float)(p.SuggestedMin??0),(float)(p.SuggestedMax??1),0,w-32);}finally{GUI.EndGroup();}y+=56;
+            }
+            theme.Rule(R(16,y,w-32,1));y+=12;
+        }
     }
     void DrawParameterInspector(ParameterDescriptor p,float w,ref float y)
     {
@@ -71,13 +92,19 @@ public sealed partial class PreviewPlugin
                 else if(Event.current.keyCode==KeyCode.Escape){model.Cancel();keyTimeDirty=false;GUI.FocusControl(null);Event.current.Use();}
             }
             y+=40;
-            if(PreviewModel.IsSwitch(p.Id)){theme.Paragraph(R(16,y,w-32,48),"离散开关；渐变请调整 Amount 或混合强度。",12);y+=54;}
+                if(PreviewModel.IsSwitch(p.Id)){theme.Paragraph(R(16,y,w-32,48),"离散开关；渐变请调整 Amount 或混合强度。",12);y+=54;}
             else {
                 var modes=new[]{Easing.Linear,Easing.Smooth,Easing.Hold,Easing.SineInOut,Easing.CubicInOut,Easing.BackOut};
                 string[] names={"线性","平滑","保持","正弦","三次","回弹"};
                 for(int i=0;i<modes.Length;i++){var mode=modes[i];if(theme.Button(R(16+i%3*(w-32)/3,y+i/3*32,(w-38)/3,27),names[i],marker.Ease==mode,false,12))Queue(()=>model.SetEase(marker.Id,mode));}
                 y+=70;
+                if(theme.Button(R(16,y,w-32,28),"贝塞尔 · 拖动时间轴紫色柄",marker.Ease==Easing.Curve,false,12))Queue(()=>{model.PreviewCurve(marker.Id,BezierCurve.From(marker));model.Commit();});y+=38;
             }
+        }
+        if(p.Binding.Kind is ParameterKind.Color or ParameterKind.Vector) {
+            string labels=p.Binding.Kind==ParameterKind.Color?"RGBA":"XYZW";
+            for(int c=0;c<4;c++)if(theme.Button(R(16+c*(w-32)/4,y,(w-38)/4,26),labels[c].ToString(),curveComponent==c,false,12))curveComponent=c;
+            y+=36;
         }
         model.Sample(CurrentSeconds);int index=model.Catalog.Parameters.ToList().FindIndex(x=>x.Id==p.Id);
         var value=marker!=null?model.EditedKey==marker.Id&&model.EditedValue.HasValue?model.EditedValue.Value.Number:marker.Value.Number:model.Values[index].Number;
