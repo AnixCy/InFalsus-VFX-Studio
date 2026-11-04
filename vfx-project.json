@@ -43,11 +43,11 @@
     "backgroundMaterialExport": "docs/vfx/BACKGROUND_MATERIAL_EXPORT.md"
   },
   "preview": {
-    "pluginVersion": "0.10.0",
+    "pluginVersion": "0.10.1",
     "testedStudioBinary": "1.0.7 build1030",
     "unityVersion": "6000.3.25f1",
     "coreChecks": 196,
-    "runtimeChecks": 310,
+    "runtimeChecks": 323,
     "authoredBackgroundChecks": 312,
     "combinedAuthoringChecks": 320,
     "previewResolutions": [
@@ -77,7 +77,8 @@
     "sceneReferencePreview": true,
     "optionalFixtureChecksLastVersion": "0.7.5",
     "chartPackRuntimeChecks": 332,
-    "genericBackgroundExport": true
+    "genericBackgroundExport": true,
+    "textDeletionRebindChecked": true
   },
   "presentationCoreImported": true,
   "presentationUiImplemented": true,

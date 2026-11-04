@@ -89,6 +89,7 @@ public sealed partial class PreviewPlugin
             CheckLifecycle(Assert,Path.GetDirectoryName(output)!);
             CheckTimelineAndEffects(Assert,Path.GetDirectoryName(output)!,hashes);
             CheckShortcutsAndStarts(Assert,Path.GetDirectoryName(output)!);
+            CheckTextDelete(Assert);
             CheckEffectInstances(Assert,Path.GetDirectoryName(output)!);
             CheckAuthoringWorkflow(Assert,Path.GetDirectoryName(output)!);
             CheckCurveEditing(Assert,Path.GetDirectoryName(output)!);

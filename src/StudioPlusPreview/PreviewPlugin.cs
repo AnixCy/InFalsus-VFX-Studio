@@ -13,7 +13,7 @@ using UColor = UnityEngine.Color;
 
 namespace InFalsus.Vfx.StudioPlus;
 
-[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.10.0")]
+[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.10.1")]
 [BepInDependency("local.infalsusstudio.visualui", "1.0.7")]
 public sealed partial class PreviewPlugin : BaseUnityPlugin
 {
@@ -71,6 +71,8 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
             var nativeUi=AppDomain.CurrentDomain.GetAssemblies().First(a=>a.GetName().Name=="InfStudioVisualUI")
                 .GetType("InFalsusStudio.NativeEditorUI.NativeEditorUIPlugin")!;
             harmony.Patch(nativeUi.GetMethod("Update",StudioBridge.Flags),prefix:new HarmonyMethod(typeof(Hooks).GetMethod(nameof(Hooks.ChartTick))!));
+            harmony.Patch(nativeUi.GetMethod("RouteHotkey",StudioBridge.Flags)??throw new MissingMethodException(nativeUi.FullName,"RouteHotkey"),
+                prefix:new HarmonyMethod(typeof(Hooks).GetMethod(nameof(Hooks.NativeShortcuts))!){priority=Priority.First});
             harmony.Patch(typeof(StudioTransport).GetMethod("Seek"), postfix: new HarmonyMethod(typeof(Hooks).GetMethod(nameof(Hooks.Seek))!));
             if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("VFX_WORK_ROOT"))) {
                 var getter = typeof(StudioBootstrap).GetProperty("PreferencesPath", StudioBridge.Flags)?.GetGetMethod(true);
@@ -265,6 +267,14 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         public static Exception? GuiFinally(Exception? __exception, Event? __state)
         { if(__exception!=null)Instance?.Probe("gui-exception",Event.current,__exception.GetType().FullName);if(__state!=null)Event.current=__state; return __exception; }
         public static bool ChartTick()=>Instance?.Bridge.AuthoringView!=true;
+        public static bool NativeShortcuts(ref bool __1,ref bool __result)
+        {
+            var p=Instance;if(p==null)return true;
+            // Native callers can route keys separately from StudioBootstrap.OnGUI.
+            // The authoring view owns its dispatcher; chart hotkeys must not consume text.
+            if(p.Bridge.AuthoringView||p.BlocksHostInput){__result=false;return false;}
+            __1|=p.OwnsText;return true;
+        }
         public static void Block(Vector2 __0, ref bool __result) { if (Instance != null) __result |= Instance.Bridge.AuthoringView || Instance.BlocksHostInput || Instance.Captures(__0); }
         public static bool Scene(Event __0) => Instance == null || !(Instance.Bridge.AuthoringView || Instance.BlocksHostInput || Instance.Captures(__0.mousePosition));
         public static bool Keys(Event __0)
