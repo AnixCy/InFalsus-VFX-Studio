@@ -13,7 +13,7 @@ using UColor = UnityEngine.Color;
 
 namespace InFalsus.Vfx.StudioPlus;
 
-[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.10.1")]
+[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.10.2")]
 [BepInDependency("local.infalsusstudio.visualui", "1.0.7")]
 public sealed partial class PreviewPlugin : BaseUnityPlugin
 {
@@ -67,7 +67,7 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
             Patch("HandleSceneEvent", prefix: nameof(Hooks.Scene));
             Patch("HandleKeyboard", prefix: nameof(Hooks.Keys));
             Patch("HandleCommittedInput", prefix: nameof(Hooks.TextInput));
-            Patch("LateUpdate",prefix:nameof(Hooks.ChartTick));
+            Patch("LateUpdate",prefix:nameof(Hooks.ChartTick),postfix:nameof(Hooks.ChartBackground));
             var nativeUi=AppDomain.CurrentDomain.GetAssemblies().First(a=>a.GetName().Name=="InfStudioVisualUI")
                 .GetType("InFalsusStudio.NativeEditorUI.NativeEditorUIPlugin")!;
             harmony.Patch(nativeUi.GetMethod("Update",StudioBridge.Flags),prefix:new HarmonyMethod(typeof(Hooks).GetMethod(nameof(Hooks.ChartTick))!));
@@ -94,6 +94,7 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
             Bridge.Owner = UnityEngine.Object.FindFirstObjectByType<StudioBootstrap>();
             if (Bridge.Owner && Bridge.Owner!.ViewCamera) {
                 try {
+                    chartBackground?.Dispose();chartBackground=null;HideChartBackground();
                     Surface?.Dispose(); Model?.Cancel();
                     Model = new PreviewModel(folder, Application.unityVersion, QualitySettings.activeColorSpace.ToString(),legacy:TestMode);
                     Surface = new PreviewSurface(Bridge.Owner.ViewCamera, folder);
@@ -118,7 +119,7 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
     }
     void BeforeCamera(ScriptableRenderContext context, Camera camera)
     {
-        // Normal authoring renders explicitly into its isolated surface; chart view incurs no material updates.
+        // Normal views render explicitly outside camera callbacks; this callback is a self-check probe only.
         if(!TestMode)return;
         if (stopped || Model == null || Surface == null || !Bridge.Owner || camera != Bridge.Owner!.ViewCamera) return;
         Surface.Enabled = previewEnabled;
@@ -212,6 +213,7 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         stopped = true; RenderPipelineManager.beginCameraRendering -= BeforeCamera;
         StopHeldPreview();Bridge.SetView(false);
         Application.wantsToQuit -= MayQuit; harmony?.UnpatchSelf();
+        chartBackground?.Dispose();chartBackground=null;
         Model?.Cancel(); Surface?.Dispose();ReleasePointers(); ReleaseStyle();
         if (Instance == this) Instance = null;
     }
@@ -267,6 +269,8 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         public static Exception? GuiFinally(Exception? __exception, Event? __state)
         { if(__exception!=null)Instance?.Probe("gui-exception",Event.current,__exception.GetType().FullName);if(__state!=null)Event.current=__state; return __exception; }
         public static bool ChartTick()=>Instance?.Bridge.AuthoringView!=true;
+        public static void ChartBackground(StudioBootstrap __instance)
+        {if(Instance?.Bridge.Owner==__instance)Instance.TickChartBackground();}
         public static bool NativeShortcuts(ref bool __1,ref bool __result)
         {
             var p=Instance;if(p==null)return true;

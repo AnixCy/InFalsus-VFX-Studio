@@ -8,26 +8,31 @@ public sealed partial class PreviewPlugin
     int previewHeight=1440;
     static readonly int[] PreviewHeights={1440,1080,720};
     static readonly string[] PreviewLabels={"2K","1080p","720p"};
-    sealed class PreviewSettings {public int Height=1440;}
+    sealed class PreviewSettings {public int Height=1440;public bool ChartBackgroundPreview;}
     string PreviewSettingsFile=>Path.Combine(Environment.GetEnvironmentVariable("VFX_WORK_ROOT")??Path.GetFullPath(Path.Combine(folder,"../../../UserData/vfx")),"preview-render.json");
     static int ValidPreviewHeight(int height)=>height is 1440 or 1080 or 720?height:1440;
     (int Width,int Height) PreviewSize=>(previewHeight*16/9,previewHeight);
     void LoadPreviewSettings()
     {
-        previewHeight=1440;
+        previewHeight=1440;chartBackgroundEnabled=false;
         try {
             if(!File.Exists(PreviewSettingsFile))return;
             if(new FileInfo(PreviewSettingsFile).Length>8192)throw new InvalidDataException("Preview settings are too large.");
-            previewHeight=ValidPreviewHeight(JsonConvert.DeserializeObject<PreviewSettings>(File.ReadAllText(PreviewSettingsFile))?.Height??1440);
+            var settings=JsonConvert.DeserializeObject<PreviewSettings>(File.ReadAllText(PreviewSettingsFile));
+            previewHeight=ValidPreviewHeight(settings?.Height??1440);chartBackgroundEnabled=settings?.ChartBackgroundPreview??false;
         }catch(Exception e){Logger.LogWarning("Preview resolution ignored: "+e.Message);}
     }
     void SetPreviewResolution(int height)
     {
         previewHeight=ValidPreviewHeight(height);
+        SavePreviewSettings();
+    }
+    void SavePreviewSettings()
+    {
         string file=PreviewSettingsFile;Directory.CreateDirectory(Path.GetDirectoryName(file)!);
         string temporary=file+"."+Guid.NewGuid().ToString("N")+".tmp";
         try {
-            File.WriteAllText(temporary,JsonConvert.SerializeObject(new PreviewSettings{Height=previewHeight},Json));
+            File.WriteAllText(temporary,JsonConvert.SerializeObject(new PreviewSettings{Height=previewHeight,ChartBackgroundPreview=chartBackgroundEnabled},Json));
             if(File.Exists(file))File.Replace(temporary,file,null);else File.Move(temporary,file);
         }finally{if(File.Exists(temporary))File.Delete(temporary);}
     }

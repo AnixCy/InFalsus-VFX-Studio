@@ -44,9 +44,11 @@ if(Test-Path -LiteralPath (Join-Path $taskRepo 'local/custom-effect-sample/effec
 $taskLauncher='@echo off'+"`r`n"+'setlocal'+"`r`n"+'cd /d "%~dp0"'+"`r`n"+'set "INFSTUDIO_CONFIG_ROOT=%~dp0UserData\studio"'+"`r`n"+'set "VFX_WORK_ROOT=%~dp0UserData\vfx"'+"`r`n"+'start "" "%~dp0InFalsusStudio.exe"'+"`r`n"
 [IO.File]::WriteAllText((Join-Path $taskDestination 'Start-VFX.bat'),$taskLauncher,[Text.Encoding]::ASCII)
 $taskGuide=@'
-VFX Addon 测试版 0.10.0
+VFX Addon 测试版：编辑器 0.10.2 / 玩家运行包 0.10.0
 
 双击 Start-VFX.bat，点击右上“演出视图”；左上“制谱视图”返回。
+制谱视图右上“异象背景：关/开”可观看当前已加载演出，跟随谱面播放、暂停和定位；关闭恢复默认背景。
+默认关闭，开关自动保存；只改变背景画面，不编辑演出、不改变note/轨道/UI，也不进入视频导出。
 演出编辑期间停止谱面编辑输入；可直接加载本地音频和 PNG/JPEG，不必打开谱面。
 效果库“效果/预设/自定义”只作筛选；所有效果与参数共用一条时间轴。
 拖入效果创建5秒片段；也可双击或点击 + 添加。效果可重复添加；原始 Shader 组合按支持范围叠加。

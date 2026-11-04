@@ -17,7 +17,7 @@ public sealed partial class PreviewPlugin
     float UiScale => ui?.Scale??1;
     Rect R(float x,float y,float width,float height) => new(x*UiScale,y*UiScale,width*UiScale,height*UiScale);
     bool OwnsText => GUI.GetNameOfFocusedControl().StartsWith("vfx_",StringComparison.Ordinal);
-    internal bool Captures(Vector2 point) => Model != null && (Bridge.AuthoringView || button.Contains(point));
+    internal bool Captures(Vector2 point) => Model != null && (Bridge.AuthoringView || button.Contains(point)||chartBackgroundButton.Contains(point));
     void DrawEditor()
     {
         if(Model==null)return;
@@ -35,6 +35,9 @@ public sealed partial class PreviewPlugin
             var viewport=Bridge.Owner!.ViewCamera.pixelRect;
             button=new Rect(Mathf.Clamp(viewport.xMax-Mathf.Max(52,104*layout)-112*s,12,Screen.width-110*s),
                 Mathf.Max(12,Screen.height-viewport.yMax+205*layout+8*s),100*s,32*s);
+            chartBackgroundButton=new Rect(button.x-136*s,button.y,128*s,button.height);
+            if(ui.Button(chartBackgroundButton,chartBackgroundEnabled?"异象背景：开":"异象背景：关",chartBackgroundEnabled,false))
+                Queue(()=>SetChartBackgroundPreview(!chartBackgroundEnabled));
             if(ui.Button(button,"演出视图",false,false))Queue(()=>{Model.Commit();Bridge.SetView(true);});
         }finally{UpdatePointer();GUI.skin=previous;}
     }
