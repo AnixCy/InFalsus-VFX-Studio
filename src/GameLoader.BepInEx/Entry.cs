@@ -8,7 +8,7 @@ using Object=UnityCore::UnityEngine.Object;
 
 namespace InFalsus.Presentation.BepInEx;
 
-[BepInPlugin("local.InFalsus.Presentation","InFalsus Presentation","0.9.0")]
+[BepInPlugin("local.InFalsus.Presentation","InFalsus Presentation","0.10.0")]
 public sealed class Entry:BasePlugin
 {
     PresentationDriver? driver;

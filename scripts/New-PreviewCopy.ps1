@@ -29,11 +29,14 @@ if(Test-Path -LiteralPath (Join-Path $PluginDirectory 'GameExport')){Copy-Item -
 $taskCustom=Join-Path $taskDestination 'CustomEffects'
 New-Item -ItemType Directory -Path (Join-Path $taskCustom 'scripts') -Force|Out-Null
 New-Item -ItemType Directory -Path (Join-Path $taskCustom 'templates/custom-effect') -Force|Out-Null
-foreach($taskName in @('ProceduralPulse.shader','effect.json','BuildCustomEffect.cs')){
+foreach($taskName in @('ProceduralPulse.shader','Background.shader','effect.json','BuildCustomEffect.cs')){
     Copy-Item -LiteralPath (Join-Path $taskRepo ('templates/custom-effect/'+$taskName)) -Destination (Join-Path $taskCustom ('templates/custom-effect/'+$taskName))
 }
 foreach($taskName in @('README.txt','Build-Sample.bat')){Copy-Item -LiteralPath (Join-Path $taskRepo ('templates/custom-effect/'+$taskName)) -Destination (Join-Path $taskCustom $taskName)}
 Copy-Item -LiteralPath (Join-Path $taskRepo 'scripts/Build-CustomEffect.ps1') -Destination (Join-Path $taskCustom 'scripts/Build-CustomEffect.ps1')
+New-Item -ItemType Directory -Path (Join-Path $taskCustom 'templates/game-addon') -Force|Out-Null
+Copy-Item -LiteralPath (Join-Path $taskRepo 'scripts/Build-GameAddonAssets.ps1') -Destination (Join-Path $taskCustom 'scripts/Build-GameAddonAssets.ps1')
+Copy-Item -LiteralPath (Join-Path $taskRepo 'templates/game-addon/BuildAddonAssets.cs') -Destination (Join-Path $taskCustom 'templates/game-addon/BuildAddonAssets.cs')
 if(Test-Path -LiteralPath (Join-Path $taskRepo 'local/custom-effect-sample/effect.bundle')){
     New-Item -ItemType Directory -Path (Join-Path $taskCustom 'SampleCompiled')|Out-Null
     foreach($taskName in @('effect.bundle','effect.json')){Copy-Item -LiteralPath (Join-Path $taskRepo ('local/custom-effect-sample/'+$taskName)) -Destination (Join-Path $taskCustom ('SampleCompiled/'+$taskName))}
@@ -41,7 +44,7 @@ if(Test-Path -LiteralPath (Join-Path $taskRepo 'local/custom-effect-sample/effec
 $taskLauncher='@echo off'+"`r`n"+'setlocal'+"`r`n"+'cd /d "%~dp0"'+"`r`n"+'set "INFSTUDIO_CONFIG_ROOT=%~dp0UserData\studio"'+"`r`n"+'set "VFX_WORK_ROOT=%~dp0UserData\vfx"'+"`r`n"+'start "" "%~dp0InFalsusStudio.exe"'+"`r`n"
 [IO.File]::WriteAllText((Join-Path $taskDestination 'Start-VFX.bat'),$taskLauncher,[Text.Encoding]::ASCII)
 $taskGuide=@'
-VFX Addon 测试版 0.9.0
+VFX Addon 测试版 0.10.0
 
 双击 Start-VFX.bat，点击右上“演出视图”；左上“制谱视图”返回。
 演出编辑期间停止谱面编辑输入；可直接加载本地音频和 PNG/JPEG，不必打开谱面。
@@ -68,7 +71,9 @@ VFX Addon 测试版 0.9.0
 本版为独立测试副本，旧版保留。视觉、实际操作和听感由用户验收。
 效果库搜索“透明度”可加入轨道、分数、曲名资料、通关状态和判定文字控件；参数 1 保留原生显示，0 隐藏，可打关键帧。
 画布显示简化轨道/UI参照；游戏绑定真实对象，不影响note、光标或暂停菜单。
-“导出曲包”支持通用背景图片、一个“色彩与曝光”和上述透明度控件；其他启用效果会阻止导出。
+“导出曲包”支持原始背景、背景控制项及关联源码的自定义背景 Shader；参数和动画随包，保持单背景绘制。
+自定义页“新建背景…”生成背景模板，“新建后处理…”保留屏幕模板；额外屏幕后处理尚不支持随谱导出。
+复杂背景需要0.10.0玩家端。自定义背景首次游戏目标构建需要制作端Unity 6000.3.9f1，之后复用缓存；玩家不需要Unity。
 包含透明度控件的addon需要0.8.0玩家端，旧玩家端会明确拒绝。
 默认选择已保存的 Studio 歌曲目录、难度和输出位置，生成含全部有效谱面、音频、曲绘和当前演出的完整 ZIP。
 需要配套 GameExport/ChartCompiler，谱师不必安装 Python；不改原工程。SPC2 仅用于适配社区壳。

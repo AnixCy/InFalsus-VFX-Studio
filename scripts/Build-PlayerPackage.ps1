@@ -36,7 +36,7 @@ try {
         Copy-Item -LiteralPath (Join-Path $taskRepo 'src/ChartLoader/LICENSE') -Destination (Join-Path $taskLicenses 'InFalsusChartLoader-MIT.txt')
         Copy-Item -LiteralPath (Join-Path $taskRepo 'src/ChartLoader/ORIGIN.json') -Destination (Join-Path $taskLicenses 'InFalsusChartLoader-source.json')
         $taskReadme=@"
-InFalsus VFX 0.9.0 — $taskLoader / Windows x64 / IL2CPP
+InFalsus VFX 0.10.0 — $taskLoader / Windows x64 / IL2CPP
 
 1. 先安装对应的 $taskLoader 及其要求的运行时。两种 Loader 只选一种。
 2. 退出游戏，将本 ZIP 解压到游戏 EXE 同级目录，保留目录结构。
@@ -59,9 +59,9 @@ ChartLoader 基于 MagicNeko InFalsusChartLoader v0.2.2（MIT），本地兼容�
         $taskFiles=@(Get-ChildItem -LiteralPath $taskPayload -Recurse -File|Sort-Object FullName|ForEach-Object{
             [ordered]@{path=$_.FullName.Substring($taskPayload.Length+1).Replace([char]92,[char]47);bytes=$_.Length;sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()}
         })
-        $taskManifest=[ordered]@{version='0.9.0';loader=$taskLoader;platform='Windows x64 IL2CPP';files=$taskFiles}
+        $taskManifest=[ordered]@{version='0.10.0';loader=$taskLoader;platform='Windows x64 IL2CPP';files=$taskFiles}
         [IO.File]::WriteAllText((Join-Path $taskDocs 'package-manifest.json'),($taskManifest|ConvertTo-Json -Depth 6),[Text.UTF8Encoding]::new($false))
-        [IO.Compression.ZipFile]::CreateFromDirectory($taskPayload,(Join-Path $taskStaging ('InFalsus-VFX-0.9.0-'+$taskLoader+'-win-x64.zip')),[IO.Compression.CompressionLevel]::Optimal,$false)
+        [IO.Compression.ZipFile]::CreateFromDirectory($taskPayload,(Join-Path $taskStaging ('InFalsus-VFX-0.10.0-'+$taskLoader+'-win-x64.zip')),[IO.Compression.CompressionLevel]::Optimal,$false)
     }
     # Publish only the two ZIPs and their hashes, not the intermediate payload trees.
     New-Item -ItemType Directory -Path $taskOutput|Out-Null

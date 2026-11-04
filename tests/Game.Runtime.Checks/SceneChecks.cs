@@ -44,7 +44,7 @@ public sealed partial class Entry
         doc.Requires=doc.Requires.Concat(new[]{"effect.instances",SceneOpacityPlan.Capability}).Distinct().ToArray();
         for(int i=0;i<5;i++) {
             string id="scene-"+i;
-            doc.Nodes=doc.Nodes.Append(new MaterialNodeDocument{Id=id,Target="postprocess",Bundle="background.bundle",
+            doc.Nodes=doc.Nodes.Append(new MaterialNodeDocument{Id=id,Target="postprocess",Bundle=doc.Nodes.Single(n=>n.Target=="background").Bundle,
                 Material=SceneOpacityPlan.Material,EffectId=SceneOpacityPlan.EffectIds[i]}).ToArray();
             doc.Channels=doc.Channels.Append(new ChannelDocument{Node=id,Property=SceneOpacityPlan.Properties[i],
                 Kind=ParameterKind.Float,Default=new[]{1d},Keys=new[]{

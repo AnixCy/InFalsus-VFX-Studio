@@ -27,6 +27,7 @@ public sealed class EffectDefinition
     [JsonIgnore] public string StrengthProperty {get;set;}="";
     [JsonIgnore] public string LegacyLabel {get;set;}="";
     public string[] Keywords { get; set; }=Array.Empty<string>();
+    public string[][] ExclusiveKeywordGroups {get;set;}=Array.Empty<string[]>();
     public EffectParameter[] Parameters { get; set; }=Array.Empty<EffectParameter>();
 }
 public sealed partial class EffectLibrary

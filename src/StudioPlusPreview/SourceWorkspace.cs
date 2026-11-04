@@ -19,15 +19,16 @@ internal sealed class SourceWorkspace
         InFalsus.Presentation.EffectPackage.ResolveAsset(root,workspace.Descriptor);
         workspace.Root=root;return workspace;
     }
-    internal static SourceWorkspace Create(string root,string tools)
+    internal static SourceWorkspace Create(string root,string tools,bool background=false)
     {
         root=Path.GetFullPath(root);if(Directory.Exists(root)||File.Exists(root))throw new IOException("目标目录已存在；不会覆盖已有源码。");
         Directory.CreateDirectory(root);var workspace=new SourceWorkspace{Root=root,Name=Path.GetFileName(root),CompilerVersion=2};
         Directory.CreateDirectory(Path.Combine(root,".vfx/scripts"));Directory.CreateDirectory(Path.Combine(root,".vfx/templates/custom-effect"));
-        File.Copy(Path.Combine(tools,"templates/custom-effect/ProceduralPulse.shader"),Path.Combine(root,"Effect.shader"));
+        File.Copy(Path.Combine(tools,"templates/custom-effect/"+(background?"Background.shader":"ProceduralPulse.shader")),Path.Combine(root,"Effect.shader"));
         File.Copy(Path.Combine(tools,"templates/custom-effect/effect.json"),Path.Combine(root,"effect.json"));
         var descriptor=Newtonsoft.Json.Linq.JObject.Parse(File.ReadAllText(Path.Combine(root,"effect.json")));
         descriptor["Effect"]!["Id"]="source-"+Guid.NewGuid().ToString("N");descriptor["Effect"]!["Label"]=workspace.Name;
+        if(background)descriptor["Effect"]!["Target"]="background";
         descriptor["AutoParameters"]=true;descriptor["Effect"]!["Parameters"]=new Newtonsoft.Json.Linq.JArray();
         File.WriteAllText(Path.Combine(root,"effect.json"),descriptor.ToString(Formatting.Indented));
         File.Copy(Path.Combine(tools,"templates/custom-effect/BuildCustomEffect.cs"),Path.Combine(root,".vfx/templates/custom-effect/BuildCustomEffect.cs"));

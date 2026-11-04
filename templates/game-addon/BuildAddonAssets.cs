@@ -38,10 +38,18 @@ public static class BuildAddonAssets
         var builtFile=Path.Combine(output,bundleName);
         var bundle=AssetBundle.LoadFromFile(builtFile);
         if(!bundle)throw new InvalidOperationException("Built bundle did not load");
-        try{var test=bundle.LoadAsset<Material>("vfx/addon-background");if(!test||!test.HasProperty("_MainTex"))throw new InvalidOperationException("Built material contract failed");}
+        string textureProperty="";
+        try{
+            var test=bundle.LoadAsset<Material>("vfx/addon-background");
+            if(!test)throw new InvalidOperationException("Built material contract failed");
+            textureProperty=test.HasProperty("_MainTex")?"_MainTex":"";
+            if(Environment.GetEnvironmentVariable("VFX_GAME_GENERIC_MATERIAL")=="1"){
+                if(!test.HasProperty("_Color")||test.renderQueue>2500||test.passCount!=1)throw new InvalidOperationException("Background Shader requires native _Color, opaque geometry queue and one pass; fullscreen/history shaders need a different render stage.");
+            }else if(!test.HasProperty("_MainTex"))throw new InvalidOperationException("Built material contract failed");
+        }
         finally{bundle.Unload(true);}
         if(bundleName!="background.bundle")File.Copy(builtFile,Path.Combine(output,"background.bundle"),true);
-        File.WriteAllText(Path.Combine(output,"build-info.json"),"{\"unityVersion\":\""+Application.unityVersion+"\",\"colorSpace\":\""+space+"\",\"platform\":\"StandaloneWindows64\"}");
+        File.WriteAllText(Path.Combine(output,"build-info.json"),"{\"unityVersion\":\""+Application.unityVersion+"\",\"colorSpace\":\""+space+"\",\"platform\":\"StandaloneWindows64\",\"textureProperty\":\""+textureProperty+"\"}");
         Debug.Log("VFX_GAME_ASSETS_VERIFIED "+output);
     }
 }

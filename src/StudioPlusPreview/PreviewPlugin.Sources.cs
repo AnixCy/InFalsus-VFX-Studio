@@ -36,10 +36,13 @@ public sealed partial class PreviewPlugin
         File.WriteAllText(SourcePreferences,JsonConvert.SerializeObject(new SourcePreference{Directory=sourceWorkspace?.Root??"",AutoUpdate=autoSourceUpdate}));
     }
     void CreateSourceWorkspace()
+    {CreateSourceWorkspace(false);}
+    void CreateBackgroundWorkspace()=>CreateSourceWorkspace(true);
+    void CreateSourceWorkspace(bool background)
     {
         string parent=StudioBridge.Folder("选择新模板的父文件夹");if(parent.Length==0)return;
         string root=Path.Combine(parent,"MyEffect");int number=2;while(Directory.Exists(root)||File.Exists(root))root=Path.Combine(parent,"MyEffect"+number++);
-        UseSource(SourceWorkspace.Create(root,CustomTools));attachSourceSession=Model!.Session;attachSourceRoot=root;OpenSourceInEditor();BuildSourceWorkspace();
+        UseSource(SourceWorkspace.Create(root,CustomTools,background));attachSourceSession=Model!.Session;attachSourceRoot=root;OpenSourceInEditor();BuildSourceWorkspace();
     }
     void OpenSourceWorkspace()
     {
@@ -119,7 +122,8 @@ public sealed partial class PreviewPlugin
     void DrawSourceCard(float w)
     {
         var theme=ui!;
-        if(theme.Button(R(12,88,w-24,29),"＋ 新建 Shader 效果…",false,true,13))Queue(CreateSourceWorkspace);
+        if(theme.Button(R(12,88,(w-30)/2,29),"＋ 新建背景…",false,true,13))Queue(CreateBackgroundWorkspace);
+        if(theme.Button(R(18+(w-30)/2,88,(w-30)/2,29),"新建后处理…",false,false,13))Queue(CreateSourceWorkspace);
         if(theme.Button(R(12,123,w-24,29),"打开效果文件夹…",false,false,13))Queue(OpenSourceWorkspace);
         if(sourceWorkspace==null)theme.Paragraph(R(14,163,w-28,48),"创建效果 → 编辑 Shader → 保存。参数自动出现，可直接打关键帧。",12);
         else {

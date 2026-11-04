@@ -38,6 +38,7 @@ public sealed class MaterialNodeDocument
     public double StartSeconds { get; set; }
     public double? EndSeconds { get; set; }
     public Dictionary<string, string> Textures { get; set; } = new();
+    public BackgroundBindingDocument? BackgroundBinding { get; set; }
 }
 public sealed class ChannelDocument
 {
@@ -153,6 +154,7 @@ public sealed class EffectPackage
         });
         var timeline=new PreparedTimeline(channels);
         _=new SceneOpacityPlan(doc);
+        _=new BackgroundMaterialPlan(doc);
         return new(doc, root, tempo, timeline);
     }
 

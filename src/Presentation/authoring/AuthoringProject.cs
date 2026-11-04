@@ -62,7 +62,7 @@ public static class AuthoringProjects
             Requires = p.Requires.ToArray(), Tempo = p.Tempo.Select(t => new TempoDocument { Seconds = t.Seconds, Bpm = t.Bpm }).ToArray(),
             Nodes = p.Nodes.Select(n => new MaterialNodeDocument { Id = n.Id, Target = n.Target, Bundle = n.Bundle,
                 Material = n.Material, EffectId=n.EffectId,Name=n.Name,Enabled=n.Enabled,StartSeconds=n.StartSeconds,EndSeconds=n.EndSeconds,
-                Textures = new Dictionary<string, string>(n.Textures) }).ToArray(),
+                Textures = new Dictionary<string, string>(n.Textures),BackgroundBinding=n.BackgroundBinding?.Copy() }).ToArray(),
             Channels = p.Channels.Select(c => new ChannelDocument { Node = c.Node, Property = c.Property, Kind = c.Kind,
                 Default = c.Default?.ToArray()!, DefaultChoice = c.DefaultChoice, Keys = c.Keys.Select(CopyKey).ToArray() }).ToArray() };
     }
@@ -116,7 +116,8 @@ public static class AuthoringProjects
             var x = p.Nodes[i]; var y = q.Nodes[i];
             if (x.Id != y.Id || x.Target != y.Target || x.Bundle != y.Bundle || x.Material != y.Material
                 || x.EffectId!=y.EffectId || x.Name!=y.Name || x.Enabled!=y.Enabled || x.StartSeconds!=y.StartSeconds || x.EndSeconds!=y.EndSeconds
-                || !x.Textures.OrderBy(v => v.Key, StringComparer.Ordinal).SequenceEqual(y.Textures.OrderBy(v => v.Key, StringComparer.Ordinal))) return false;
+                || !x.Textures.OrderBy(v => v.Key, StringComparer.Ordinal).SequenceEqual(y.Textures.OrderBy(v => v.Key, StringComparer.Ordinal))
+                || !BackgroundBindingDocument.Same(x.BackgroundBinding,y.BackgroundBinding)) return false;
         }
         for (var i = 0; i < a.ParameterHints.Length; i++)
         {

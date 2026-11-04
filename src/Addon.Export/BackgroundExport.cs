@@ -10,12 +10,13 @@ public static class BackgroundExport
         "_Brightness","_Tint","_Distortion","_Frequency","_Speed","_OffsetX","_OffsetY","_PatternMix" };
     static readonly HashSet<string> GradeProperties = new() { "_BaseColor","_Exposure","_Contrast","_Saturation","_VfxOpacity" };
 
-    public static PackageDocument Compile(AuthoringProjectDocument project, AddonTarget target, string colorSpace)
+    public static PackageDocument Compile(AuthoringProjectDocument project, AddonTarget target, string colorSpace,BackgroundExportContext? context=null)
     {
         if(string.IsNullOrWhiteSpace(target.SongKey)||target.Difficulty<0||target.Difficulty>3
             ||!target.SongKey.StartsWith("game:",StringComparison.Ordinal)&&string.IsNullOrWhiteSpace(target.ChartFingerprint))
             throw new InvalidDataException("请选择有效目标谱面；自制谱必须具有指纹。");
         if(colorSpace is not ("Gamma" or "Linear"))throw new InvalidDataException("目标色彩空间无效。");
+        if(context!=null)return MaterialBackgroundExport.Compile(project,target,colorSpace,context);
         var source=AuthoringProjects.Copy(project).Runtime;
         var background=source.Nodes.SingleOrDefault(n=>n.Target=="background")??throw new InvalidDataException("缺少背景。");
         if(background.Bundle!="preview.bundle"||background.Material!="vfx/parameter-preview"||!background.Enabled
@@ -45,7 +46,7 @@ public static class BackgroundExport
             node.Bundle="background.bundle";
             channels.AddRange(source.Channels.Where(c=>c.Node==node.Id));
         }
-        var requires=AddonPackage.Capabilities.Where(c=>c!=AddonPackage.ImageCapability&&c!="effect.instances"&&c!=SceneOpacityPlan.Capability).ToArray();
+        var requires=AddonPackage.Capabilities.Where(c=>c!=AddonPackage.ImageCapability&&c!="effect.instances"&&c!=SceneOpacityPlan.Capability&&c!=BackgroundMaterialPlan.Capability).ToArray();
         if(scene.Length>0)requires=requires.Concat(new[]{"effect.instances",SceneOpacityPlan.Capability}).ToArray();
         return new PackageDocument {
             Id="addon-"+project.ProjectId,SongKey=target.SongKey,Difficulty=target.Difficulty,ChartFingerprint=target.ChartFingerprint,
@@ -60,29 +61,43 @@ public static class BackgroundExport
 
     /// <summary>Build beside the destination, then publish in one rename. Existing outputs are never replaced.</summary>
     public static string Publish(AuthoringProjectDocument project,AddonTarget target,string backgroundImage,string bundle,
-        string colorSpace,string destination,Func<object,string> encode)
+        string colorSpace,string destination,Func<object,string> encode,BackgroundExportContext? context=null)
     {
         destination=Path.GetFullPath(destination);
         if(Directory.Exists(destination)||File.Exists(destination))throw new IOException("导出目标已存在，请选择新目录。");
         // Reject unsupported graphs before touching output or reading media.
-        var runtime=Compile(project,target,colorSpace);
-        if(!File.Exists(bundle))throw new FileNotFoundException("缺少匹配游戏的预编译背景资源。",bundle);
+        var runtime=Compile(project,target,colorSpace,context);
+        if(context==null&&!File.Exists(bundle))throw new FileNotFoundException("缺少匹配游戏的预编译背景资源。",bundle);
         var parent=Path.GetDirectoryName(destination)!;Directory.CreateDirectory(parent);
-        var staging=Path.Combine(parent,".vfx-export-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(staging);
+        var staging=Path.Combine(parent,".vfx-export-"+Guid.NewGuid().ToString("N").Substring(0,16));
+        if(Directory.Exists(staging)||File.Exists(staging))throw new IOException("导出暂存位置冲突，请重试。");Directory.CreateDirectory(staging);
         try {
             var manifest=new AddonManifest();
-            File.Copy(bundle,Path.Combine(staging,"background.bundle"));manifest.Files.Add("background.bundle",AddonPackage.Hash(Path.Combine(staging,"background.bundle")));
+            void Copy(string relative,string file){var to=EffectPackage.ResolveAsset(staging,relative,false);Directory.CreateDirectory(Path.GetDirectoryName(to)!);File.Copy(file,to);manifest.Files.Add(relative,AddonPackage.Hash(to));}
+            if(context==null)Copy("background.bundle",bundle);
+            else {
+                foreach(var pair in context.Files)Copy(pair.Key,pair.Value);
+                foreach(var node in runtime.Nodes)foreach(var key in node.Textures.Keys.ToArray())if(node.Textures[key].StartsWith("file:",StringComparison.Ordinal)) {
+                    string file=EffectPackage.ResolveAsset(context.AssetRoot,node.Textures[key].Substring(5));
+                    if(new FileInfo(file).Length>16*1024*1024)throw new InvalidDataException("背景依赖图片超过 16 MiB。");ImageHeader.Validate(File.ReadAllBytes(file));
+                    string relative="images/"+AddonPackage.Hash(file).Substring(0,32)+Path.GetExtension(file).ToLowerInvariant();if(!manifest.Files.ContainsKey(relative))Copy(relative,file);node.Textures[key]="file:"+relative;
+                }
+            }
             if(backgroundImage.Length>0) {
+                var backgroundNode=runtime.Nodes.Single(n=>n.Target=="background");
+                string textureProperty=backgroundNode.BackgroundBinding?.TextureProperty??"_MainTex";
+                if(textureProperty.Length==0)throw new NotSupportedException("此程序化背景没有图像输入；请清空背景图片，或在 Shader 暴露 _MainTex。");
                 if(new FileInfo(backgroundImage).Length>16*1024*1024)throw new InvalidDataException("背景图片超过 16 MiB。");
                 var ext=Path.GetExtension(backgroundImage).ToLowerInvariant();
                 if(ext is not (".png" or ".jpg" or ".jpeg"))throw new NotSupportedException("背景只支持 PNG/JPEG。");
                 ImageHeader.Validate(File.ReadAllBytes(backgroundImage));
                 var relative="background"+ext;File.Copy(backgroundImage,Path.Combine(staging,relative));
                 manifest.Files.Add(relative,AddonPackage.Hash(Path.Combine(staging,relative)));
-                runtime.Nodes[0].Textures.Add("image","file:"+relative);
-                runtime.Channels=runtime.Channels.Append(new ChannelDocument{Node="background",Property="_MainTex",Kind=ParameterKind.Choice,
+                backgroundNode.Textures["image"]="file:"+relative;
+                runtime.Channels=runtime.Channels.Where(c=>c.Node!=backgroundNode.Id||c.Property!=textureProperty).Append(new ChannelDocument{Node=backgroundNode.Id,Property=textureProperty,Kind=ParameterKind.Choice,
                     DefaultChoice="image"}).ToArray();runtime.Requires=runtime.Requires.Append(AddonPackage.ImageCapability).ToArray();
             }
+            if(runtime.Nodes.Any(n=>n.Textures.Values.Any(v=>v.StartsWith("file:",StringComparison.Ordinal))))runtime.Requires=runtime.Requires.Append(AddonPackage.ImageCapability).Distinct().ToArray();
             EffectPackage.FromDocument(runtime,staging,AddonPackage.Capabilities);
             var runtimePath=Path.Combine(staging,manifest.Runtime);WriteDocument(runtimePath,encode(runtime));
             manifest.Files.Add(manifest.Runtime,AddonPackage.Hash(runtimePath));

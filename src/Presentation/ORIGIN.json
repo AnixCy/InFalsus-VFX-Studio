@@ -25,12 +25,16 @@
       "sha256": "ed1ec145a720ec9f8ba528ebac324bcba818d7781e2eb82c5d0ae27c627bf580"
     },
     "core/EffectPackage.cs": {
-      "change": "Optional effect instances and intervals, plus validated logical scene-opacity controls protected by scene.opacity.v1.",
-      "sha256": "3ff184a90e2e14fd917b22686f09019effe76eb5a56aa0cbb96dec84c99ad873"
+      "change": "Optional instances, logical opacity and capability-guarded background material metadata.",
+      "sha256": "a368e484f2523fb744495fac04a9d1724439a27c177e4186f395c7fe444664d0"
     },
     "authoring/AuthoringProject.cs": {
-      "change": "Deep copy and equality of effect instance metadata for undo, reliable persistence and snapshots.",
-      "sha256": "8ba3d0525c1cb8b36805167c5c644ac5a2351b34dc4aae38d3ff0f10c98e0bf9"
+      "change": "Deep copy and equality of scene and generic background material metadata.",
+      "sha256": "5f3739b8c76135722d4b76275da3dea44085a7037db8fe544d42ad75fb4894d6"
     }
+  },
+  "addedAfterImport": {
+    "core/SceneOpacity.cs": "Logical scene opacity from 0.8.0.",
+    "core/BackgroundMaterialPlan.cs": "Shared metadata-driven background selection/parameter/keyword evaluator from 0.10.0."
   }
 }

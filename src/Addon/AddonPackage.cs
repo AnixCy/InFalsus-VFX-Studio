@@ -21,7 +21,7 @@ public static class AddonPackage
     public const int MaximumDocumentBytes = 4 * 1024 * 1024;
     public const string ImageCapability = "texture.image-file";
     public const string MaterialPath = "vfx/addon-background";
-    public static readonly string[] Capabilities = { "clock.chart", "clock.audio", "background.material", "shader.bundle", ImageCapability, "effect.instances", SceneOpacityPlan.Capability };
+    public static readonly string[] Capabilities = { "clock.chart", "clock.audio", "background.material", "shader.bundle", ImageCapability, "effect.instances", SceneOpacityPlan.Capability,BackgroundMaterialPlan.Capability };
     public static string Hash(string path)
     {
         using var input=File.OpenRead(path);using var sha=SHA256.Create();

@@ -8,6 +8,7 @@ param(
     [string]$BackgroundProject,
     [string]$AuthoringSpec,
     [string]$ChartPackSource,
+    [string]$MaterialSource,
     [switch]$AuthoringFrames
 )
 $ErrorActionPreference='Stop'
@@ -31,9 +32,11 @@ try{
     if($BackgroundProject){$taskArgs+=@('-vfx-background-project',('"'+[IO.Path]::GetFullPath($BackgroundProject)+'"'))}
     if($AuthoringSpec){$taskArgs+=@('-vfx-author-spec',('"'+[IO.Path]::GetFullPath($AuthoringSpec)+'"'))}
     if($ChartPackSource){$taskArgs+=@('-vfx-chart-package-source',('"'+[IO.Path]::GetFullPath($ChartPackSource)+'"'))}
+    if($MaterialSource){$taskArgs+=@('-vfx-material-source',('"'+[IO.Path]::GetFullPath($MaterialSource)+'"'))}
     if($AuthoringFrames){if(-not $AuthoringSpec){throw 'AuthoringFrames requires AuthoringSpec.'};$taskArgs+='-vfx-author-frames'}
     $taskProcess=Start-Process -FilePath $taskExe -ArgumentList $taskArgs -WorkingDirectory $taskRoot -WindowStyle Hidden -PassThru
-    if(-not $taskProcess.WaitForExit(45000)){Stop-Process -Id $taskProcess.Id;throw 'The owned check process exceeded 45 seconds.'}
+    $taskLimit=if($MaterialSource){240000}else{45000}
+    if(-not $taskProcess.WaitForExit($taskLimit)){Stop-Process -Id $taskProcess.Id;throw 'The owned check process exceeded its bounded test budget.'}
     if($taskProcess.ExitCode -ne 0){throw ('Runtime checks failed with exit code '+$taskProcess.ExitCode+'; see player.log and checks.json.')}
     $taskReport=Get-Content -Raw -LiteralPath (Join-Path $taskOut 'checks.json')|ConvertFrom-Json
     if(-not $taskReport.ok){throw 'Runtime check report did not pass.'}

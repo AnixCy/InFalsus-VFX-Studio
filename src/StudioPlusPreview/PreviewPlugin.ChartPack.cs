@@ -50,10 +50,10 @@ public sealed partial class PreviewPlugin
         string parent=addonFolderDialog("选择完整曲包输出位置");if(parent.Length==0)return;
         string name="Song_"+song.Id+"_"+DateTime.Now.ToString("yyyyMMdd-HHmmss")+"_"+Guid.NewGuid().ToString("N").Substring(0,4)+(addonZip?".zip":"");
         string destination=Path.Combine(parent,name);
-        var project=Model.Session.Snapshot();
+        var project=MaterialExportProject(Model.Session.Snapshot());var context=MaterialExportContext(project,profile.ColorSpace);
         if(project.Runtime.TimeDomain==InFalsus.Presentation.TimeDomain.Chart)project.Runtime.OffsetSeconds-=prepared.ChartOffsetSeconds;
         ChartPackExport.Publish(prepared.Root,addonDifficulty,project,imagePath,Path.Combine(folder,"GameExport",profile.ColorSpace,"background.bundle"),profile.ColorSpace,
-            destination,addonZip,o=>JsonConvert.SerializeObject(o,Json),PackFields,t=>JsonConvert.DeserializeObject<ChartPackManifest>(t,Json)!,t=>JsonConvert.DeserializeObject<AddonManifest>(t,Json)!);
+            destination,addonZip,o=>JsonConvert.SerializeObject(o,Json),PackFields,t=>JsonConvert.DeserializeObject<ChartPackManifest>(t,Json)!,t=>JsonConvert.DeserializeObject<AddonManifest>(t,Json)!,context);
         lastAddonExport=destination;status="完整曲包已导出："+destination;
     }
 }

@@ -10,7 +10,7 @@ using Object = UnityCore::UnityEngine.Object;
 namespace InFalsus.Presentation.Game;
 
 /// <summary>Background/scene player owns only its bundles and material instances; never hooks the renderer graph.</summary>
-public sealed class UnityRenderBackend : IRenderBackend, IDisposable
+public sealed partial class UnityRenderBackend : IRenderBackend, IDisposable
 {
     public IReadOnlyCollection<string> Capabilities { get; }
     private readonly IGameBindings _bridge;
@@ -36,7 +36,7 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
     public UnityRenderBackend(IGameBindings bridge, Action<string> report)
     {
         (_bridge,_report)=(bridge,report);
-        var caps=new HashSet<string>{"clock.audio","clock.chart","background.material","shader.bundle",AddonPackage.ImageCapability};
+        var caps=new HashSet<string>{"clock.audio","clock.chart","background.material","shader.bundle",AddonPackage.ImageCapability,BackgroundMaterialPlan.Capability};
         if(bridge is ISceneOpacityBindings){caps.Add("effect.instances");caps.Add(SceneOpacityPlan.Capability);}
         Capabilities=caps;
     }
@@ -46,7 +46,7 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
         if (!package.Matches(snapshot)) throw new InvalidOperationException("Package/chart mismatch.");
         package.ValidateMaterialGraph(Application.unityVersion, "StandaloneWindows64", QualitySettings.activeColorSpace.ToString());
         _=new SceneOpacityPlan(package.Document);
-        if (package.Document.Nodes.Any(n => !SceneOpacityPlan.IsControl(n)&&(n.Target != "background" || !n.Enabled || n.StartSeconds != 0 || n.EndSeconds.HasValue)))
+        if (package.Document.Nodes.Any(n => !SceneOpacityPlan.IsControl(n)&&!BackgroundMaterialPlan.IsControl(n)&&(n.Target != "background" || !n.Enabled || n.StartSeconds != 0 || n.EndSeconds.HasValue)))
             throw new NotSupportedException("This player milestone supports one always-active background, with color grading fused into it.");
         if (_bridge.HasSpecialScene && !package.Document.AllowSpecialScene)
             throw new NotSupportedException("Official special scene requires explicit allowSpecialScene.");
@@ -160,16 +160,19 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
         private readonly Dictionary<string, BundleEntry> _owned = new();
         private readonly List<Material> _materials = new();
         private readonly List<Texture2D> _images = new();
+        private readonly MaterialNodeDocument[] _nodes;
         private MaterialEffect? _result;
         private bool _taken, _disposed, _requestedAssets;
         public string? Error { get; private set; }
         public Preparation(UnityRenderBackend owner, EffectPackage package, IntPtr background, Camera? camera)
         {
             (_owner, _package, _background, _camera) = (owner, package, background, camera);
+            var plan=new BackgroundMaterialPlan(package.Document);
+            _nodes=plan.Enabled?plan.States.Select(s=>s.Node).ToArray():package.Document.Nodes.Where(n=>!SceneOpacityPlan.IsControl(n)).ToArray();
             _owner._preparations++;
             try
             {
-                foreach (var node in package.Document.Nodes.Where(n=>!SceneOpacityPlan.IsControl(n)))
+                foreach (var node in _nodes)
                 {
                     var path = EffectPackage.ResolveAsset(package.Root, node.Bundle);
                     if (!_owned.ContainsKey(path)) _owned.Add(path, owner.Acquire(path));
@@ -187,10 +190,10 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
             {
                 if (!_requestedAssets)
                 {
-                    foreach (var doc in _package.Document.Nodes.Where(n=>!SceneOpacityPlan.IsControl(n)))
+                    foreach (var doc in _nodes)
                     {
                         var entry = _owned[EffectPackage.ResolveAsset(_package.Root, doc.Bundle)];
-                        entry.Load(doc.Material, Il2CppType.Of<Material>());
+                        entry.Load(doc.Material, Il2CppType.Of<Object>());
                         foreach (var texture in doc.Textures.Values) if(!texture.StartsWith("file:", StringComparison.Ordinal)) entry.Load(texture, Il2CppType.Of<Texture>());
                     }
                     _requestedAssets = true;
@@ -198,13 +201,14 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
                 }
                 if (_owned.Values.Any(b => !b.LoadsComplete)) return PreparationState.Pending;
                 var resources = new List<MaterialResource>();
-                foreach (var doc in _package.Document.Nodes.Where(n=>!SceneOpacityPlan.IsControl(n)))
+                foreach (var doc in _nodes)
                 {
                     var entry = _owned[EffectPackage.ResolveAsset(_package.Root, doc.Bundle)];
-                    var asset = entry.Load(doc.Material, Il2CppType.Of<Material>()).asset?.TryCast<Material>();
-                    if (asset == null || asset.shader == null || !asset.shader.isSupported)
+                    var raw = entry.Load(doc.Material, Il2CppType.Of<Object>()).asset;
+                    var asset=raw?.TryCast<Material>();var shader=asset?.shader??raw?.TryCast<Shader>();
+                    if (shader == null || !shader.isSupported)
                         throw new InvalidDataException($"Unsupported/missing material: {doc.Material}");
-                    var material = _owner.Own(new Material(asset)); _materials.Add(material);
+                    var material = _owner.Own(asset!=null?new Material(asset):new Material(shader)); _materials.Add(material);
                     var textures = new Dictionary<string, Texture>();
                     var images = new List<Texture2D>();
                     foreach (var texture in doc.Textures)
@@ -251,7 +255,7 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
     {
         public readonly string PassName = "Presentation." + Id;
     }
-    private sealed class MaterialEffect : IEffectNode
+    private sealed partial class MaterialEffect : IEffectNode
     {
         private readonly Camera? _camera;
         private readonly UnityRenderBackend _owner;
@@ -284,12 +288,15 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
             (_owner, _target, _camera, _resources, _bundles) = (owner, target, camera, resources, bundles);
             _targetObject = target == IntPtr.Zero ? null : new Component(target);
             _scenePlan=new SceneOpacityPlan(package.Document);
+            _backgroundPlan=new BackgroundMaterialPlan(package.Document);
+            _backgroundResources=PrepareBackgroundResources(_backgroundPlan,resources);
             _bindings = new (MaterialResource?, int, ParameterKind)[package.Timeline.Count];
             _last = new ParameterValue[_bindings.Length];
             for (var i = 0; i < _bindings.Length; i++)
             {
                 var b = package.Timeline.Bindings[i];
                 if(SceneOpacityPlan.IsControl(package.Document.Nodes.Single(n=>n.Id==b.Node)))continue;
+                if(_backgroundPlan.Enabled&&b.Kind!=ParameterKind.Choice)continue;
                 var resource = resources.Single(r => r.Id == b.Node);
                 var mat = resource.Material;
                 var id = Shader.PropertyToID(b.Property);
@@ -345,26 +352,29 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
                 _last[i] = value;
             }
             _hasLast = true;
+            ApplyBackground(frame,values);
             var aspect=_camera!=null?_camera.aspect:(float)Screen.width/Math.Max(1,Screen.height);
-            if (_lastSeconds == frame.Seconds && _lastRevision == frame.ClockRevision && _lastRate == frame.Playback.PlaybackRate && _lastAspect==aspect) return;
+            if (_lastSeconds == frame.Seconds && _lastRevision == frame.ClockRevision && _lastRate == frame.Playback.PlaybackRate && _lastAspect==aspect&&!_backgroundSelectionChanged) return;
             _lastAspect=aspect;
             _lastSeconds = frame.Seconds; _lastRevision = frame.ClockRevision; _lastRate = frame.Playback.PlaybackRate;
             for (var i = 0; i < _resources.Length; i++)
             {
+                if(_backgroundPlan.Enabled&&_backgroundResources[i].State!=_backgroundPlan.Current)continue;
                 var mat = _resources[i].Material;
                 if (_uniforms[i, 0]) mat.SetFloat(TimeId, (float)frame.Seconds);
                 if (_uniforms[i, 1]) mat.SetFloat(BeatId, (float)frame.Beat);
                 if (_uniforms[i, 2]) mat.SetFloat(TickId, frame.VisualTick);
                 if (_uniforms[i, 3]) mat.SetFloat(SeedId, frame.Seed);
                 if (_uniforms[i, 4]) mat.SetFloat(RateId, frame.Playback.PlaybackRate);
-                if (_uniforms[i, 5]) mat.SetFloat(AspectId, aspect);
+                if (_uniforms[i, 5]&&!_backgroundPlan.Enabled)mat.SetFloat(AspectId,aspect);
+                if(_backgroundPlan.Enabled)ApplyMaterialClocks(_backgroundResources[i],frame,aspect);
             }
         }
         public void Reset(ResetReason reason) { _hasLast = false; _lastSeconds = double.NaN; /* No persistent history allocated in v1. */ }
         public void Activate(IEffectNode? previous)
         {
             if (_disposed || _active) throw new InvalidOperationException("Effect cannot activate twice.");
-            var bg = _resources.SingleOrDefault(r => r.Target == "background");
+            var bg = _backgroundPlan.Enabled?_backgroundResources.First(r=>r.State==_backgroundPlan.Current).Resource:_resources.SingleOrDefault(r => r.Target == "background");
             if (bg != null && _targetObject == null) throw new InvalidOperationException("Background target destroyed.");
             var old = previous as MaterialEffect;
             var beforeMaterial=_target!=IntPtr.Zero?_owner._bridge.RequestedMaterial(_target):IntPtr.Zero;

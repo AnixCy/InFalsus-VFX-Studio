@@ -13,7 +13,7 @@ InFalsus VFX Studio 是 Studio+ 的演出创作扩展。现已迁入共享求值
 | 原版编辑器宿主 | Studio Windows Mono 1.0.10；根目录 `Assets/`、`Packages/`、`ProjectSettings/` |
 | 增强插件源码 | Studio+ 内部 1.079；公开版本 1.0.7，绑定程序集 1.0.7.0 |
 | 本次运行基线 | 已有 Studio+ 1.0.7 build1030 完整应用；未重建完整 1.079 主插件 |
-| 本项目 | 演出编辑插件及随谱演出玩家端 0.9.0 原型，尚无正式应用发行版本 |
+| 本项目 | 演出编辑插件及随谱演出玩家端 0.10.0 原型，尚无正式应用发行版本 |
 
 Studio+ 源码固定于提交 `2c8c63722948b8e739f0eef6ebd0478cdf8ddd3d`，快照在 [Mods/StudioPlusSnapshots/1.079-20261102](../../Mods/StudioPlusSnapshots/1.079-20261102/README.md)。历史快照用于溯源，不叠加安装。
 
@@ -57,6 +57,8 @@ Studio+ 源码固定于提交 `2c8c63722948b8e739f0eef6ebd0478cdf8ddd3d`，快�
 只编译根 Unity 工程不会得到本项目插件。根宿主构建见保留的 [docs/BUILDING.md](../BUILDING.md)；完整增强主插件的构建仍参考快照中的 `Build.ps1`，本次没有重建它。
 
 0.9.0 整曲包链路见 [CHART_PACKAGES.md](CHART_PACKAGES.md)。制作端用 `Build-ChartCompiler.ps1 -PythonEmbedArchive '<已核对的官方 3.13.9 x64 ZIP>' -OutputDirectory '<新目录>'` 组装私有编译器，`Build-Preview.ps1 -ChartCompilerDirectory '<该目录>'` 将其带入 `GameExport/ChartCompiler`。`Prepare-GameExport.py` 的 `--catalog` 现为可选，仅旧独立 addon 选择器需要；完整曲包从自己的 if/SPC 建立身份。
+
+0.10.0 背景材质路径与新共享求值见 [BACKGROUND_MATERIAL_EXPORT.md](BACKGROUND_MATERIAL_EXPORT.md)。`CustomEffects/scripts/Build-GameAddonAssets.ps1` 与 `templates/game-addon/BuildAddonAssets.cs` 为创作端游戏目标构建工具，副本生成脚本自动携带。游戏端只加载结果；不把每个背景控制项注册成全屏阶段，不为新效果重复编写导出算法。
 
 两种玩家运行包用 `Build-ChartPackRuntime.ps1 -GameReferenceRoot '<Melon 参考游戏>' -BepInExRoot '<Bep IL2CPP 解压根目录>' -OutputDirectory '<新目录>'` 构建。Bep 当前固定验证 be.791，不能混用 Studio 的 Mono 核心。脚本只读取参考依赖，输出两个解压式 ZIP，不安装到游戏。默认资源、DLL 与私有编译器准备齐后，`New-PreviewCopy.ps1` 将整套 GameExport 复制到新测试安装。
 

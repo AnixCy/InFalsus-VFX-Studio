@@ -39,10 +39,11 @@
     "effectReference": "docs/vfx/reference/index.md",
     "validation": "docs/vfx/VALIDATION.md",
     "previewBuild": "scripts/Build-Preview.ps1",
-    "chartPackages": "docs/vfx/CHART_PACKAGES.md"
+    "chartPackages": "docs/vfx/CHART_PACKAGES.md",
+    "backgroundMaterialExport": "docs/vfx/BACKGROUND_MATERIAL_EXPORT.md"
   },
   "preview": {
-    "pluginVersion": "0.9.0",
+    "pluginVersion": "0.10.0",
     "testedStudioBinary": "1.0.7 build1030",
     "unityVersion": "6000.3.25f1",
     "coreChecks": 196,
@@ -75,7 +76,8 @@
     "sceneOpacityControls": 5,
     "sceneReferencePreview": true,
     "optionalFixtureChecksLastVersion": "0.7.5",
-    "chartPackRuntimeChecks": 324
+    "chartPackRuntimeChecks": 332,
+    "genericBackgroundExport": true
   },
   "presentationCoreImported": true,
   "presentationUiImplemented": true,
@@ -114,13 +116,13 @@
     "installedStudioUpdated": false
   },
   "addonRuntime": {
-    "version": "0.9.0",
+    "version": "0.10.0",
     "loader": "MelonLoader IL2CPP / BepInEx Unity IL2CPP",
     "unityVersion": "6000.3.9f1",
     "platform": "StandaloneWindows64",
     "colorSpace": "Gamma",
     "exportChecks": 23,
-    "gameChecks": 52,
+    "gameChecks": 57,
     "realIl2Cpp": true,
     "syntheticTransport": true,
     "realSongAcceptance": "pending",
@@ -134,6 +136,9 @@
     "studioSourceCompilation": true,
     "colocatedDiscovery": true,
     "playerInstall": "extract matching runtime ZIP once; songs into Charts",
-    "spc2": "verified community binary only"
+    "spc2": "verified community binary only",
+    "customBackgroundGameChecks": 52,
+    "backgroundMaterialChecks": 20,
+    "backgroundCapability": "background.material-plan.v1"
   }
 }

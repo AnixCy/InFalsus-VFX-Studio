@@ -40,6 +40,9 @@ public sealed partial class Entry:MelonMod
     Material? original,foreign;
     float expectedOne=.9f,expectedTwo=1.4f,expectedThree=.9f;
     float expectedSceneOne=.5f;
+    string expectedProperty="_Brightness",expectedTexture="_MainTex",expectedMaterialShader="InFalsusVFX/AddonBackground";
+    bool materialPlanFixture;
+    IntPtr fixtureVariant;
     public override void OnLateInitializeMelon()
     {
         try {
@@ -59,10 +62,12 @@ public sealed partial class Entry:MelonMod
                 colorSpace=QualitySettings.activeColorSpace.ToString(),graphics=SystemInfo.graphicsDeviceType.ToString()},Json));
             fixture=Path.Combine(data,"Addons/Fixture");stored=Path.Combine(data,"StoredFixture");
             var args=Environment.GetCommandLineArgs();int packAt=Array.IndexOf(args,"-vfx-chart-package");
+            int expectationAt=Array.IndexOf(args,"-vfx-material-expectations");
+            if(expectationAt>=0){using var expected=JsonDocument.Parse(File.ReadAllText(args[expectationAt+1]));expectedProperty=expected.RootElement.GetProperty("Property").GetString()!;expectedTexture=expected.RootElement.GetProperty("Texture").GetString()!;expectedMaterialShader=expected.RootElement.GetProperty("Shader").GetString()!;materialPlanFixture=!expected.RootElement.TryGetProperty("Switching",out var switching)||switching.GetBoolean();}
             if(packAt>=0)fixture=Path.Combine(root,"Charts",args[packAt+1],"vfx/FBD");
             var expectedPackage=EffectPackage.FromDocument(JsonSerializer.Deserialize<PackageDocument>(File.ReadAllText(Path.Combine(fixture,"runtime.json")),Json)!,fixture,AddonPackage.Capabilities);
             float Expected(double seconds){var v=new ParameterValue[expectedPackage.Timeline.Count];expectedPackage.Timeline.Sample(seconds+expectedPackage.Document.OffsetSeconds,v);
-                int i=Array.FindIndex(expectedPackage.Document.Channels,c=>c.Property=="_Brightness");return v[i].Number.X;}
+                int i=Array.FindIndex(expectedPackage.Document.Channels,c=>c.Property==expectedProperty);return v[i].Number.X;}
             expectedOne=Expected(1);expectedTwo=Expected(2);expectedThree=Expected(3);
             double sceneSeconds=1+expectedPackage.Document.OffsetSeconds;
             expectedSceneOne=sceneSeconds<0?1:Math.Clamp(1-(float)sceneSeconds*.5f,0,1);
@@ -123,18 +128,32 @@ public sealed partial class Entry:MelonMod
                     }
                     var active=new Material(bindings.CurrentMaterial(bindings.Background));
                     var arguments=Environment.GetCommandLineArgs();int expectedAt=Array.IndexOf(arguments,"-vfx-expected-shader");
-                    string expectedShader=expectedAt>=0?arguments[expectedAt+1]:"InFalsusVFX/AddonBackground";
+                    string expectedShader=expectedAt>=0?arguments[expectedAt+1]:expectedMaterialShader;
                     Check(active.shader.name==expectedShader,"actual IL2CPP component uses the exported shader");
-                    Check(Math.Abs(active.GetFloat("_Brightness")-expectedOne)<.001,"actual material receives the exported value at the current clock");
-                    Check(active.GetTexture("_MainTex")!=null&&host.Diagnostics.Images==1,"external addon image loaded and owned");
+                    Check(Math.Abs(active.GetFloat(expectedProperty)-expectedOne)<.001,"actual material receives the exported value at the current clock");
+                    Check(active.GetTexture(expectedTexture)!=null&&host.Diagnostics.Images==1,"external addon image loaded and owned");
                     Check(host.Diagnostics.RenderRegistrations==0&&host.Diagnostics.PassesRecorded==0,"background addon registers no postprocess passes");
                     Check(bindings.Opacity==new SceneOpacityValues(expectedSceneOne,expectedSceneOne,expectedSceneOne,expectedSceneOne,expectedSceneOne),"game backend evaluates logical scene keys without a Shader pass");
+                    if(materialPlanFixture){fixtureVariant=active.Pointer;Check(Math.Abs(active.GetFloat("_CurrentTime")-1)<.001,"native material clock matches the shared transport");bindings.Seconds=5.5;Go(31);break;}
                     bindings.Seconds=3;Next();break;
+                case 31:
+                    if(frames<3)return;
+                    Check(new Material(bindings!.CurrentMaterial(bindings.Background)).shader.name=="InFalsusVFX/AddonBackground","ending all controls restores the input background without another rendering pass");
+                    bindings.Seconds=6.5;Go(32);break;
+                case 32:
+                    if(frames<3)return;
+                    Check(bindings!.CurrentMaterial(bindings.Background)!=fixtureVariant&&new Material(bindings.CurrentMaterial(bindings.Background)).shader.isSupported,"a later control selects a different compiled shader family");
+                    Check(host!.Diagnostics.Materials==3&&host.Diagnostics.RenderRegistrations==0&&host.Diagnostics.PassesRecorded==0,"material variants are deduplicated and allocate no fullscreen render stage");
+                    bindings.Seconds=1;Go(33);break;
+                case 33:
+                    if(frames<3)return;
+                    Check(bindings!.CurrentMaterial(bindings.Background)==fixtureVariant,"backward seek returns to the same owned variant material");
+                    bindings.Seconds=3;Go(4);break;
                 case 4:
-                    Check(Math.Abs(new Material(bindings!.CurrentMaterial(bindings.Background)).GetFloat("_Brightness")-expectedThree)<.001,"random seek reevaluates current value without accumulated history");
+                    Check(Math.Abs(new Material(bindings!.CurrentMaterial(bindings.Background)).GetFloat(expectedProperty)-expectedThree)<.001,"random seek reevaluates current value without accumulated history");
                     bindings.Paused=true;bindings.Seconds=2;Next();break;
                 case 5:
-                    Check(Math.Abs(new Material(bindings!.CurrentMaterial(bindings.Background)).GetFloat("_Brightness")-expectedTwo)<.001,"paused transport samples requested position");
+                    Check(Math.Abs(new Material(bindings!.CurrentMaterial(bindings.Background)).GetFloat(expectedProperty)-expectedTwo)<.001,"paused transport samples requested position");
                     Config(false);Next();break;
                 case 6:
                     if(host!.IsActive||!Wait(.8))return;
@@ -151,7 +170,7 @@ public sealed partial class Entry:MelonMod
                 case 80:
                     if(frames<5)return;
                     Check(host!.IsActive&&bindings!.CurrentMaterial(bindings.Background)!=original!.Pointer,"transport teardown retains the addon while the native background is visible");
-                    Check(Math.Abs(new Material(bindings!.CurrentMaterial(bindings.Background)).GetFloat("_Brightness")-expectedTwo)<.001,"transition holds the last sampled frame without advancing its clock");
+                    Check(Math.Abs(new Material(bindings!.CurrentMaterial(bindings.Background)).GetFloat(expectedProperty)-expectedTwo)<.001,"transition holds the last sampled frame without advancing its clock");
                     Config(false,1);Go(81);break;
                 case 81:
                     if(!Wait(.8))return;
@@ -199,7 +218,9 @@ public sealed partial class Entry:MelonMod
                 case 16:
                     if(!host!.IsActive||!Wait(.8))return;
                     var duplicate=Path.Combine(data,"Addons/Duplicate");Directory.CreateDirectory(duplicate);
-                    foreach(var file in Directory.GetFiles(fixture))File.Copy(file,Path.Combine(duplicate,Path.GetFileName(file)));
+                    foreach(var file in Directory.GetFiles(fixture,"*",SearchOption.AllDirectories)) {
+                        var target=Path.Combine(duplicate,Path.GetRelativePath(fixture,file));Directory.CreateDirectory(Path.GetDirectoryName(target)!);File.Copy(file,target);
+                    }
                     Config(true,6);Next();break;
                 case 17:
                     if(!Wait(.8))return;

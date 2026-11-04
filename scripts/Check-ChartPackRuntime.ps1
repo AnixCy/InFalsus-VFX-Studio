@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$Sandbox,[Parameter(Mandatory=$true)][string]$ChartPackage,[ValidateSet('MelonLoader','BepInEx')][string]$Loader='MelonLoader')
+param([Parameter(Mandatory=$true)][string]$Sandbox,[Parameter(Mandatory=$true)][string]$ChartPackage,[ValidateSet('MelonLoader','BepInEx')][string]$Loader='MelonLoader',[string]$MaterialExpectations)
 $ErrorActionPreference='Stop'
 $taskRepo=Split-Path $PSScriptRoot -Parent
 $taskRoot=(Resolve-Path -LiteralPath $Sandbox).Path
@@ -46,6 +46,7 @@ foreach($taskName in @('profiles.json','catalog.json')) {
     if(Test-Path -LiteralPath $taskPath){$taskFrom=(Resolve-Path -LiteralPath $taskPath).Path;if(-not $taskFrom.StartsWith($taskRoot+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)){throw 'Profile archive escaped sandbox'};Move-Item -LiteralPath $taskFrom -Destination $taskArchive}
 }
 $taskArgs=@('-batchmode','-force-d3d11','-screen-width','1280','-screen-height','720','-noaudio','-vfx-addon-check','-vfx-chart-package',$taskTop[0],'-logFile',('"'+(Join-Path $taskRoot 'vfx-check-player.log')+'"'))
+if($MaterialExpectations){$taskArgs+=@('-vfx-material-expectations',('"'+(Resolve-Path -LiteralPath $MaterialExpectations).Path+'"'))}
 $taskProcess=Start-Process -FilePath $taskExe -ArgumentList $taskArgs -WorkingDirectory $taskRoot -WindowStyle Hidden -PassThru
 Write-Output ('Owned '+$Loader+' chart-package check PID '+$taskProcess.Id)
 $taskReport=Join-Path $taskRoot 'addon-checks.json';$taskDeadline=[DateTime]::UtcNow.AddMinutes(5)

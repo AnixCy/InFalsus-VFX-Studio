@@ -65,11 +65,12 @@ public sealed partial class PreviewPlugin
     {
         var target=addonTargets[addonTarget];
         var profile=JsonConvert.DeserializeObject<GameExportProfile>(File.ReadAllText(Path.Combine(folder,"GameExport/profile.json")),Json)!;
-        BackgroundExport.Compile(Model!.Session.Snapshot(),target,profile.ColorSpace);
+        var project=MaterialExportProject(Model!.Session.Snapshot());var context=MaterialExportContext(project,profile.ColorSpace);
+        BackgroundExport.Compile(project,target,profile.ColorSpace,context);
         string parent=addonFolderDialog("选择 addon 导出目录");if(parent.Length==0)return;
         var bundle=Path.Combine(folder,"GameExport",profile.ColorSpace,"background.bundle");
         var destination=Path.Combine(parent,"vfx-addon-"+DateTime.Now.ToString("yyyyMMdd-HHmmss")+"-"+Guid.NewGuid().ToString("N").Substring(0,6));
-        BackgroundExport.Publish(Model.Session.Snapshot(),target,imagePath,bundle,profile.ColorSpace,destination,o=>JsonConvert.SerializeObject(o,Json));
+        BackgroundExport.Publish(project,target,imagePath,bundle,profile.ColorSpace,destination,o=>JsonConvert.SerializeObject(o,Json),context);
         lastAddonExport=destination;status="Addon 已导出："+destination;
     }
     sealed class GameExportProfile {public string ColorSpace {get;set;}="Gamma";}

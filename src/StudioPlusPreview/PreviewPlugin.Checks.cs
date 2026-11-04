@@ -95,6 +95,7 @@ public sealed partial class PreviewPlugin
             CheckBackgroundControls(Assert,Path.GetDirectoryName(output)!);
             CheckAddonExport(Assert,Path.GetDirectoryName(output)!);
             CheckChartPackageExport(Assert,Path.GetDirectoryName(output)!);
+            CheckMaterialExport(Assert,Path.GetDirectoryName(output)!);
             CheckBackgroundProject(Assert,hashes);
             CheckPreviewResolution(Assert);
             CheckEffectNotes(Assert);

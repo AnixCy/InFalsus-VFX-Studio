@@ -8,6 +8,9 @@ public sealed partial class EffectLibrary
     void AddBackgroundControls()
     {
         var originals=Effects.Where(e=>e.Original&&e.Target=="background").ToArray();
+        // Recovered variant-group metadata for this legacy shader family; export is generic.
+        var recursive=originals.FirstOrDefault(e=>e.Id=="official-09-background");
+        if(recursive!=null)recursive.ExclusiveKeywordGroups=new[]{new[]{"USE_FEEDBACK","USE_CHROMA_ZOOM","USE_SLASH_DISPLACE","USE_STATIC_NOISE"}};
         if(originals.Length==0)return;
         foreach(var source in originals)Effects.Add(new EffectDefinition{Id="bg-preset-"+source.Id.Split('-')[1],Label=source.Label,Category="预设",Target="postprocess",
             Bundle=source.Bundle,Material=source.Material,BackgroundSource=source.Id,Parameters=source.Parameters.Where(p=>!p.Property.StartsWith("_KW_",StringComparison.Ordinal)).Select(Copy).ToArray()});

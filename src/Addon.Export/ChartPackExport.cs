@@ -7,7 +7,7 @@ namespace InFalsus.Vfx.Addon;
 public static class ChartPackExport
 {
     public static string Publish(string songDirectory,int difficulty,AuthoringProjectDocument project,string image,string bundle,string colorSpace,
-        string destination,bool zip,Func<object,string> encode,Func<string,string,string?[]> readField,Func<string,ChartPackManifest> decodePack,Func<string,AddonManifest> decodeAddon)
+        string destination,bool zip,Func<object,string> encode,Func<string,string,string?[]> readField,Func<string,ChartPackManifest> decodePack,Func<string,AddonManifest> decodeAddon,BackgroundExportContext? context=null)
     {
         if(difficulty<0||difficulty>3)throw new ArgumentOutOfRangeException(nameof(difficulty));
         var song=ChartPack.ReadSong(songDirectory,readField);
@@ -19,10 +19,11 @@ public static class ChartPackExport
         var manifest=new ChartPackManifest{SongId=song.Id,Charts=song.Charts.ToArray()};
         for(int i=0;i<4;i++)if(!string.IsNullOrWhiteSpace(song.Charts[i]))manifest.ChartHashes[i]=AddonPackage.Hash(ChartPack.Resolve(song.Root,song.Charts[i]!));
         var target=new AddonTarget{SongKey=ChartPack.SongKey(song.Id),Difficulty=difficulty,ChartFingerprint=manifest.ChartHashes[difficulty]!};
-        BackgroundExport.Compile(project,target,colorSpace);
+        BackgroundExport.Compile(project,target,colorSpace,context);
         var old=ChartPack.ReadBindings(song,decodePack);
         string parent=Path.GetDirectoryName(destination)!;Directory.CreateDirectory(parent);
-        string staging=Path.Combine(parent,".vfx-chartpack-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(staging);
+        string staging=Path.Combine(parent,".vfx-chartpack-"+Guid.NewGuid().ToString("N").Substring(0,16));
+        if(Directory.Exists(staging)||File.Exists(staging))throw new IOException("曲包暂存位置冲突，请重试。");Directory.CreateDirectory(staging);
         string temporaryZip=staging+".zip";
         try {
             // Copy declared runtime media only; never collect editor caches or the whole project.
@@ -43,7 +44,7 @@ public static class ChartPackExport
                 manifest.Addons[binding.Difficulty]=relative.Replace('\\','/');
             }
             string addonRelative="vfx/"+ChartPack.DifficultyNames[difficulty]+"/addon.json";
-            BackgroundExport.Publish(project,target,image,bundle,colorSpace,Path.GetDirectoryName(ChartPack.Resolve(folder,addonRelative,false))!,encode);
+            BackgroundExport.Publish(project,target,image,bundle,colorSpace,Path.GetDirectoryName(ChartPack.Resolve(folder,addonRelative,false))!,encode,context);
             manifest.Addons[difficulty]=addonRelative;
             string text=encode(manifest);
             if(System.Text.Encoding.UTF8.GetByteCount(text)>AddonPackage.MaximumDocumentBytes)throw new InvalidDataException("曲包清单超过上限。");
