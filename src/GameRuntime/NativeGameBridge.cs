@@ -22,8 +22,8 @@ public sealed class GameProfile
     public string PracticeSeekPrefix { get; set; } = "";
 }
 
-/// <summary>Read-only except the explicit presentation-material setter. No transport/input/save writes.</summary>
-public sealed unsafe class NativeGameBridge : IGameBindings
+/// <summary>Only presentation material/opacity setters write game objects. No transport/input/save writes.</summary>
+public sealed unsafe partial class NativeGameBridge : IGameBindings
 {
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)] private delegate double ClockCall(IntPtr self, IntPtr method);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)] private delegate byte BoolCall(IntPtr self, IntPtr method);
@@ -193,6 +193,7 @@ public sealed unsafe class NativeGameBridge : IGameBindings
 
     private void Invalidate()
     {
+        RestoreSceneOpacity();
         _lastScene = _lastAudio = _lastChart = IntPtr.Zero; _identity = null;
         Scene = Background = IntPtr.Zero; GameCamera = null; _pause = null; _pausePointer = IntPtr.Zero;
         _sceneObject = _backgroundObject = null; CanRetainBackground = false;

@@ -14,7 +14,7 @@ public sealed class EditorKey
 }
 public sealed partial class PreviewModel
 {
-    public static readonly string[] Capabilities={"clock.chart","clock.audio","background.material","shader.bundle","postprocess.blit.experimental","effect.instances",EffectLibrary.BackgroundCapability};
+    public static readonly string[] Capabilities={"clock.chart","clock.audio","background.material","shader.bundle","postprocess.blit.experimental","effect.instances",EffectLibrary.BackgroundCapability,SceneOpacityPlan.Capability};
     public AuthoringSession Session {get;private set;}
     public ParameterCatalog Catalog {get;private set;}=null!;
     public EffectPackage Package {get;private set;}=null!;

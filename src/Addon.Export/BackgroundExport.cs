@@ -21,7 +21,9 @@ public static class BackgroundExport
         if(background.Bundle!="preview.bundle"||background.Material!="vfx/parameter-preview"||!background.Enabled
             ||background.StartSeconds!=0||background.EndSeconds.HasValue)
             throw new NotSupportedException("当前游戏导出只支持始终启用的通用背景；不支持原始或自定义背景材质。");
-        var enabled=source.Nodes.Where(n=>n.Enabled&&n.Target!="background").ToArray();
+        var scene=source.Nodes.Where(n=>n.Enabled&&SceneOpacityPlan.IsControl(n)).ToArray();
+        _=new SceneOpacityPlan(source);
+        var enabled=source.Nodes.Where(n=>n.Enabled&&n.Target!="background"&&!SceneOpacityPlan.IsControl(n)).ToArray();
         if(enabled.Length>1||enabled.Any(n=>n.Bundle!="preview.bundle"||n.Material!="vfx/utility-post"||n.EffectId!="color-grade"))
             throw new NotSupportedException("当前游戏导出只支持通用背景和一个“色彩与曝光”；请停用其他效果后导出。");
         var channels=new List<ChannelDocument>();
@@ -39,12 +41,18 @@ public static class BackgroundExport
             channels.Add(Constant("_GradeStart",grade.StartSeconds));channels.Add(Constant("_GradeEnd",grade.EndSeconds??1e20));
             channels.Add(Constant("_GradeEnabled",1));
         } else channels.Add(Constant("_GradeEnabled",0));
+        foreach(var node in scene) {
+            node.Bundle="background.bundle";
+            channels.AddRange(source.Channels.Where(c=>c.Node==node.Id));
+        }
+        var requires=AddonPackage.Capabilities.Where(c=>c!=AddonPackage.ImageCapability&&c!="effect.instances"&&c!=SceneOpacityPlan.Capability).ToArray();
+        if(scene.Length>0)requires=requires.Concat(new[]{"effect.instances",SceneOpacityPlan.Capability}).ToArray();
         return new PackageDocument {
             Id="addon-"+project.ProjectId,SongKey=target.SongKey,Difficulty=target.Difficulty,ChartFingerprint=target.ChartFingerprint,
             TimeDomain=source.TimeDomain,OffsetSeconds=source.OffsetSeconds,Seed=source.Seed,Tempo=source.Tempo,
             UnityVersion="6000.3.9f1",Platform="StandaloneWindows64",ColorSpace=colorSpace,
-            Requires=AddonPackage.Capabilities.Where(c=>c!=AddonPackage.ImageCapability).ToArray(),
-            Nodes=new[]{new MaterialNodeDocument{Id="background",Target="background",Bundle="background.bundle",Material=AddonPackage.MaterialPath}},
+            Requires=requires,
+            Nodes=new[]{new MaterialNodeDocument{Id="background",Target="background",Bundle="background.bundle",Material=AddonPackage.MaterialPath}}.Concat(scene).ToArray(),
             Channels=channels.ToArray()
         };
     }

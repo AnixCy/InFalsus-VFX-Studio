@@ -13,7 +13,7 @@ InFalsus VFX Studio 是 Studio+ 的演出创作扩展。现已迁入共享求值
 | 原版编辑器宿主 | Studio Windows Mono 1.0.10；根目录 `Assets/`、`Packages/`、`ProjectSettings/` |
 | 增强插件源码 | Studio+ 内部 1.079；公开版本 1.0.7，绑定程序集 1.0.7.0 |
 | 本次运行基线 | 已有 Studio+ 1.0.7 build1030 完整应用；未重建完整 1.079 主插件 |
-| 本项目 | 演出编辑插件 0.7.5、最小 addon 玩家端 0.7.1 原型，尚无正式应用发行版本 |
+| 本项目 | 演出编辑插件及最小 addon 玩家端 0.8.0 原型，尚无正式应用发行版本 |
 
 Studio+ 源码固定于提交 `2c8c63722948b8e739f0eef6ebd0478cdf8ddd3d`，快照在 [Mods/StudioPlusSnapshots/1.079-20261102](../../Mods/StudioPlusSnapshots/1.079-20261102/README.md)。历史快照用于溯源，不叠加安装。
 
@@ -88,6 +88,7 @@ dotnet run --project tests/Project.Checks/Project.Checks.csproj -c Release -- .
 
 - GUI 只控制 `PreviewModel`；数据求值和事务属于共享层，渲染资源属于 `PreviewSurface`，宿主时间与对话框属于 `StudioBridge`。
 - 效果说明由 `docs/vfx/reference/effect-notes.json` 同时供给插件与知识卡。更新语义后运行 `python scripts/Generate-EffectReference.py`；不把未知自定义 Shader 的同名参数解释为内置含义，也不将未验收的分支补写成确定观感。
+- 轨道与 UI 透明度使用 `SceneOpacityPlan` 和 `scene.opacity.v1`；节点属于逻辑控制，不得交给 Shader 加载或后处理绘制。原生对象及恢复语义见 [SCENE_OPACITY.md](SCENE_OPACITY.md)。
 - `StudioUiTheme` 复用当前宿主的 UI 绘制组件和皮肤；字体资源由宿主管理，插件不复制或销毁它们。组件清单和草稿隔离边界见 [UI_COMPONENTS.md](UI_COMPONENTS.md)。
 - 预览使用经 Studio+ 适配的显示时刻，另保留音频偏移信息，避免二次偏移；SV 不是时钟。时间驱动 Shader 不自行累计 `Time.time`。
 - 参数与关键帧拖动松手一次提交，取消恢复；材质在数值变化时复用。材质图替换使用共享事务，公共轨道和身份保留，其余可撤销恢复。

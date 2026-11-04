@@ -52,6 +52,7 @@ public sealed class RuntimeHost : IDisposable
             PollConfig();backend.Collect();
             if(!config.Enabled||addons.Count==0){session.End();requested=null;return;}
             if(!Bridge.TrySample(out var snapshot)){
+                if(Bridge is ISceneOpacityBindings scene)scene.RestoreSceneOpacity();
                 // Freeze the last frame through the native scene transition, rather than
                 // exposing the original image as soon as audio stops. Explicit disable wins above.
                 holdingBackground=session.IsActive&&Bridge.CanRetainBackground;
@@ -71,6 +72,20 @@ public sealed class RuntimeHost : IDisposable
         } catch(Exception e) {
             report("Addon runtime stopped safely: "+e.Message);Dispose();
         } finally {if(!disposed)PublishDiagnostics();}
+    }
+    public void BeforeUpdate()
+    {
+        if(disposed)return;
+        try{if(Bridge is ISceneOpacityBindings scene)scene.BeginOpacityFrame();}
+        catch(Exception error){report("Scene opacity restore failed: "+error.Message);Dispose();}
+    }
+    public void BeforeUiRender()=>UiScope(true);
+    public void AfterUiRender()=>UiScope(false);
+    void UiScope(bool before)
+    {
+        if(disposed)return;
+        try{if(Bridge is ISceneOpacityBindings scene){if(before)scene.BeforeUiRender();else scene.AfterUiRender();}}
+        catch(Exception error){report("Scene UI scope failed: "+error.Message);Dispose();}
     }
     void PollConfig()
     {
@@ -115,7 +130,7 @@ public sealed class RuntimeHost : IDisposable
     public void Dispose()
     {
         if(disposed)return;disposed=true;
-        try{session.Dispose();}finally{backend.Dispose();}
+        try{session.Dispose();}finally{backend.Dispose();if(Bridge is ISceneOpacityBindings scene)scene.RestoreSceneOpacity();}
         report("Addon runtime disposed: "+JsonSerializer.Serialize(backend.Diagnostics));
     }
 }

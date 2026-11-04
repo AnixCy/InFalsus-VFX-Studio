@@ -41,14 +41,18 @@
     "previewBuild": "scripts/Build-Preview.ps1"
   },
   "preview": {
-    "pluginVersion": "0.7.5",
+    "pluginVersion": "0.8.0",
     "testedStudioBinary": "1.0.7 build1030",
     "unityVersion": "6000.3.25f1",
     "coreChecks": 196,
-    "runtimeChecks": 295,
+    "runtimeChecks": 310,
     "authoredBackgroundChecks": 312,
     "combinedAuthoringChecks": 320,
-    "previewResolutions": ["2560x1440", "1920x1080", "1280x720"],
+    "previewResolutions": [
+      "2560x1440",
+      "1920x1080",
+      "1280x720"
+    ],
     "visualAcceptance": "pending",
     "interactiveAcceptance": "pending",
     "full1079PluginVerified": false,
@@ -66,7 +70,10 @@
     "independentBackgroundControls": 36,
     "backgroundPresetEntries": 12,
     "backgroundSingleDraw": true,
-    "hoverDragCursors": true
+    "hoverDragCursors": true,
+    "sceneOpacityControls": 5,
+    "sceneReferencePreview": true,
+    "optionalFixtureChecksLastVersion": "0.7.5"
   },
   "presentationCoreImported": true,
   "presentationUiImplemented": true,
@@ -89,7 +96,8 @@
     "batchAudioBake": true,
     "addonDocumentBudgetSource": true,
     "installedStudioUpdated": false,
-    "appIntegration": false
+    "appIntegration": false,
+    "addonDocumentBudgetInstalled": true
   },
   "creatorWorkspace": {
     "source": "src/CreatorWorkspace",
@@ -104,17 +112,19 @@
     "installedStudioUpdated": false
   },
   "addonRuntime": {
-    "version": "0.7.1",
+    "version": "0.8.0",
     "loader": "MelonLoader IL2CPP",
     "unityVersion": "6000.3.9f1",
     "platform": "StandaloneWindows64",
     "colorSpace": "Gamma",
     "exportChecks": 23,
-    "gameChecks": 35,
+    "gameChecks": 51,
     "realIl2Cpp": true,
     "syntheticTransport": true,
     "realSongAcceptance": "pending",
     "visualAcceptance": "pending",
-    "postprocessExport": false
+    "postprocessExport": false,
+    "sceneOpacityCapability": "scene.opacity.v1",
+    "nativeUiFrameChecked": true
   }
 }

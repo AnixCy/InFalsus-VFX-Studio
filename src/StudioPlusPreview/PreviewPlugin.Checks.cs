@@ -97,6 +97,7 @@ public sealed partial class PreviewPlugin
             CheckBackgroundProject(Assert,hashes);
             CheckPreviewResolution(Assert);
             CheckEffectNotes(Assert);
+            CheckSceneOpacity(Assert,Path.GetDirectoryName(output)!);
             CheckInteraction(Assert);
             CheckAuthoredEffect(Assert,Path.GetDirectoryName(output)!,hashes);
             var report=new {ok=true,checks,hashes,unity=Application.unityVersion,colorSpace=QualitySettings.activeColorSpace.ToString(),

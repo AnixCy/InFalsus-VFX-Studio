@@ -66,6 +66,7 @@ internal sealed partial class PreviewSurface:IDisposable
     void Ensure(PackageDocument document,EffectLibrary library,Func<MaterialNodeDocument,bool>? active=null,MaterialNodeDocument? backgroundOverride=null)
     {
         foreach(var original in document.Nodes) {
+            if(SceneOpacityPlan.IsControl(original))continue;
             var node=original.Target=="background"?backgroundOverride??original:original;
             if(library.Resolve(node).BackgroundSource.Length>0)continue;
             if(active!=null&&!active(node))continue;
@@ -146,7 +147,7 @@ internal sealed partial class PreviewSurface:IDisposable
         bool hasCommands=false;
         LastPostProcessDraws=0;
         double seconds=frame.Seconds;
-        foreach(var node in model.RenderDocument.Nodes.Where(n=>n.Target=="postprocess"&&model.Definition(n).BackgroundSource.Length==0&&model.IsActive(n,seconds))) {
+        foreach(var node in model.RenderDocument.Nodes.Where(n=>n.Target=="postprocess"&&!SceneOpacityPlan.IsControl(n)&&model.Definition(n).BackgroundSource.Length==0&&model.IsActive(n,seconds))) {
             float opacity=model.Opacity(node.Id);if(opacity<=0)continue;
             int before=index;index=(index+1)%3;command.SetRenderTarget(targets[index]);
             Blitter.BlitTexture(command,handles[before],new Vector4(1,1,0,0),resources[node.Id].Material,0);hasCommands=true;LastPostProcessDraws++;

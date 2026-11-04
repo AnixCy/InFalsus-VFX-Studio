@@ -68,7 +68,7 @@ public sealed partial class EffectLibrary
     internal static EffectParameter Opacity()=>P("_VfxOpacity","混合强度",1,0,1);
     internal static void Prepare(EffectDefinition effect)
     {
-        if(effect.Target=="postprocess"&&!effect.Parameters.Any(p=>p.Property=="_VfxOpacity"))
+        if(effect.Target=="postprocess"&&effect.Material!=SceneOpacityPlan.Material&&!effect.Parameters.Any(p=>p.Property=="_VfxOpacity"))
             effect.Parameters=effect.Parameters.Append(Opacity()).ToArray();
         if(effect.BackgroundSource.Length>0)effect.Parameters.Single(p=>p.Property=="_VfxOpacity").Label="效果强度";
         foreach(var parameter in effect.Parameters)if(parameter.Property.StartsWith("_KW_",StringComparison.Ordinal))parameter.Min=-1;
@@ -91,6 +91,7 @@ public sealed partial class EffectLibrary
         }
         library.AddCuratedEffects();
         library.AddBackgroundControls();
+        library.AddSceneControls();
         library.LoadCustom(folder);
         foreach(var effect in library.Effects)Prepare(effect);
         return library;

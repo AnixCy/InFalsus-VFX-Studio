@@ -17,8 +17,7 @@ namespace InFalsus.Presentation.Game;
 /// <summary>Owns only its bundles, material instances and Hub handles; never clears global effects.</summary>
 public sealed class UnityRenderBackend : IRenderBackend, IDisposable
 {
-    public IReadOnlyCollection<string> Capabilities { get; } = new HashSet<string>
-        { "clock.audio", "clock.chart", "background.material", "shader.bundle", AddonPackage.ImageCapability };
+    public IReadOnlyCollection<string> Capabilities { get; }
     private readonly IGameBindings _bridge;
     private readonly Action<string> _report;
     private readonly Dictionary<string, BundleEntry> _bundles = new(StringComparer.OrdinalIgnoreCase);
@@ -38,13 +37,20 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
     }
     private Material Own(Material material) { _materials++; return material; }
     private void DestroyOwned(Material material) { Object.Destroy(material); _materials--; }
-    public UnityRenderBackend(IGameBindings bridge, Action<string> report) => (_bridge, _report) = (bridge, report);
+    public UnityRenderBackend(IGameBindings bridge, Action<string> report)
+    {
+        (_bridge,_report)=(bridge,report);
+        var caps=new HashSet<string>{"clock.audio","clock.chart","background.material","shader.bundle",AddonPackage.ImageCapability};
+        if(bridge is ISceneOpacityBindings){caps.Add("effect.instances");caps.Add(SceneOpacityPlan.Capability);}
+        Capabilities=caps;
+    }
 
     public IEffectPreparation Prepare(EffectPackage package, in PlaybackSnapshot snapshot)
     {
         if (!package.Matches(snapshot)) throw new InvalidOperationException("Package/chart mismatch.");
         package.ValidateMaterialGraph(Application.unityVersion, "StandaloneWindows64", QualitySettings.activeColorSpace.ToString());
-        if (package.Document.Nodes.Any(n => n.Target != "background" || !n.Enabled || n.StartSeconds != 0 || n.EndSeconds.HasValue))
+        _=new SceneOpacityPlan(package.Document);
+        if (package.Document.Nodes.Any(n => !SceneOpacityPlan.IsControl(n)&&(n.Target != "background" || !n.Enabled || n.StartSeconds != 0 || n.EndSeconds.HasValue)))
             throw new NotSupportedException("This player milestone supports one always-active background, with color grading fused into it.");
         if (_bridge.HasSpecialScene && !package.Document.AllowSpecialScene)
             throw new NotSupportedException("Official special scene requires explicit allowSpecialScene.");
@@ -167,7 +173,7 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
             _owner._preparations++;
             try
             {
-                foreach (var node in package.Document.Nodes)
+                foreach (var node in package.Document.Nodes.Where(n=>!SceneOpacityPlan.IsControl(n)))
                 {
                     var path = EffectPackage.ResolveAsset(package.Root, node.Bundle);
                     if (!_owned.ContainsKey(path)) _owned.Add(path, owner.Acquire(path));
@@ -185,7 +191,7 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
             {
                 if (!_requestedAssets)
                 {
-                    foreach (var doc in _package.Document.Nodes)
+                    foreach (var doc in _package.Document.Nodes.Where(n=>!SceneOpacityPlan.IsControl(n)))
                     {
                         var entry = _owned[EffectPackage.ResolveAsset(_package.Root, doc.Bundle)];
                         entry.Load(doc.Material, Il2CppType.Of<Material>());
@@ -196,7 +202,7 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
                 }
                 if (_owned.Values.Any(b => !b.LoadsComplete)) return PreparationState.Pending;
                 var resources = new List<MaterialResource>();
-                foreach (var doc in _package.Document.Nodes)
+                foreach (var doc in _package.Document.Nodes.Where(n=>!SceneOpacityPlan.IsControl(n)))
                 {
                     var entry = _owned[EffectPackage.ResolveAsset(_package.Root, doc.Bundle)];
                     var asset = entry.Load(doc.Material, Il2CppType.Of<Material>()).asset?.TryCast<Material>();
@@ -257,7 +263,9 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
         private readonly Camera? _camera;
         private readonly MaterialResource[] _resources;
         private readonly BundleEntry[] _bundles;
-        private readonly (MaterialResource Resource, int Id, ParameterKind Kind)[] _bindings;
+        private readonly (MaterialResource? Resource, int Id, ParameterKind Kind)[] _bindings;
+        private readonly SceneOpacityPlan _scenePlan;
+        private SceneOpacityValues _sceneValues=SceneOpacityValues.Visible;
         private readonly ParameterValue[] _last;
         private bool _hasLast, _active, _disposed, _handoff, _warnedBackbuffer, _reportedBinding;
         private long _bindingCheckFrame;
@@ -283,11 +291,14 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
             (_owner, _target, _camera, _resources, _bundles) = (owner, target, camera, resources, bundles);
             _targetObject = target == IntPtr.Zero ? null : new Component(target);
             _hasPost = resources.Any(r => r.Target == "postprocess");
-            _bindings = new (MaterialResource, int, ParameterKind)[package.Timeline.Count];
+            _scenePlan=new SceneOpacityPlan(package.Document);
+            _bindings = new (MaterialResource?, int, ParameterKind)[package.Timeline.Count];
             _last = new ParameterValue[_bindings.Length];
             for (var i = 0; i < _bindings.Length; i++)
             {
-                var b = package.Timeline.Bindings[i]; var resource = resources.Single(r => r.Id == b.Node);
+                var b = package.Timeline.Bindings[i];
+                if(SceneOpacityPlan.IsControl(package.Document.Nodes.Single(n=>n.Id==b.Node)))continue;
+                var resource = resources.Single(r => r.Id == b.Node);
                 var mat = resource.Material;
                 var id = Shader.PropertyToID(b.Property);
                 if (!mat.HasProperty(id)) throw new InvalidDataException($"{b.Node}: shader has no {b.Property}.");
@@ -318,6 +329,8 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
         }
         public void Apply(in FrameContext frame, ReadOnlySpan<ParameterValue> values)
         {
+            _sceneValues=_scenePlan.Sample(frame.Seconds,values);
+            if(_active&&_owner._bridge is ISceneOpacityBindings scene&&_scenePlan.Count>0)scene.ApplySceneOpacity(_sceneValues);
             if (_active && !_reportedBinding && _owner._frame >= _bindingCheckFrame && _assigned != IntPtr.Zero)
             {
                 _reportedBinding = true;
@@ -329,6 +342,7 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
             {
                 if (_hasLast && _last[i] == values[i]) continue;
                 var (r, id, kind) = _bindings[i]; var value = values[i]; var v = value.Number;
+                if(r==null)continue;
                 switch (kind)
                 {
                     case ParameterKind.Float: r.Material.SetFloat(id, v.X); break;
@@ -362,6 +376,9 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
             if (bg != null && _targetObject == null) throw new InvalidOperationException("Background target destroyed.");
             if (_hasPost && _camera == null) throw new InvalidOperationException("Game camera unavailable.");
             var old = previous as MaterialEffect;
+            var beforeMaterial=_target!=IntPtr.Zero?_owner._bridge.RequestedMaterial(_target):IntPtr.Zero;
+            var beforeOption=_target!=IntPtr.Zero?_owner._bridge.RequestedMaterialOption(_target):(byte)1;
+            if(beforeMaterial==IntPtr.Zero&&_target!=IntPtr.Zero)beforeMaterial=_owner._bridge.CurrentMaterial(_target);
             try
             {
                 if (_hasPost)
@@ -385,15 +402,17 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
                     _assigned = bg.Material.Pointer;
                     _owner._bridge.SetMaterial(_target, _assigned);
                     // C2D's calculated material updates later; handoff is based on its requested binding.
-                    if (old != null && old._target == _target) old._handoff = true;
                 }
+                if(_owner._bridge is ISceneOpacityBindings scene)scene.ApplySceneOpacity(_sceneValues);
+                if(old!=null&&old._target==_target)old._handoff=true;
                 _active = true; _bindingCheckFrame = _owner._frame + 2;
             }
             catch
             {
                 RemoveGraph();
                 if (OwnsBinding())
-                    _owner._bridge.SetMaterial(_target, _original, _originalOption);
+                    _owner._bridge.SetMaterial(_target, beforeMaterial, beforeOption);
+                if(_owner._bridge is ISceneOpacityBindings scene){scene.RestoreSceneOpacity();if(old!=null&&old._active)scene.ApplySceneOpacity(old._sceneValues);}
                 throw;
             }
         }
@@ -438,6 +457,7 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
             _owner._effects--;
             try
             {
+                if(_active&&!_handoff&&_owner._bridge is ISceneOpacityBindings scene)scene.RestoreSceneOpacity();
                 RemoveGraph();
                 if (!_handoff && OwnsBinding())
                     _owner._bridge.SetMaterial(_target, _original, _originalOption);

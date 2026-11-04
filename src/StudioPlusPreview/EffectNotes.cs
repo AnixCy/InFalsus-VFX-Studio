@@ -31,7 +31,7 @@ internal static class EffectNotes
         using var text=new StreamReader(stream);var data=JsonConvert.DeserializeObject<Catalog>(text.ReadToEnd())!;
         if(data.SchemaVersion!=1)throw new InvalidDataException("Unsupported effect reference data.");return data;
     }
-    internal static string Scope(EffectDefinition effect)=>effect.Target=="background"||effect.BackgroundSource.Length>0?"底图材质 · 只改变背景":"后处理 · 处理前面已合成的预览画面";
+    internal static string Scope(EffectDefinition effect)=>effect.Material==InFalsus.Presentation.SceneOpacityPlan.Material?"场景透明度 · 不增加后处理 Pass":effect.Target=="background"||effect.BackgroundSource.Length>0?"底图材质 · 只改变背景":"后处理 · 处理前面已合成的预览画面";
     internal static EffectNote For(EffectDefinition effect)
     {
         if(Cache.TryGetValue(effect,out var found))return found;

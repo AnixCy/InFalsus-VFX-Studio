@@ -25,8 +25,8 @@
       "sha256": "ed1ec145a720ec9f8ba528ebac324bcba818d7781e2eb82c5d0ae27c627bf580"
     },
     "core/EffectPackage.cs": {
-      "change": "Optional effect instance identity, name, enabled state and finite time intervals, protected by the effect.instances capability.",
-      "sha256": "6b70235a52c843c936cee172ad7c0023ef75ec00bf42dc8d6cd634ac5db999e8"
+      "change": "Optional effect instances and intervals, plus validated logical scene-opacity controls protected by scene.opacity.v1.",
+      "sha256": "3ff184a90e2e14fd917b22686f09019effe76eb5a56aa0cbb96dec84c99ad873"
     },
     "authoring/AuthoringProject.cs": {
       "change": "Deep copy and equality of effect instance metadata for undo, reliable persistence and snapshots.",

@@ -12,7 +12,7 @@ public sealed partial class PreviewModel
         var node=Document.Runtime.Nodes.Single(n=>n.Id==Catalog.Get(id).Binding.Node);
         return node.Target=="postprocess"?Math.Clamp(seconds,node.StartSeconds,node.EndSeconds??double.MaxValue):seconds;
     }
-    public bool TrackVisible(string id)=>Keys.Any(k=>k.ParameterId==id)||id is "adjust/_BaseColor" or "adjust/_Exposure";
+    public bool TrackVisible(string id)=>Keys.Any(k=>k.ParameterId==id)||id is "adjust/_BaseColor" or "adjust/_Exposure"||SceneOpacityPlan.Properties.Any(p=>id.EndsWith("/"+p,StringComparison.Ordinal));
     static ChannelDocument[] Channels(string node,EffectDefinition definition)=>definition.Parameters.Select(p=>new ChannelDocument {
         Node=node,Property=p.Property,Kind=p.Kind,Default=p.Value.ToArray()}).ToArray();
     void Graph(string label,Action<PackageDocument> change)
@@ -31,6 +31,7 @@ public sealed partial class PreviewModel
             int at=index<0?nodes.Count:Math.Clamp(index,1,nodes.Count);nodes.Insert(at,node);graph.Nodes=nodes.ToArray();
             graph.Channels=graph.Channels.Concat(Channels(id,definition)).ToArray();
             if(definition.BackgroundSource.Length>0)graph.Requires=graph.Requires.Append(EffectLibrary.BackgroundCapability).Distinct().ToArray();
+            if(definition.Material==SceneOpacityPlan.Material)graph.Requires=graph.Requires.Append(SceneOpacityPlan.Capability).Distinct().ToArray();
         });return id;
     }
     public void SetBackground(EffectDefinition definition)

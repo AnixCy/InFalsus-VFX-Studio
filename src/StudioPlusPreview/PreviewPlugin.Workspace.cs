@@ -56,7 +56,7 @@ public sealed partial class PreviewPlugin
         StudioUiTheme.Fill(stage,"#061119");DrawPreviewResolution(stage);StudioUiTheme.Fill(canvas,"#000000");
         if(Event.current.type==EventType.Repaint&&Surface!=null) {
             try{var texture=RenderWorkspacePreview(Bridge.Snapshot());
-                GUI.DrawTexture(canvas,texture,ScaleMode.ScaleToFit,false);RenderedFrames++;
+                GUI.DrawTexture(canvas,texture,ScaleMode.ScaleToFit,false);RenderedFrames++;DrawSceneReference();
                 if(Surface.BackgroundGroupConflicts>0){var hint=new Rect(canvas.x,canvas.yMax-28*s,canvas.width,28*s);StudioUiTheme.Fill(hint,"#382c28dd");theme.Label(hint,"不同底图效果组重叠：以下方组为准",12,"#f2d4b1",false,2);}
                 if(imagePath.Length==0&&Surface.BackgroundControlPasses>0&&!model.Definition(model.Document.Runtime.Nodes.Single(n=>n.Target=="background")).Original){StudioUiTheme.Fill(canvas,"#091923");theme.Label(canvas,"请先在背景栏选择图片",16,"#94b6c3",false,2);}}
             catch(Exception e){Error(e);}

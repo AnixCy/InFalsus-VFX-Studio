@@ -151,7 +151,9 @@ public sealed class EffectPackage
             });
             return new ChannelTrack(new(ch.Node, ch.Property, ch.Kind), Value(ch.Kind, ch.Default, ch.DefaultChoice), keys);
         });
-        return new(doc, root, tempo, new PreparedTimeline(channels));
+        var timeline=new PreparedTimeline(channels);
+        _=new SceneOpacityPlan(doc);
+        return new(doc, root, tempo, timeline);
     }
 
     // Both backends support exactly this material graph in v1, in document order.

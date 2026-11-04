@@ -16,7 +16,7 @@ using Object=UnityCore::UnityEngine.Object;
 namespace InFalsus.Vfx.GameChecks;
 
 /// <summary>Development-only assembly, copied exclusively to a marked sandbox. No keys, audio or gameplay actions.</summary>
-public sealed class Entry:MelonMod
+public sealed partial class Entry:MelonMod
 {
     static readonly JsonSerializerOptions Json=new(){WriteIndented=true,PropertyNameCaseInsensitive=true,
         Converters={new JsonStringEnumConverter(JsonNamingPolicy.CamelCase,false)}};
@@ -29,6 +29,7 @@ public sealed class Entry:MelonMod
     int stage,frames;
     double since;
     bool quitting;
+    bool playerLoaded,uiFrameChecked;
     string? failure;
     Material? original,foreign;
     public override void OnLateInitializeMelon()
@@ -39,6 +40,7 @@ public sealed class Entry:MelonMod
                 throw new InvalidOperationException("Checks require an explicitly marked isolated copy and command flag");
             data=Path.Combine(root,"UserData/InFalsusPresentation");output=Path.Combine(root,"addon-checks.json");
             var player=MelonMod.RegisteredMelons.FirstOrDefault(m=>m.GetType().FullName=="InFalsus.Presentation.Melon.Entry");
+            playerLoaded=player!=null;
             var playerHost=player?.GetType().GetField("_host",BindingFlags.Instance|BindingFlags.NonPublic)?.GetValue(player) as RuntimeHost;
             native=playerHost?.Bridge as NativeGameBridge??new(root,Path.Combine(data,"profiles.json"),Path.Combine(data,"catalog.json"));
             if(player!=null)Check(playerHost!=null&&native.HasExactSeekSerial,"actual player loader initialized and attached its seek observer");
@@ -65,6 +67,7 @@ public sealed class Entry:MelonMod
             // Keep this test-only override after native Update, never in the shipped runtime.
             UnityEngine.AudioListener.volume=0;
             frames++;
+            frameOpacity?.Apply(new(1,.5f,1,1,1));
             if(elapsed.Elapsed.TotalSeconds>100)throw new TimeoutException("Isolated lifecycle checks exceeded 100 seconds at stage "+stage);
             if(stage==1) {
                 if(!Wait(6))return;
@@ -79,9 +82,19 @@ public sealed class Entry:MelonMod
                 case 2:
                     if(bindings!.CurrentMaterial(bindings.Background)!=original!.Pointer){if(Wait(8))throw new Exception($"C2D baseline mismatch: requested={bindings.RequestedMaterial(bindings.Background):x}, current={bindings.CurrentMaterial(bindings.Background):x}, expected={original.Pointer:x}");return;}
                     Check(bindings.RequestedMaterial(bindings.Background)==IntPtr.Zero,"native C2D consumes and clears pending material request");
-                    Config(true);host=new(bindings,data,Log);Next();break;
+                    CheckSceneTargets(NativeType(native!.BaseAddress,"Constrained2D"));
+                    // Only one NativeHook owns a given machine-code entry. Run the standalone
+                    // frame probe separately from the real loader, never stack two detours.
+                    if(!playerLoaded)StartOpacityFrameProbe(NativeType(native.BaseAddress,"Constrained2D"));
+                    AddSceneFixture();Config(true);host=new(bindings,data,Log);Next();break;
                 case 3:
+                    if(frames<5)return;
                     if(!host!.IsActive||bindings!.CurrentMaterial(bindings.Background)==original!.Pointer){if(Wait(10))throw new Exception("Addon did not activate");return;}
+                    if(frameHud is not null){
+                        float renderedAlpha=CalculatedOpacity(frameHud);
+                        Check(Math.Abs(renderedAlpha-.4f)<.0001,"native UI calculation consumes frame opacity before rendering: "+renderedAlpha);
+                        uiFrameChecked=true;StopOpacityFrameProbe();
+                    }
                     var active=new Material(bindings.CurrentMaterial(bindings.Background));
                     var arguments=Environment.GetCommandLineArgs();int expectedAt=Array.IndexOf(arguments,"-vfx-expected-shader");
                     string expectedShader=expectedAt>=0?arguments[expectedAt+1]:"InFalsusVFX/AddonBackground";
@@ -89,6 +102,7 @@ public sealed class Entry:MelonMod
                     Check(Math.Abs(active.GetFloat("_Brightness")-.9)<.001,"actual material receives interpolated exported keys");
                     Check(active.GetTexture("_MainTex")!=null&&host.Diagnostics.Images==1,"external addon image loaded and owned");
                     Check(host.Diagnostics.RenderRegistrations==0&&host.Diagnostics.PassesRecorded==0,"background addon registers no postprocess passes");
+                    Check(bindings.Opacity==new SceneOpacityValues(.5f,.5f,.5f,.5f,.5f),"game backend evaluates logical scene keys without a Shader pass");
                     bindings.Seconds=3;Next();break;
                 case 4:
                     Check(Math.Abs(new Material(bindings!.CurrentMaterial(bindings.Background)).GetFloat("_Brightness")-.9)<.001,"random seek reevaluates current value without accumulated history");
@@ -99,6 +113,7 @@ public sealed class Entry:MelonMod
                 case 6:
                     if(host!.IsActive||!Wait(.8))return;
                     Check(bindings!.CurrentMaterial(bindings.Background)==original!.Pointer,"disable restores effective original material after request was cleared");
+                    Check(bindings.Opacity==SceneOpacityValues.Visible,"disable restores scene opacity through the optional binding");
                     Clean("disable releases all addon-owned resources");Config(true);Next();break;
                 case 7:
                     if(!host!.IsActive||!Wait(.8))return;
@@ -190,6 +205,7 @@ public sealed class Entry:MelonMod
     {
         try {
             host?.Dispose();
+            StopOpacityFrameProbe();
             if(host!=null)Clean("actual application shutdown releases active addon resources");
             checks.Add("MelonLoader invoked shutdown during actual application exit");
             WriteReport(failure==null);
@@ -200,6 +216,7 @@ public sealed class Entry:MelonMod
         if(output.Length==0)return;
         File.WriteAllText(output,JsonSerializer.Serialize(new{ok,checks,error=failure,messages,
             realIl2Cpp=true,realConstrained2D=true,syntheticTransport=true,gameplayStarted=false,audioPlaybackRequested=false,fmodMuteVerified=false,
+            playerLoaded,nativeUiFrameChecked=uiFrameChecked,
             visualInspection=false,resources=host?.Diagnostics},Json));
     }
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]delegate IntPtr Unary(IntPtr arg);
@@ -217,7 +234,7 @@ public sealed class Entry:MelonMod
         }
         throw new TypeLoadException(name);
     }
-    sealed class ProbeBindings:IGameBindings
+    sealed class ProbeBindings:IGameBindings,ISceneOpacityBindings
     {
         readonly NativeGameBridge native;readonly GameObject root;
         public bool Valid=true,Paused,TransitionVisible;public double Seconds=1;
@@ -226,6 +243,12 @@ public sealed class Entry:MelonMod
         public bool HasSpecialScene=>false;
         public string SceneControllerName=>"isolated C2D lifecycle probe";
         public bool CanRetainBackground=>TransitionVisible;
+        public SceneOpacityValues Opacity=SceneOpacityValues.Visible;
+        public void BeginOpacityFrame(){}
+        public void ApplySceneOpacity(in SceneOpacityValues values)=>Opacity=values;
+        public void RestoreSceneOpacity()=>Opacity=SceneOpacityValues.Visible;
+        public void BeforeUiRender(){}
+        public void AfterUiRender(){}
         public ProbeBindings(NativeGameBridge native,Il2CppBase::Il2CppSystem.Type type)
         {
             this.native=native;root=GameObject.CreatePrimitive(PrimitiveType.Quad);root.name="VFX isolated native C2D";
