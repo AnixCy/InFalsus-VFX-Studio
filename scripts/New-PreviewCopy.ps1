@@ -44,7 +44,7 @@ if(Test-Path -LiteralPath (Join-Path $taskRepo 'local/custom-effect-sample/effec
 $taskLauncher='@echo off'+"`r`n"+'setlocal'+"`r`n"+'cd /d "%~dp0"'+"`r`n"+'set "INFSTUDIO_CONFIG_ROOT=%~dp0UserData\studio"'+"`r`n"+'set "VFX_WORK_ROOT=%~dp0UserData\vfx"'+"`r`n"+'start "" "%~dp0InFalsusStudio.exe"'+"`r`n"
 [IO.File]::WriteAllText((Join-Path $taskDestination 'Start-VFX.bat'),$taskLauncher,[Text.Encoding]::ASCII)
 $taskGuide=@'
-VFX Addon 测试版：编辑器 0.10.2 / 玩家运行包 0.10.0
+VFX Addon 测试版：编辑器 0.11.0 / 玩家运行包 0.11.0
 
 双击 Start-VFX.bat，点击右上“演出视图”；左上“制谱视图”返回。
 制谱视图右上“异象背景：关/开”可观看当前已加载演出，跟随谱面播放、暂停和定位；关闭恢复默认背景。
@@ -60,6 +60,8 @@ VFX Addon 测试版：编辑器 0.10.2 / 玩家运行包 0.10.0
 默认 Ctrl+S 保存，Ctrl+Shift+S 另存，Ctrl+Z 撤销，Ctrl+Y / Ctrl+Shift+Z 重做。
 旧工程若首帧前有突变，点时间轴“补齐起点”；可撤销，保存才写入。开关用对应 Amount 调渐变。
 “背景”只设置图片；Ephemeral、Feedback 等在效果库顶部，可搜索名称后拖入时间轴。
+背景栏“Bright 亮图”可选择自定义 PNG/JPEG（4096像素以内、16MiB以内），随工程保存；Bright 强度控制混合。
+“恢复默认亮图”保留动画；更换主图保留亮图。导出只带实际使用的辅助图片，自定义亮图包需要0.11.0玩家端。
 同组底图效果共用原始背景 Shader，不逐个增加后处理 Pass。跨组或互斥模式重叠会提示，以下方组为准。
 “自定义→新建 Shader 效果”打开 Effect.shader，首次编译成功自动加入时间轴。
 修改 Shader 后保存即可自动编译；Properties 自动生成右侧参数，点击 ◆ 打帧。

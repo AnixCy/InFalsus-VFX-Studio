@@ -13,7 +13,7 @@ using UColor = UnityEngine.Color;
 
 namespace InFalsus.Vfx.StudioPlus;
 
-[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.10.2")]
+[BepInPlugin("local.infalsus.vfx.preview", "InFalsus VFX Studio Preview", "0.11.0")]
 [BepInDependency("local.infalsusstudio.visualui", "1.0.7")]
 public sealed partial class PreviewPlugin : BaseUnityPlugin
 {
@@ -24,6 +24,7 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
     readonly Queue<Action> actions = new();
     Harmony? harmony;
     string folder = "", imagePath = "", savedImagePath = "", projectFile = "",audioPath="",savedAudioPath="";
+    string brightImagePath="",savedBrightImagePath="";
     ProjectFileVersion? fileVersion;
     string status = "实时预览 · 回车应用 · Esc 取消";
     bool previewEnabled = true, stopped, actionRunning;
@@ -39,9 +40,10 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         public int FormatVersion { get; set; } = 1;
         public AuthoringProjectDocument Project { get; set; } = null!;
         public string BackgroundPath { get; set; } = "";
+        public string BrightBackgroundPath {get;set;}="";
         public string AudioPath { get; set; } = "";
     }
-    bool Dirty => Model != null && (Model.Session.IsDirty || Model.IsEditing || textParameter != null || imagePath != savedImagePath || audioPath!=savedAudioPath || keyTimeDirty);
+    bool Dirty => Model != null && (Model.Session.IsDirty || Model.IsEditing || textParameter != null || imagePath != savedImagePath || brightImagePath!=savedBrightImagePath || audioPath!=savedAudioPath || keyTimeDirty);
     internal void Awake()
     {
         Instance = this;
@@ -140,12 +142,12 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         if (decision != PendingDecision.None) decisionError = status;
         Logger.LogWarning("VFX: " + e);
     }
-    ProjectFileStore Store() => new(p => JsonConvert.SerializeObject(new ProjectFile { Project = p, BackgroundPath = imagePath,AudioPath=audioPath }, Json),
+    ProjectFileStore Store() => new(p => JsonConvert.SerializeObject(new ProjectFile { Project = p, BackgroundPath = imagePath,BrightBackgroundPath=brightImagePath,AudioPath=audioPath }, Json),
         text => Decode(text).Project, PreviewModel.Capabilities);
     static ProjectFile Decode(string text)
     {
         var p = JsonConvert.DeserializeObject<ProjectFile>(text, Json);
-        if (p == null || p.FormatVersion != 1 || p.Project == null || p.BackgroundPath == null || p.AudioPath==null)
+        if (p == null || p.FormatVersion != 1 || p.Project == null || p.BackgroundPath == null || p.BrightBackgroundPath==null || p.AudioPath==null)
             throw new InvalidDataException("不是受支持的演出参数工程。");
         return p;
     }
@@ -158,7 +160,7 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         string target = projectFile.Length == 0 ? saveDialog("演出工程.vfx.json") : projectFile;
         if (target.Length == 0) return false;
         var result = Store().Save(Model.Session, target, Model.Session.Revision, fileVersion);
-        projectFile = target; fileVersion = result.FileVersion; savedImagePath = imagePath;savedAudioPath=audioPath;
+        projectFile = target; fileVersion = result.FileVersion; savedImagePath = imagePath;savedBrightImagePath=brightImagePath;savedAudioPath=audioPath;
         status = "工程已保存。";
         return true;
     }
@@ -168,7 +170,7 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         Model.Commit(); var target = saveDialog("演出工程.vfx.json"); if (target.Length == 0) return;
         var result = Store().Save(Model.Session, target, Model.Session.Revision,
             string.Equals(target, projectFile, StringComparison.OrdinalIgnoreCase) ? fileVersion : null);
-        projectFile = target; fileVersion = result.FileVersion; savedImagePath = imagePath;savedAudioPath=audioPath; status = "工程已另存。";
+        projectFile = target; fileVersion = result.FileVersion; savedImagePath = imagePath;savedBrightImagePath=brightImagePath;savedAudioPath=audioPath; status = "工程已另存。";
     }
     void LoadProject()
     {
@@ -183,13 +185,15 @@ public sealed partial class PreviewPlugin : BaseUnityPlugin
         if (new FileInfo(file).Length > 4*1024*1024) throw new InvalidDataException("工程超过 4 MiB。");
         var data = Decode(File.ReadAllText(file));
         var opened = Store().Open(file);
-        Texture2D? image = null;
+        Texture2D? image = null,brightImage=null;
         try {
             if (data.BackgroundPath.Length != 0) image = Surface.PrepareImage(data.BackgroundPath);
+            if(data.BrightBackgroundPath.Length!=0)brightImage=Surface.PrepareImage(data.BrightBackgroundPath,portable:true);
             if(data.AudioPath.Length!=0&&!File.Exists(data.AudioPath))throw new FileNotFoundException("工程音频不存在。",data.AudioPath);
             Model.Replace(opened.Session);
-        } catch { if (image) Destroy(image); throw; }
+        } catch { if (image) Destroy(image);if(brightImage)Destroy(brightImage); throw; }
         Surface.ApplyImage(image); imagePath = savedImagePath = data.BackgroundPath;
+        Surface.ApplyBrightImage(brightImage);brightImagePath=savedBrightImagePath=data.BrightBackgroundPath;
         audioPath=savedAudioPath=data.AudioPath;
         if(audioPath.Length!=0)Bridge.LoadAudio(audioPath);
         selectedKey="";selectedParameter="";

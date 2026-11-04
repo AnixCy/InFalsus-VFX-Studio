@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$Sandbox,[Parameter(Mandatory=$true)][string]$Fixture,[switch]$ArchivePrevious,[switch]$IncludePlayerLoader,[string]$ExpectedShader)
+param([Parameter(Mandatory=$true)][string]$Sandbox,[Parameter(Mandatory=$true)][string]$Fixture,[switch]$ArchivePrevious,[switch]$IncludePlayerLoader,[string]$ExpectedShader,[string]$MaterialExpectations)
 $ErrorActionPreference='Stop'
 $taskRepo=Split-Path $PSScriptRoot -Parent
 $taskRoot=(Resolve-Path -LiteralPath $Sandbox).Path
@@ -32,6 +32,7 @@ Copy-Item -LiteralPath (Join-Path $taskRepo 'tests/Game.Runtime.Checks/bin/Relea
 if($IncludePlayerLoader){Copy-Item -LiteralPath (Join-Path $taskRepo 'src/GameLoader.Melon/bin/Release/net6.0/InFalsus.Presentation.Melon.dll') -Destination (Join-Path $taskRoot 'Mods/InFalsus.Presentation.Melon.dll') -Force}
 $taskArgs=@('-batchmode','-force-d3d11','-screen-width','1280','-screen-height','720','-noaudio','-vfx-addon-check','-logFile',('"'+(Join-Path $taskRoot 'addon-check-player.log')+'"'))
 if($ExpectedShader){$taskArgs+=@('-vfx-expected-shader',('"'+$ExpectedShader+'"'))}
+if($MaterialExpectations){$taskArgs+=@('-vfx-material-expectations',('"'+(Resolve-Path -LiteralPath $MaterialExpectations).Path+'"'))}
 $taskProcess=Start-Process -FilePath $taskExe -ArgumentList $taskArgs -WorkingDirectory $taskRoot -WindowStyle Hidden -PassThru
 Write-Output ('Owned IL2CPP check PID '+$taskProcess.Id)
 if(-not $taskProcess.WaitForExit(125000)){Stop-Process -Id $taskProcess.Id;throw 'Owned runtime check exceeded timeout.'}

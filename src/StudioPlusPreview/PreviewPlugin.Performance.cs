@@ -31,6 +31,7 @@ public sealed partial class PreviewPlugin
             if(performanceTimes.Length==0) {
                 var data=Decode(File.ReadAllText(performanceProject));Model.Replace(Store().Open(performanceProject).Session);
                 Surface.ApplyImage(data.BackgroundPath.Length>0?Surface.PrepareImage(data.BackgroundPath):null);imagePath=savedImagePath=data.BackgroundPath;
+                Surface.ApplyBrightImage(data.BrightBackgroundPath.Length>0?Surface.PrepareImage(data.BrightBackgroundPath,portable:true):null);brightImagePath=savedBrightImagePath=data.BrightBackgroundPath;
                 selectedEffect="background";selectedParameter="background/_Brightness";selectedKey="";
                 Bridge.SetView(true);autoSourceUpdate=false;QualitySettings.vSyncCount=0;Application.targetFrameRate=-1;
                 performanceTimes=Model.Keys.Select(k=>k.Seconds).Concat(Model.RenderDocument.Nodes.Select(n=>n.StartSeconds)).Append(0d).Distinct().OrderBy(t=>t).Take(512).ToArray();

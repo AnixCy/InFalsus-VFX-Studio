@@ -60,5 +60,26 @@ var invalid=AuthoringProjects.Copy(project);invalid.Runtime.Requires=Array.Empty
 invalid=AuthoringProjects.Copy(project);invalid.Runtime.Nodes[2].BackgroundBinding!.Properties[0].Value[0]=1;Reject(()=>new BackgroundMaterialPlan(invalid.Runtime),"one source id cannot carry inconsistent neutral parameters");
 invalid=AuthoringProjects.Copy(project);invalid.Runtime.Nodes[2].BackgroundBinding!.StrengthProperty="_Missing";Reject(()=>new BackgroundMaterialPlan(invalid.Runtime),"an unknown strength property is rejected");
 invalid=AuthoringProjects.Copy(project);invalid.Runtime.Channels=invalid.Runtime.Channels.Append(new ChannelDocument{Node="warp",Property="_NotExposed"}).ToArray();Reject(()=>new BackgroundMaterialPlan(invalid.Runtime),"undeclared control channels are rejected");
+string image=Path.Combine(output,"detail.png");
+File.WriteAllBytes(image,Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAG0lEQVR4nGPQcMz7nxcw8T9DQMWC/7Mn7vsPAEnSCXVyxwqKAAAAAElFTkSuQmCC"));
+BackgroundExportContext ImageContext(){var c=Context();c.SetTextureInput("generic-source","_DetailMap",image);return c;}
+var imageRuntime=BackgroundExport.Compile(project,target,"Gamma",ImageContext());
+Check(imageRuntime.Requires.Contains(BackgroundMaterialPlan.TextureCapability)&&imageRuntime.Nodes.Skip(1).All(n=>n.BackgroundBinding!.TextureBindings.ContainsKey("_DetailMap")),"arbitrary auxiliary texture properties bind to every shared-source operator with a protected capability");
+Check(new BackgroundMaterialPlan(imageRuntime).States.Count==2,"auxiliary images do not add material states or rendering stages");
+var imageCopy=AuthoringProjects.Copy(new AuthoringProjectDocument{Runtime=imageRuntime});
+imageCopy.Runtime.Nodes[1].BackgroundBinding!.TextureBindings["_DetailMap"]="different";
+Check(imageRuntime.Nodes[1].BackgroundBinding!.TextureBindings["_DetailMap"]!="different"&&!BackgroundBindingDocument.Same(imageCopy.Runtime.Nodes[1].BackgroundBinding,imageRuntime.Nodes[1].BackgroundBinding),"texture bindings participate in deep-copy and equality semantics");
+Reject(()=>EffectPackage.FromDocument(imageRuntime,output,AddonPackage.Capabilities.Where(c=>c!=BackgroundMaterialPlan.TextureCapability).ToArray(),false),"previous players explicitly reject auxiliary texture overrides instead of using their default images");
+invalid=AuthoringProjects.Copy(new AuthoringProjectDocument{Runtime=imageRuntime});invalid.Runtime.Requires=invalid.Runtime.Requires.Where(c=>c!=BackgroundMaterialPlan.TextureCapability).ToArray();
+Reject(()=>new BackgroundMaterialPlan(invalid.Runtime),"missing auxiliary-texture capability is rejected");
+invalid=AuthoringProjects.Copy(new AuthoringProjectDocument{Runtime=imageRuntime});invalid.Runtime.Nodes[2].Textures["input_DetailMap"]="file:other.png";
+Reject(()=>new BackgroundMaterialPlan(invalid.Runtime),"shared source operators cannot disagree about auxiliary image resources");
+string imageOutput=Path.Combine(output,"ImageAddon");BackgroundExport.Publish(project,target,"","unused","Gamma",imageOutput,o=>JsonSerializer.Serialize(o,o.GetType(),json),ImageContext());
+var imagePackage=AddonPackage.Load(Path.Combine(imageOutput,"addon.json"),s=>JsonSerializer.Deserialize<AddonManifest>(s,json)!,s=>JsonSerializer.Deserialize<PackageDocument>(s,json)!,AddonPackage.Capabilities);
+Check(Directory.GetFiles(Path.Combine(imageOutput,"images")).Length==1&&AddonPackage.Hash(Directory.GetFiles(Path.Combine(imageOutput,"images"))[0])==AddonPackage.Hash(image),"auxiliary images are published once with exact bytes and manifest hashes");
+Check(imagePackage.Document.Nodes.Skip(1).All(n=>n.Textures[n.BackgroundBinding!.TextureBindings["_DetailMap"]].StartsWith("file:images/",StringComparison.Ordinal)),"published texture bindings survive validated portable loading");
+File.WriteAllText(Path.Combine(output,"bad.png"),"invalid");var badImage=Context();badImage.SetTextureInput("generic-source","_DetailMap",Path.Combine(output,"bad.png"));
+Reject(()=>BackgroundExport.Publish(project,target,"","unused","Gamma",Path.Combine(output,"BadAddon"),o=>JsonSerializer.Serialize(o,o.GetType(),json),badImage),"invalid auxiliary images are rejected before publication");
+Check(!Directory.Exists(Path.Combine(output,"BadAddon")),"auxiliary-image validation leaves no partial addon");
 File.WriteAllText(Path.Combine(output,"checks.json"),JsonSerializer.Serialize(new{ok=true,checks,samplingAllocatedBytes=allocated,visualCalls=0,gameStarted=false},json));
 Console.WriteLine(JsonSerializer.Serialize(new{ok=true,count=checks.Count,samplingAllocatedBytes=allocated},json));

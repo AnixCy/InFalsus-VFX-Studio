@@ -15,7 +15,15 @@ public sealed class BackgroundExportContext
     readonly Func<MaterialNodeDocument,BackgroundExportAsset> resolve;
     readonly Dictionary<string,BackgroundExportAsset> cached=new(StringComparer.Ordinal);
     internal readonly Dictionary<string,string> Files=new(StringComparer.Ordinal);
+    internal readonly Dictionary<string,string> ImageHashes=new(StringComparer.Ordinal);
+    readonly Dictionary<string,Dictionary<string,string>> textureInputs=new(StringComparer.Ordinal);
     public BackgroundExportContext(string root,Func<MaterialNodeDocument,BackgroundExportAsset> resolve)=>(AssetRoot,this.resolve)=(Path.GetFullPath(root),resolve);
+    public void SetTextureInput(string sourceId,string property,string file)
+    {
+        if(string.IsNullOrWhiteSpace(sourceId)||string.IsNullOrWhiteSpace(property))throw new ArgumentException("Texture source and property are required.");
+        if(!textureInputs.TryGetValue(sourceId,out var inputs))textureInputs[sourceId]=inputs=new(StringComparer.Ordinal);
+        inputs[property]=Path.GetFullPath(file);
+    }
     internal void Bind(MaterialNodeDocument node)
     {
         string key=node.Bundle+":"+node.Material;
@@ -24,6 +32,14 @@ public sealed class BackgroundExportContext
         string relative="materials/"+AddonPackage.Hash(asset.File).Substring(0,32)+".bundle";
         Files[relative]=asset.File;node.Bundle=relative;node.Material=asset.Material;
         if(asset.TextureProperty!=null)node.BackgroundBinding!.TextureProperty=asset.TextureProperty;
+        if(textureInputs.TryGetValue(node.BackgroundBinding!.SourceId,out var inputs))foreach(var pair in inputs) {
+            string file=pair.Value,extension=Path.GetExtension(file).ToLowerInvariant();
+            if(extension is not (".png" or ".jpg" or ".jpeg"))throw new InvalidDataException("辅助背景图片只支持 PNG/JPEG。");
+            if(new FileInfo(file).Length>16*1024*1024)throw new InvalidDataException("辅助背景图片超过 16 MiB。");
+            ImageHeader.Validate(File.ReadAllBytes(file));string digest=AddonPackage.Hash(file);
+            string image="images/"+digest.Substring(0,32)+extension,imageKey="input"+pair.Key;
+            Files[image]=file;ImageHashes[image]=digest;node.Textures[imageKey]="file:"+image;node.BackgroundBinding.TextureBindings[pair.Key]=imageKey;
+        }
     }
 }
 internal static class MaterialBackgroundExport
@@ -46,7 +62,8 @@ internal static class MaterialBackgroundExport
         source.Id="addon-"+project.ProjectId;source.SongKey=target.SongKey;source.Difficulty=target.Difficulty;source.ChartFingerprint=target.ChartFingerprint;
         source.UnityVersion="6000.3.9f1";source.Platform="StandaloneWindows64";source.ColorSpace=colorSpace;
         source.Requires=new[]{"clock.chart","clock.audio","background.material","shader.bundle","effect.instances",BackgroundMaterialPlan.Capability}
-            .Concat(nodes.Any(SceneOpacityPlan.IsControl)?new[]{SceneOpacityPlan.Capability}:Array.Empty<string>()).ToArray();
+            .Concat(nodes.Any(SceneOpacityPlan.IsControl)?new[]{SceneOpacityPlan.Capability}:Array.Empty<string>())
+            .Concat(nodes.Any(n=>n.BackgroundBinding?.TextureBindings.Count>0)?new[]{BackgroundMaterialPlan.TextureCapability}:Array.Empty<string>()).ToArray();
         _=new BackgroundMaterialPlan(source);return source;
     }
     static bool NeutralGrade(ChannelDocument c)

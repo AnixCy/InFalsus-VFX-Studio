@@ -22,12 +22,18 @@ public sealed partial class PreviewPlugin
     BackgroundExportContext? MaterialExportContext(AuthoringProjectDocument project,string colorSpace)
     {
         if(!project.Runtime.Nodes.Any(n=>n.BackgroundBinding!=null))return null;
-        return new BackgroundExportContext(folder,node=>{
+        var context=new BackgroundExportContext(folder,node=>{
             var effect=Model!.Definition(node);
             if(effect.Id=="builtin")return new BackgroundExportAsset(Path.Combine(folder,"GameExport",colorSpace,"background.bundle"),AddonPackage.MaterialPath);
             if(effect.Original||effect.BackgroundSource.Length>0)return new BackgroundExportAsset(EffectPackage.ResolveAsset(folder,node.Bundle),node.Material);
             return CompileBackgroundSource(effect,colorSpace);
         });
+        if(brightImagePath.Length>0)foreach(var node in project.Runtime.Nodes.Where(n=>n.BackgroundBinding!=null&&n.Enabled)) {
+            var effect=Model!.Definition(node);
+            var source=effect.BackgroundSource.Length>0?Model.Library.Effects.Single(e=>e.Id==effect.BackgroundSource):effect;
+            if(Surface!.SupportsTexture(source,"_BrightMap"))context.SetTextureInput(node.BackgroundBinding!.SourceId,"_BrightMap",brightImagePath);
+        }
+        return context;
     }
     sealed class GameToolchain {public string UnityEditor="";}
     BackgroundExportAsset CompileBackgroundSource(EffectDefinition effect,string colorSpace)

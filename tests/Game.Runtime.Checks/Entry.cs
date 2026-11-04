@@ -42,6 +42,8 @@ public sealed partial class Entry:MelonMod
     float expectedSceneOne=.5f;
     string expectedProperty="_Brightness",expectedTexture="_MainTex",expectedMaterialShader="InFalsusVFX/AddonBackground";
     bool materialPlanFixture;
+    int expectedImages=1;
+    readonly Dictionary<string,(int Width,int Height)> expectedAuxiliaryImages=new();
     IntPtr fixtureVariant;
     public override void OnLateInitializeMelon()
     {
@@ -66,6 +68,17 @@ public sealed partial class Entry:MelonMod
             if(expectationAt>=0){using var expected=JsonDocument.Parse(File.ReadAllText(args[expectationAt+1]));expectedProperty=expected.RootElement.GetProperty("Property").GetString()!;expectedTexture=expected.RootElement.GetProperty("Texture").GetString()!;expectedMaterialShader=expected.RootElement.GetProperty("Shader").GetString()!;materialPlanFixture=!expected.RootElement.TryGetProperty("Switching",out var switching)||switching.GetBoolean();}
             if(packAt>=0)fixture=Path.Combine(root,"Charts",args[packAt+1],"vfx/FBD");
             var expectedPackage=EffectPackage.FromDocument(JsonSerializer.Deserialize<PackageDocument>(File.ReadAllText(Path.Combine(fixture,"runtime.json")),Json)!,fixture,AddonPackage.Capabilities);
+            var backgroundPlan=new BackgroundMaterialPlan(expectedPackage.Document);
+            var physicalNodes=backgroundPlan.Enabled?backgroundPlan.States.Select(s=>s.Node):expectedPackage.Document.Nodes.Where(n=>!SceneOpacityPlan.IsControl(n));
+            expectedImages=physicalNodes.Sum(n=>n.Textures.Values.Count(t=>t.StartsWith("file:",StringComparison.Ordinal)));
+            var sampled=new ParameterValue[expectedPackage.Timeline.Count];expectedPackage.Timeline.Sample(1+expectedPackage.Document.OffsetSeconds,sampled);
+            var firstState=backgroundPlan.Sample(1+expectedPackage.Document.OffsetSeconds,sampled);
+            if(firstState!=null)foreach(var binding in firstState.Definition.TextureBindings) {
+                string reference=firstState.Node.Textures[binding.Value];
+                if(!reference.StartsWith("file:",StringComparison.Ordinal)||!reference.EndsWith(".png",StringComparison.OrdinalIgnoreCase))continue;
+                byte[] image=File.ReadAllBytes(EffectPackage.ResolveAsset(fixture,reference.Substring(5)));
+                expectedAuxiliaryImages[binding.Key]=(System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(image.AsSpan(16,4)),System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(image.AsSpan(20,4)));
+            }
             float Expected(double seconds){var v=new ParameterValue[expectedPackage.Timeline.Count];expectedPackage.Timeline.Sample(seconds+expectedPackage.Document.OffsetSeconds,v);
                 int i=Array.FindIndex(expectedPackage.Document.Channels,c=>c.Property==expectedProperty);return v[i].Number.X;}
             expectedOne=Expected(1);expectedTwo=Expected(2);expectedThree=Expected(3);
@@ -131,7 +144,11 @@ public sealed partial class Entry:MelonMod
                     string expectedShader=expectedAt>=0?arguments[expectedAt+1]:expectedMaterialShader;
                     Check(active.shader.name==expectedShader,"actual IL2CPP component uses the exported shader");
                     Check(Math.Abs(active.GetFloat(expectedProperty)-expectedOne)<.001,"actual material receives the exported value at the current clock");
-                    Check(active.GetTexture(expectedTexture)!=null&&host.Diagnostics.Images==1,"external addon image loaded and owned");
+                    Check(active.GetTexture(expectedTexture)!=null&&host.Diagnostics.Images==expectedImages,"external addon images loaded and owned: "+expectedImages);
+                    foreach(var image in expectedAuxiliaryImages) {
+                        var texture=active.GetTexture(image.Key);
+                        Check(texture!=null&&texture.width==image.Value.Width&&texture.height==image.Value.Height,"auxiliary texture bound to the actual IL2CPP material: "+image.Key);
+                    }
                     Check(host.Diagnostics.RenderRegistrations==0&&host.Diagnostics.PassesRecorded==0,"background addon registers no postprocess passes");
                     Check(bindings.Opacity==new SceneOpacityValues(expectedSceneOne,expectedSceneOne,expectedSceneOne,expectedSceneOne,expectedSceneOne),"game backend evaluates logical scene keys without a Shader pass");
                     if(materialPlanFixture){fixtureVariant=active.Pointer;Check(Math.Abs(active.GetFloat("_CurrentTime")-1)<.001,"native material clock matches the shared transport");bindings.Seconds=5.5;Go(31);break;}

@@ -12,6 +12,7 @@ public sealed partial class PreviewPlugin
     RenderTexture? chartBackgroundTexture;
     double chartBackgroundAudio=double.NaN,chartBackgroundSeconds=double.NaN;
     int chartBackgroundHeight;
+    int chartBackgroundImageRevision;
     internal int ChartBackgroundRenders;
 
     void SetChartBackgroundPreview(bool enabled)
@@ -41,10 +42,11 @@ public sealed partial class PreviewPlugin
         if(!chartBackgroundTexture||!chartBackgroundTexture!.IsCreated()
             ||!ReferenceEquals(chartBackgroundDocument,Model!.RenderDocument)||Model.IsEditing
             ||chartBackgroundAudio!=snapshot.AudioSeconds||chartBackgroundSeconds!=snapshot.ChartSeconds
-            ||chartBackgroundHeight!=previewHeight) {
+            ||chartBackgroundHeight!=previewHeight||chartBackgroundImageRevision!=Surface!.ImageRevision) {
             chartBackgroundTexture=RenderWorkspacePreview(snapshot);ChartBackgroundRenders++;
             chartBackgroundDocument=Model!.RenderDocument;chartBackgroundAudio=snapshot.AudioSeconds;
             chartBackgroundSeconds=snapshot.ChartSeconds;chartBackgroundHeight=previewHeight;
+            chartBackgroundImageRevision=Surface!.ImageRevision;
         }
         chartBackground??=new ChartBackgroundDisplay(Bridge.Owner!.ViewCamera);
         chartBackground.Show(chartBackgroundTexture!);

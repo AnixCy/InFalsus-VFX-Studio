@@ -46,7 +46,7 @@ public static class BackgroundExport
             node.Bundle="background.bundle";
             channels.AddRange(source.Channels.Where(c=>c.Node==node.Id));
         }
-        var requires=AddonPackage.Capabilities.Where(c=>c!=AddonPackage.ImageCapability&&c!="effect.instances"&&c!=SceneOpacityPlan.Capability&&c!=BackgroundMaterialPlan.Capability).ToArray();
+        var requires=AddonPackage.Capabilities.Where(c=>c!=AddonPackage.ImageCapability&&c!="effect.instances"&&c!=SceneOpacityPlan.Capability&&c!=BackgroundMaterialPlan.Capability&&c!=BackgroundMaterialPlan.TextureCapability).ToArray();
         if(scene.Length>0)requires=requires.Concat(new[]{"effect.instances",SceneOpacityPlan.Capability}).ToArray();
         return new PackageDocument {
             Id="addon-"+project.ProjectId,SongKey=target.SongKey,Difficulty=target.Difficulty,ChartFingerprint=target.ChartFingerprint,
@@ -76,8 +76,12 @@ public static class BackgroundExport
             void Copy(string relative,string file){var to=EffectPackage.ResolveAsset(staging,relative,false);Directory.CreateDirectory(Path.GetDirectoryName(to)!);File.Copy(file,to);manifest.Files.Add(relative,AddonPackage.Hash(to));}
             if(context==null)Copy("background.bundle",bundle);
             else {
-                foreach(var pair in context.Files)Copy(pair.Key,pair.Value);
+                foreach(var pair in context.Files) {
+                    Copy(pair.Key,pair.Value);
+                    if(context.ImageHashes.TryGetValue(pair.Key,out var expected)&&manifest.Files[pair.Key]!=expected)throw new IOException("导出期间辅助背景图片发生变化，请重试。");
+                }
                 foreach(var node in runtime.Nodes)foreach(var key in node.Textures.Keys.ToArray())if(node.Textures[key].StartsWith("file:",StringComparison.Ordinal)) {
+                    if(context.ImageHashes.ContainsKey(node.Textures[key].Substring(5)))continue;
                     string file=EffectPackage.ResolveAsset(context.AssetRoot,node.Textures[key].Substring(5));
                     if(new FileInfo(file).Length>16*1024*1024)throw new InvalidDataException("背景依赖图片超过 16 MiB。");ImageHeader.Validate(File.ReadAllBytes(file));
                     string relative="images/"+AddonPackage.Hash(file).Substring(0,32)+Path.GetExtension(file).ToLowerInvariant();if(!manifest.Files.ContainsKey(relative))Copy(relative,file);node.Textures[key]="file:"+relative;

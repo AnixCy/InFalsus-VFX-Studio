@@ -43,11 +43,11 @@
     "backgroundMaterialExport": "docs/vfx/BACKGROUND_MATERIAL_EXPORT.md"
   },
   "preview": {
-    "pluginVersion": "0.10.2",
+    "pluginVersion": "0.11.0",
     "testedStudioBinary": "1.0.7 build1030",
     "unityVersion": "6000.3.25f1",
     "coreChecks": 196,
-    "runtimeChecks": 340,
+    "runtimeChecks": 356,
     "authoredBackgroundChecks": 312,
     "combinedAuthoringChecks": 320,
     "previewResolutions": [
@@ -80,7 +80,10 @@
     "genericBackgroundExport": true,
     "textDeletionRebindChecked": true,
     "chartBackgroundPreview": true,
-    "chartBackgroundViewOnly": true
+    "chartBackgroundViewOnly": true,
+    "customBrightImage": true,
+    "customBrightImageExport": true,
+    "deploymentPending": true
   },
   "presentationCoreImported": true,
   "presentationUiImplemented": true,
@@ -119,7 +122,7 @@
     "installedStudioUpdated": false
   },
   "addonRuntime": {
-    "version": "0.10.0",
+    "version": "0.11.0",
     "loader": "MelonLoader IL2CPP / BepInEx Unity IL2CPP",
     "unityVersion": "6000.3.9f1",
     "platform": "StandaloneWindows64",
@@ -141,7 +144,9 @@
     "playerInstall": "extract matching runtime ZIP once; songs into Charts",
     "spc2": "verified community binary only",
     "customBackgroundGameChecks": 52,
-    "backgroundMaterialChecks": 20,
-    "backgroundCapability": "background.material-plan.v1"
+    "backgroundMaterialChecks": 30,
+    "backgroundCapability": "background.material-plan.v1",
+    "auxiliaryTextureCapability": "background.texture-bindings.v1",
+    "auxiliaryTextureRuntimeChecks": 52
   }
 }

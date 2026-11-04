@@ -88,7 +88,7 @@ public sealed partial class PreviewPlugin
     {
         var args=Environment.GetCommandLineArgs();int at=Array.IndexOf(args,"-vfx-project-fixture");if(at<0)return;
         string file=args[at+1];var original=File.ReadAllBytes(file);var data=Decode(File.ReadAllText(file));
-        var store=new ProjectFileStore(p=>JsonConvert.SerializeObject(new ProjectFile{Project=p,BackgroundPath=data.BackgroundPath,AudioPath=data.AudioPath},Json),
+        var store=new ProjectFileStore(p=>JsonConvert.SerializeObject(new ProjectFile{Project=p,BackgroundPath=data.BackgroundPath,BrightBackgroundPath=data.BrightBackgroundPath,AudioPath=data.AudioPath},Json),
             text=>Decode(text).Project,PreviewModel.Capabilities);
         var opened=store.Open(file);var fixture=new PreviewModel(folder,Application.unityVersion,QualitySettings.activeColorSpace.ToString(),legacy:true);
         fixture.Replace(opened.Session);var keys=fixture.Keys.ToArray();int missing=fixture.MissingAnimationStarts;

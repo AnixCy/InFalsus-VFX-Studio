@@ -9,7 +9,7 @@ namespace InFalsus.Vfx.StudioPlus;
 
 internal sealed partial class PreviewSurface:IDisposable
 {
-    sealed class Resource {public string Path="";public Material Material=null!;public EffectDefinition Definition=null!;public readonly HashSet<string> Integers=new();}
+    sealed class Resource {public string Path="";public Material Material=null!;public EffectDefinition Definition=null!;public readonly HashSet<string> Integers=new();public bool HasBrightMap;public Texture? DefaultBrightMap;}
     readonly string folder;
     readonly Camera hostCamera,previewCamera;
     readonly GameObject root,quad;
@@ -22,7 +22,7 @@ internal sealed partial class PreviewSurface:IDisposable
     readonly UniversalRenderPipeline.SingleCameraRequest request=new();
     RenderTexture? scene,post,alternate;
     RTHandle? sceneHandle,postHandle,alternateHandle;
-    Texture2D? ownedTexture;
+    Texture2D? ownedTexture,ownedBrightTexture;
     Material? blendMaterial;
     bool imageOverride;
     int width,height;
@@ -30,6 +30,7 @@ internal sealed partial class PreviewSurface:IDisposable
     internal Material Material=>resources["background"].Material;
     internal int ResourceCount=>resources.Count;
     internal int LastPostProcessDraws {get;private set;}
+    internal int ImageRevision {get;private set;}
     internal Material NodeMaterial(string id)=>resources[id].Material;
     internal PreviewSurface(Camera view,string folder)
     {
@@ -59,7 +60,8 @@ internal sealed partial class PreviewSurface:IDisposable
         Material material=asset is Shader shader?new Material(shader):asset is Material original?new Material(original):
             throw new InvalidDataException("找不到效果材质："+node.Material);
         if(!material.shader.isSupported){Object.DestroyImmediate(material);throw new NotSupportedException("当前设备不支持该效果。");}
-        var resource=new Resource{Path=node.Bundle+":"+node.Material,Material=material,Definition=library.Resolve(node)};
+        var resource=new Resource{Path=node.Bundle+":"+node.Material,Material=material,Definition=library.Resolve(node),HasBrightMap=material.HasProperty("_BrightMap")};
+        if(resource.HasBrightMap)resource.DefaultBrightMap=material.GetTexture("_BrightMap");
         for(int i=0;i<material.shader.GetPropertyCount();i++)if(material.shader.GetPropertyType(i)==ShaderPropertyType.Int)resource.Integers.Add(material.shader.GetPropertyName(i));
         return resource;
     }
@@ -166,10 +168,13 @@ internal sealed partial class PreviewSurface:IDisposable
         if(hasCommands)Graphics.ExecuteCommandBuffer(command);return result;
     }
     RenderTexture Target(string name,int depth){var rt=new RenderTexture(width,height,depth,RenderTextureFormat.ARGBHalf){name=name};if(!rt.Create())throw new InvalidOperationException("无法分配预览画布。");return rt;}
-    internal Texture2D PrepareImage(string path)
+    internal Texture2D PrepareImage(string path,bool portable=false)
     {
-        var info=new FileInfo(path);if(!info.Exists||info.Length>32*1024*1024)throw new InvalidDataException("请选择不超过 32 MiB 的 PNG/JPEG 图片。");
-        var bytes=File.ReadAllBytes(path);typeof(StudioBootstrap).Assembly.GetType("InFalsusStudio.Core.LocalImageSize")!
+        int limit=portable?16:32;
+        var info=new FileInfo(path);if(!info.Exists||info.Length>limit*1024*1024)throw new InvalidDataException($"请选择不超过 {limit} MiB 的 PNG/JPEG 图片。");
+        var bytes=File.ReadAllBytes(path);
+        if(portable)InFalsus.Vfx.Addon.ImageHeader.Validate(bytes);
+        else typeof(StudioBootstrap).Assembly.GetType("InFalsusStudio.Core.LocalImageSize")!
             .GetMethod("Validate",StudioBridge.Flags)!.Invoke(null,new object[]{bytes,8192,33554432});
         var image=new Texture2D(2,2,TextureFormat.RGBA32,false);
         try{if(!ImageConversion.LoadImage(image,bytes))throw new InvalidDataException("图片解码失败。");image.wrapMode=TextureWrapMode.Clamp;return image;}
@@ -177,7 +182,29 @@ internal sealed partial class PreviewSurface:IDisposable
     }
     internal void ApplyImage(Texture2D? image)
     {
-        var old=ownedTexture;ownedTexture=image;imageOverride=image!=null;ApplyBackgroundTexture();if(old)Object.Destroy(old);
+        var old=ownedTexture;ownedTexture=image;imageOverride=image!=null;ImageRevision++;ApplyBackgroundTexture();if(old)Object.Destroy(old);
+    }
+    internal void ApplyBrightImage(Texture2D? image)
+    {
+        var old=ownedBrightTexture;ownedBrightTexture=image;ImageRevision++;
+        foreach(var resource in resources.Values)ApplyBrightTexture(resource);
+        if(old)Object.Destroy(old);
+    }
+    void ApplyBrightTexture(Resource resource)
+    {
+        if(resource.Definition.Target!="background"||!resource.HasBrightMap)return;
+        var texture=ownedBrightTexture?ownedBrightTexture:resource.DefaultBrightMap;
+        if(resource.Material.GetTexture("_BrightMap")!=texture)resource.Material.SetTexture("_BrightMap",texture);
+    }
+    internal bool SupportsTexture(EffectDefinition definition,string property)
+    {
+        if(!bundles.TryGetValue(definition.Bundle,out var bundle)) {
+            bundle=AssetBundle.LoadFromFile(EffectPackage.ResolveAsset(folder,definition.Bundle));
+            if(!bundle)throw new InvalidDataException("无法加载效果资源："+definition.Bundle);bundles[definition.Bundle]=bundle;
+        }
+        var asset=bundle.LoadAsset<Object>(definition.Material);var shader=asset is Material m?m.shader:asset as Shader;
+        int index=shader?shader!.FindPropertyIndex(property):-1;
+        return index>=0&&shader!.GetPropertyType(index)==ShaderPropertyType.Texture;
     }
     void ApplyBackgroundTexture()
     {
@@ -187,6 +214,7 @@ internal sealed partial class PreviewSurface:IDisposable
         else if(imageOverride)r.Material.SetTexture(property,ownedTexture);
         else if(!r.Definition.Original)r.Material.SetTexture(property,Texture2D.whiteTexture);
         else if(bundles.TryGetValue(r.Definition.Bundle,out var bundle))r.Material.SetTexture(property,bundle.LoadAsset<Material>(r.Definition.Material).GetTexture(property));
+        ApplyBrightTexture(r);
     }
     void ReleaseTargets()
     {
@@ -207,7 +235,7 @@ internal sealed partial class PreviewSurface:IDisposable
     public void Dispose()
     {
         ReleaseTargets();foreach(var r in resources.Values)Object.DestroyImmediate(r.Material);resources.Clear();
-        Object.DestroyImmediate(root);Object.DestroyImmediate(mesh);if(ownedTexture)Object.Destroy(ownedTexture);
+        Object.DestroyImmediate(root);Object.DestroyImmediate(mesh);if(ownedTexture)Object.Destroy(ownedTexture);if(ownedBrightTexture)Object.Destroy(ownedBrightTexture);
         if(blendMaterial)Object.DestroyImmediate(blendMaterial);
         foreach(var b in bundles.Values)b.Unload(true);bundles.Clear();command.Release();
     }

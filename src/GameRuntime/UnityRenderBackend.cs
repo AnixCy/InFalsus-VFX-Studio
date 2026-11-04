@@ -36,7 +36,7 @@ public sealed partial class UnityRenderBackend : IRenderBackend, IDisposable
     public UnityRenderBackend(IGameBindings bridge, Action<string> report)
     {
         (_bridge,_report)=(bridge,report);
-        var caps=new HashSet<string>{"clock.audio","clock.chart","background.material","shader.bundle",AddonPackage.ImageCapability,BackgroundMaterialPlan.Capability};
+        var caps=new HashSet<string>{"clock.audio","clock.chart","background.material","shader.bundle",AddonPackage.ImageCapability,BackgroundMaterialPlan.Capability,BackgroundMaterialPlan.TextureCapability};
         if(bridge is ISceneOpacityBindings){caps.Add("effect.instances");caps.Add(SceneOpacityPlan.Capability);}
         Capabilities=caps;
     }
@@ -226,6 +226,12 @@ public sealed partial class UnityRenderBackend : IRenderBackend, IDisposable
                         } else value = entry.Load(texture.Value, Il2CppType.Of<Texture>()).asset?.TryCast<Texture>();
                         if (value == null) throw new InvalidDataException($"Texture not found: {texture.Value}");
                         textures.Add(texture.Key, value);
+                    }
+                    if(doc.BackgroundBinding!=null)foreach(var binding in doc.BackgroundBinding.TextureBindings) {
+                        int property=material.shader.FindPropertyIndex(binding.Key);
+                        if(property<0||material.shader.GetPropertyType(property)!=ShaderPropertyType.Texture||!textures.TryGetValue(binding.Value,out var image))
+                            throw new InvalidDataException("Invalid auxiliary background image property: "+binding.Key);
+                        material.SetTexture(Shader.PropertyToID(binding.Key),image);
                     }
                     resources.Add(new(doc.Id, doc.Target, material, textures, images.ToArray()));
                 }

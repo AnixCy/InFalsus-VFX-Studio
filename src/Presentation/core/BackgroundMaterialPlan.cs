@@ -9,16 +9,18 @@ public sealed class BackgroundBindingDocument
     public string StrengthProperty {get;set;}="";
     public string TextureProperty {get;set;}="_MainTex";
     public bool Native {get;set;}
+    public Dictionary<string,string> TextureBindings {get;set;}=new();
     public BackgroundPropertyDocument[] Properties {get;set;}=Array.Empty<BackgroundPropertyDocument>();
     public string[] Keywords {get;set;}=Array.Empty<string>();
     public string[][] ExclusiveKeywordGroups {get;set;}=Array.Empty<string[]>();
-    public BackgroundBindingDocument Copy()=>new(){SourceId=SourceId,StrengthProperty=StrengthProperty,TextureProperty=TextureProperty,Native=Native,
+    public BackgroundBindingDocument Copy()=>new(){SourceId=SourceId,StrengthProperty=StrengthProperty,TextureProperty=TextureProperty,Native=Native,TextureBindings=new(TextureBindings),
         Properties=Properties.Select(p=>new BackgroundPropertyDocument{Property=p.Property,Kind=p.Kind,Value=p.Value.ToArray()}).ToArray(),
         Keywords=Keywords.ToArray(),ExclusiveKeywordGroups=ExclusiveKeywordGroups.Select(g=>g.ToArray()).ToArray()};
     public static bool Same(BackgroundBindingDocument? a,BackgroundBindingDocument? b)
     {
         if(ReferenceEquals(a,b))return true;if(a==null||b==null)return false;
         return a.SourceId==b.SourceId&&a.StrengthProperty==b.StrengthProperty&&a.TextureProperty==b.TextureProperty&&a.Native==b.Native
+            &&a.TextureBindings.Count==b.TextureBindings.Count&&a.TextureBindings.All(p=>b.TextureBindings.TryGetValue(p.Key,out var v)&&v==p.Value)
             &&a.Keywords.SequenceEqual(b.Keywords)&&a.ExclusiveKeywordGroups.Select(g=>string.Join("\0",g)).SequenceEqual(b.ExclusiveKeywordGroups.Select(g=>string.Join("\0",g)))
             &&a.Properties.Length==b.Properties.Length&&a.Properties.Where((p,i)=>p.Property!=b.Properties[i].Property||p.Kind!=b.Properties[i].Kind||!p.Value.SequenceEqual(b.Properties[i].Value)).Any()==false;
     }
@@ -34,6 +36,7 @@ public sealed class BackgroundPropertyDocument
 public sealed class BackgroundMaterialPlan
 {
     public const string Capability="background.material-plan.v1";
+    public const string TextureCapability="background.texture-bindings.v1";
     public sealed class State
     {
         public MaterialNodeDocument Node{get;}
@@ -81,9 +84,12 @@ public sealed class BackgroundMaterialPlan
         foreach(var n in nodes) {
             var d=n.BackgroundBinding!;
             if(n.Target is not ("background" or "postprocess")||string.IsNullOrWhiteSpace(d.SourceId)||d.SourceId.Length>160
-                ||d.TextureProperty==null||d.StrengthProperty==null||d.Properties==null||d.Keywords==null||d.ExclusiveKeywordGroups==null
+                ||d.TextureProperty==null||d.StrengthProperty==null||d.Properties==null||d.Keywords==null||d.ExclusiveKeywordGroups==null||d.TextureBindings==null
                 ||d.Properties.Length>256||d.Keywords.Length>64||d.ExclusiveKeywordGroups.Length>16)
                 throw new InvalidDataException("Invalid background material metadata.");
+            if(d.TextureBindings.Count>16||d.TextureBindings.Any(p=>string.IsNullOrWhiteSpace(p.Key)||p.Key.Length>120||p.Key==d.TextureProperty
+                ||string.IsNullOrWhiteSpace(p.Value)||!n.Textures.ContainsKey(p.Value)))throw new InvalidDataException("Invalid auxiliary background texture binding.");
+            if(d.TextureBindings.Count>0&&!doc.Requires.Contains(TextureCapability))throw new InvalidDataException("Auxiliary background images require their capability.");
             foreach(var p in d.Properties)if(p==null||string.IsNullOrWhiteSpace(p.Property)||p.Property.Length>120||p.Kind==ParameterKind.Choice
                 ||!Enum.IsDefined(typeof(ParameterKind),p.Kind)||p.Value==null||p.Value.Length!=(p.Kind==ParameterKind.Float?1:4)||p.Value.Any(v=>!double.IsFinite(v)||Math.Abs(v)>float.MaxValue))throw new InvalidDataException("Invalid background property.");
             if(d.Properties.Select(p=>p.Property).Distinct().Count()!=d.Properties.Length||d.Keywords.Any(string.IsNullOrWhiteSpace)||d.Keywords.Distinct().Count()!=d.Keywords.Length
@@ -100,6 +106,7 @@ public sealed class BackgroundMaterialPlan
         foreach(var n in nodes.Where(n=>n.Target!="background")) {
             var s=states.Skip(1).Single(s=>s.Definition.SourceId==n.BackgroundBinding!.SourceId);var d=n.BackgroundBinding!;
             if(n.Bundle!=s.Node.Bundle||n.Material!=s.Node.Material||d.Native!=s.Definition.Native||d.TextureProperty!=s.Definition.TextureProperty
+                ||d.TextureBindings.Count!=s.Definition.TextureBindings.Count||d.TextureBindings.Any(p=>!s.Definition.TextureBindings.TryGetValue(p.Key,out var key)||key!=p.Value||n.Textures[p.Value]!=s.Node.Textures[key])
                 ||!d.Keywords.SequenceEqual(s.Definition.Keywords)||d.Properties.Length!=s.Definition.Properties.Length
                 ||d.Properties.Where((p,i)=>p.Property!=s.Definition.Properties[i].Property||p.Kind!=s.Definition.Properties[i].Kind||!p.Value.SequenceEqual(s.Definition.Properties[i].Value)).Any()
                 ||!d.ExclusiveKeywordGroups.Select(g=>string.Join("\0",g)).SequenceEqual(s.Definition.ExclusiveKeywordGroups.Select(g=>string.Join("\0",g))))throw new InvalidDataException("One background source id must describe the same resource and schema.");

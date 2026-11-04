@@ -35,6 +35,9 @@
   },
   "addedAfterImport": {
     "core/SceneOpacity.cs": "Logical scene opacity from 0.8.0.",
-    "core/BackgroundMaterialPlan.cs": "Shared metadata-driven background selection/parameter/keyword evaluator from 0.10.0."
+    "core/BackgroundMaterialPlan.cs": "Shared metadata-driven background evaluator from 0.10.0; capability-guarded auxiliary texture bindings in 0.11.0."
+  },
+  "addedFileSha256": {
+    "core/BackgroundMaterialPlan.cs": "f48506b86ce96922f9721a3c83811bed6fe228fa1dfdc459bb998774f44ae287"
   }
 }
