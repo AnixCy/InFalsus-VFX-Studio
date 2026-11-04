@@ -66,8 +66,9 @@ public sealed unsafe partial class NativeGameBridge : IGameBindings
 
     public NativeGameBridge(string gameRoot, string profilesFile, string catalogFile)
     {
+        this.gameRoot=Path.GetFullPath(gameRoot);
         if (!OperatingSystem.IsWindows() || IntPtr.Size != 8) throw new PlatformNotSupportedException("Windows x64 game adapter required.");
-        var profiles = JsonSerializer.Deserialize<GameProfile[]>(File.ReadAllText(profilesFile))!;
+        var profiles = RuntimeDefaults.Profiles(profilesFile);
         using var stream = File.OpenRead(Path.Combine(gameRoot, "GameAssembly.dll"));
         using var sha = SHA256.Create();
         var hash = Convert.ToHexString(sha.ComputeHash(stream)).ToLowerInvariant();
@@ -82,7 +83,7 @@ public sealed unsafe partial class NativeGameBridge : IGameBindings
                 throw new InvalidOperationException("Practice state marker mismatch.");
             VerifyPrefix(Profile.PracticeSeekRva, Profile.PracticeSeekPrefix);
         }
-        _catalog = JsonSerializer.Deserialize<Dictionary<string, ChartIdentity>>(File.ReadAllText(catalogFile))!;
+        _catalog = File.Exists(catalogFile)?JsonSerializer.Deserialize<Dictionary<string, ChartIdentity>>(File.ReadAllText(catalogFile))!:new();
         _clock = At<ClockCall>(Profile.AudioClockRva); _ready = At<BoolCall>(Profile.AudioReadyRva);
         _material = At<PtrCall>(Profile.MaterialGetRva); _setMaterial = At<MaterialCall>(Profile.MaterialSetRva);
         _static = Export<StaticCall>("il2cpp_field_static_get_value");
@@ -143,6 +144,10 @@ public sealed unsafe partial class NativeGameBridge : IGameBindings
             Invalidate();
             var name = ReadString(chart);
             _catalog.TryGetValue(name, out _identity);
+            if(packCatalog.TryGetValue(name,out var packed)) {
+                string? actual=ImportedChartHash(name);
+                _identity=actual!=null&&string.Equals(actual,packed.ChartFingerprint,StringComparison.OrdinalIgnoreCase)?packed:null;
+            }
             _lastScene = scene; _lastAudio = audio; _lastChart = chart;
             _logicalStamp = stamp; _practiceGeneration = generation; _generation++;
             Scene = scene; Background = Marshal.ReadIntPtr(scene + 0xd0);

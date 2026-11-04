@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks><PlatformTarget>x64</PlatformTarget><TreatWarningsAsErrors>true</TreatWarningsAsErrors><CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <InteropDir Condition="'$(InteropDir)' == ''">$(GameReferenceRoot)/MelonLoader/Il2CppAssemblies</InteropDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../GameRuntime/InFalsus.Presentation.Game.csproj" />
+    <Reference Include="$(BepInExRoot)/BepInEx/core/BepInEx.Core.dll" Private="false" />
+    <Reference Include="$(BepInExRoot)/BepInEx/core/BepInEx.Unity.Common.dll" Private="false" />
+    <Reference Include="$(BepInExRoot)/BepInEx/core/BepInEx.Unity.IL2CPP.dll" Private="false" />
+    <Reference Include="$(BepInExRoot)/BepInEx/core/Il2CppInterop.Runtime.dll" Private="false" />
+    <Reference Include="$(InteropDir)/UnityEngine.CoreModule.dll" Private="false" Aliases="UnityCore" />
+    <Reference Include="$(InteropDir)/Il2Cppmscorlib.dll" Private="false" Aliases="Il2CppBase" />
+  </ItemGroup>
+</Project>

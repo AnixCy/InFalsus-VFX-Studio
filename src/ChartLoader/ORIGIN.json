@@ -1,0 +1,208 @@
+{
+  "source": "https://github.com/Its-MagicNeko/InFalsusChartLoader/tree/v0.2.2",
+  "author": "MagicNeko",
+  "license": "MIT",
+  "localBaseline": "0.2.2-compat2",
+  "date": "2026-11-04",
+  "changes": [
+    "Preserved existing local pause-conflict repair and read-only imported chart snapshots.",
+    "Added bounded SPC2 validation for the verified community binary only.",
+    "Measure native array stride from allocated array length, not logical List Count; SPC2 stores metadata in spare capacity.",
+    "Loader-specific build and version identification.",
+    "Rejected song folders produce a concise Release warning instead of silent disappearance."
+  ],
+  "files": {
+    "Source/Background/BackgroundCatalog.cs": {
+      "sourceSha256": "ab55e6db3bca9bf59a05abc357504bdbe8356df9235b747e2c705669371841b5",
+      "currentSha256": "ab55e6db3bca9bf59a05abc357504bdbe8356df9235b747e2c705669371841b5"
+    },
+    "Source/Background/BackgroundClone.cs": {
+      "sourceSha256": "1f605a1ec69a1a1c2a860636f0880ca58d6cd05de06f88d042ff216230d6c816",
+      "currentSha256": "1f605a1ec69a1a1c2a860636f0880ca58d6cd05de06f88d042ff216230d6c816"
+    },
+    "Source/Background/VideoBackground.cs": {
+      "sourceSha256": "9b7b880bf4bd2ee91ea94b7bd14cb1f01901d2fabf6f5cc728109fb1fc033c25",
+      "currentSha256": "9b7b880bf4bd2ee91ea94b7bd14cb1f01901d2fabf6f5cc728109fb1fc033c25"
+    },
+    "Source/Charts/AudioCatalog.cs": {
+      "sourceSha256": "bde46cd46204f6311d4bed6c9ab6e3b55bccb64085c83930b91740f50d449025",
+      "currentSha256": "bde46cd46204f6311d4bed6c9ab6e3b55bccb64085c83930b91740f50d449025"
+    },
+    "Source/Charts/ChartCatalog.cs": {
+      "sourceSha256": "9b5949a40321cd8ecf1752c8d2a8b35636ed398f29e844dd6c5e71ddd7dd158e",
+      "currentSha256": "9b5949a40321cd8ecf1752c8d2a8b35636ed398f29e844dd6c5e71ddd7dd158e"
+    },
+    "Source/Charts/ChartFileSafety.cs": {
+      "sourceSha256": "ae5fe5a2aa8eaf58f0d696aafa7503ce00cdd37a21d1b2a3e47fa87b5e0f67a3",
+      "currentSha256": "0cc410db53b708b60b96085928fbbc1d5135e7a08db276912cece9940632476a"
+    },
+    "Source/Charts/ChartInfo.cs": {
+      "sourceSha256": "f6d8c90342732f906cc8fbf10a26dae3d12130fadc6512f64258e40a571f2f4a",
+      "currentSha256": "f6d8c90342732f906cc8fbf10a26dae3d12130fadc6512f64258e40a571f2f4a"
+    },
+    "Source/Charts/ChartInfoReader.cs": {
+      "sourceSha256": "2f227aa88a2b0fba85f2d2172436038f8c22102457e499d7633359a2f516a8c1",
+      "currentSha256": "2f227aa88a2b0fba85f2d2172436038f8c22102457e499d7633359a2f516a8c1"
+    },
+    "Source/Charts/ChartLibrary.cs": {
+      "sourceSha256": "b6885870729780aad30147fa5bd26a116c40f1bd939b93abfc69c2315a843770",
+      "currentSha256": "139f3ab42bece5e3612f7c345e623d7f125bb5f1cf941892f36dd20c9c993f43"
+    },
+    "Source/Charts/ChartSession.cs": {
+      "sourceSha256": "029657cd2577bb55f13c6e067028f6f158a0f1ac018f9698fd40de86475c23b0",
+      "currentSha256": "029657cd2577bb55f13c6e067028f6f158a0f1ac018f9698fd40de86475c23b0"
+    },
+    "Source/Charts/CustomResults.cs": {
+      "sourceSha256": "b235dd6a15ad8088c6d72d40f3769400075c13d45f1a6d66c9e2cb992c497e19",
+      "currentSha256": "b235dd6a15ad8088c6d72d40f3769400075c13d45f1a6d66c9e2cb992c497e19"
+    },
+    "Source/Charts/PackSetup.cs": {
+      "sourceSha256": "57896bde0864d82320b5c1e061370f899cf984bae32762a79374ae2981ffad39",
+      "currentSha256": "57896bde0864d82320b5c1e061370f899cf984bae32762a79374ae2981ffad39"
+    },
+    "Source/Charts/ResultKeys.cs": {
+      "sourceSha256": "da19e04e43d0930e60284db3d43bf0a3712b12658d1b24607114bf12d19b0ba2",
+      "currentSha256": "da19e04e43d0930e60284db3d43bf0a3712b12658d1b24607114bf12d19b0ba2"
+    },
+    "Source/Charts/SongCatalog.cs": {
+      "sourceSha256": "8961fb328c6c5e8e5a64477ff9666da389610de52d76814df402016e8f67e521",
+      "currentSha256": "8961fb328c6c5e8e5a64477ff9666da389610de52d76814df402016e8f67e521"
+    },
+    "Source/Charts/Spc2FileSafety.cs": {
+      "sourceSha256": null,
+      "currentSha256": "0f0ec72d48e854a72df5aacc151f7d462f3ebd3835b48ccc7dcfafc375819bf9"
+    },
+    "Source/Diagnostics/Log.cs": {
+      "sourceSha256": "411a25d4e03661092b792e62d8f9e5036336ccde13378f9ff4657603b358e31c",
+      "currentSha256": "411a25d4e03661092b792e62d8f9e5036336ccde13378f9ff4657603b358e31c"
+    },
+    "Source/Gameplay/AudioCodec.cs": {
+      "sourceSha256": "5cc7497fb3337337bb0c956b6b2baff7ec8b4f6a1d4ea41cfa54eac979b462b6",
+      "currentSha256": "5cc7497fb3337337bb0c956b6b2baff7ec8b4f6a1d4ea41cfa54eac979b462b6"
+    },
+    "Source/Gameplay/ChartCodec.cs": {
+      "sourceSha256": "46e4dee0499cdb16164fd80443232256b57c2649322eba42325681044fcac7f7",
+      "currentSha256": "e2ac6f23386c60e4eff42817d9fe486e21fe9eae5da6ccd243771f28bc0ad297"
+    },
+    "Source/Gameplay/Memory.cs": {
+      "sourceSha256": "a008b10377c2d4eb597e1dd6a51a50e30064a8b08fc058f5460559986da6e47c",
+      "currentSha256": "a008b10377c2d4eb597e1dd6a51a50e30064a8b08fc058f5460559986da6e47c"
+    },
+    "Source/Gameplay/Offsets.cs": {
+      "sourceSha256": "f754a00a88913f8358e26b0820fbae7bcccb5ff0d52038680d184d8f94abccc6",
+      "currentSha256": "f754a00a88913f8358e26b0820fbae7bcccb5ff0d52038680d184d8f94abccc6"
+    },
+    "Source/Gameplay/PendingReads.cs": {
+      "sourceSha256": "4ac01d49f99ef64e75c072767f65955ebb639fe1c5e4828792d20117bdb552c8",
+      "currentSha256": "4ac01d49f99ef64e75c072767f65955ebb639fe1c5e4828792d20117bdb552c8"
+    },
+    "Source/Gameplay/Selection.cs": {
+      "sourceSha256": "c88c242d92a7526bf30daff80c5ba245cfbdd1f7bde441a9c9d06df537b4b505",
+      "currentSha256": "c88c242d92a7526bf30daff80c5ba245cfbdd1f7bde441a9c9d06df537b4b505"
+    },
+    "Source/Gameplay/StreamingAssets.cs": {
+      "sourceSha256": "8cf237e8a408f71c7a89c1762fd7b9dc402e97af709c2bdb1c8500d9ae00a0c8",
+      "currentSha256": "8cf237e8a408f71c7a89c1762fd7b9dc402e97af709c2bdb1c8500d9ae00a0c8"
+    },
+    "Source/Interop/FieldResolver.cs": {
+      "sourceSha256": "684b7b84836c72d5e662369fa432003596a7afffa546d8b2385b07494dd21993",
+      "currentSha256": "684b7b84836c72d5e662369fa432003596a7afffa546d8b2385b07494dd21993"
+    },
+    "Source/Interop/GameAssembly.cs": {
+      "sourceSha256": "0b204d50714840008e485fa69054f06771a221ef206fd0ea87865a1c504ce90d",
+      "currentSha256": "0b204d50714840008e485fa69054f06771a221ef206fd0ea87865a1c504ce90d"
+    },
+    "Source/Interop/Hooking/Detours/AudioLoadHook.cs": {
+      "sourceSha256": "b5bafe0e5e23d19d6521344ca5d02ede5ab216a84f528cc70391eb9bf0a35a36",
+      "currentSha256": "b5bafe0e5e23d19d6521344ca5d02ede5ab216a84f528cc70391eb9bf0a35a36"
+    },
+    "Source/Interop/Hooking/Detours/ChartLoadHook.cs": {
+      "sourceSha256": "598c09882e62db4eb60e1fc29ce8f65607d70d4b0e4f28c43d62ee305008e8b2",
+      "currentSha256": "598c09882e62db4eb60e1fc29ce8f65607d70d4b0e4f28c43d62ee305008e8b2"
+    },
+    "Source/Interop/Hooking/Detours/ChartStartHook.cs": {
+      "sourceSha256": "9b0b4e89992da9bff82beb5868ed6569b762831884403522174a8ab15554f325",
+      "currentSha256": "9b0b4e89992da9bff82beb5868ed6569b762831884403522174a8ab15554f325"
+    },
+    "Source/Interop/Hooking/Detours/CustomResultsHook.cs": {
+      "sourceSha256": "3e3f2c65bfb6de111aa677ac9206242806cea8557898fcd0b90a9ced1c1c4b3e",
+      "currentSha256": "3e3f2c65bfb6de111aa677ac9206242806cea8557898fcd0b90a9ced1c1c4b3e"
+    },
+    "Source/Interop/Hooking/Detours/JacketHook.cs": {
+      "sourceSha256": "8673b9a1b1eb6a3419ceb7d96133cc9d04f4cefec9f3e4df36896a63744eb99d",
+      "currentSha256": "8673b9a1b1eb6a3419ceb7d96133cc9d04f4cefec9f3e4df36896a63744eb99d"
+    },
+    "Source/Interop/Hooking/Detours/PackVisualHook.cs": {
+      "sourceSha256": "c006b723b3b1aec4a8eb48d5bd9cdc37a484802db1eb41385450479ef009ac09",
+      "currentSha256": "c006b723b3b1aec4a8eb48d5bd9cdc37a484802db1eb41385450479ef009ac09"
+    },
+    "Source/Interop/Hooking/Detours/PauseHook.cs": {
+      "sourceSha256": "ae6c8fb914751ba2168cf5bbf41c745567d969292e9ed0e97a691a336b1c0df4",
+      "currentSha256": "ae6c8fb914751ba2168cf5bbf41c745567d969292e9ed0e97a691a336b1c0df4"
+    },
+    "Source/Interop/Hooking/Detours/ResultsUnlockHook.cs": {
+      "sourceSha256": "a09eeb597f7fc1c0a6f6df0c8d9bd5c284a9038afa78d54b0cb6c064d0581bb7",
+      "currentSha256": "a09eeb597f7fc1c0a6f6df0c8d9bd5c284a9038afa78d54b0cb6c064d0581bb7"
+    },
+    "Source/Interop/Hooking/Detours/SceneProbeHook.cs": {
+      "sourceSha256": "bfeb7780710147ea8022c812fab59cbe0787acf7eb5d9fda02852b8c07514daa",
+      "currentSha256": "bfeb7780710147ea8022c812fab59cbe0787acf7eb5d9fda02852b8c07514daa"
+    },
+    "Source/Interop/Hooking/Detours/SongSelectHook.cs": {
+      "sourceSha256": "07ab0138fb089d3b55adcbee48e71248ce6963d1b00387a94b44b8187c733df7",
+      "currentSha256": "07ab0138fb089d3b55adcbee48e71248ce6963d1b00387a94b44b8187c733df7"
+    },
+    "Source/Interop/Hooking/Hooks.cs": {
+      "sourceSha256": "c82f08a2c4c332278cf1fe0b4ebe72ee7d945700f15b48baadd914e828f0c372",
+      "currentSha256": "c82f08a2c4c332278cf1fe0b4ebe72ee7d945700f15b48baadd914e828f0c372"
+    },
+    "Source/Interop/Hooking/NativeHook.cs": {
+      "sourceSha256": "6e3e2b96ac88e9fab3969f62e4a142dc6607de5fef8ddb724d3166f207d0ceb1",
+      "currentSha256": "6e3e2b96ac88e9fab3969f62e4a142dc6607de5fef8ddb724d3166f207d0ceb1"
+    },
+    "Source/Interop/InteropTypeIndex.cs": {
+      "sourceSha256": "0d69696119a1b088e6414a29f1f39062810295b9470c08ed0dc68169e5fda99a",
+      "currentSha256": "0d69696119a1b088e6414a29f1f39062810295b9470c08ed0dc68169e5fda99a"
+    },
+    "Source/Interop/MethodResolver.cs": {
+      "sourceSha256": "303b7637ef8190f77c2e1ab7d5e03f28cbbd232ac1533c61791b730340d0bac4",
+      "currentSha256": "303b7637ef8190f77c2e1ab7d5e03f28cbbd232ac1533c61791b730340d0bac4"
+    },
+    "Source/Interop/Raised.cs": {
+      "sourceSha256": "d4067761be4f7468c2f7751419b7c397e1e6951a8ad611980b8661cd50a03972",
+      "currentSha256": "d4067761be4f7468c2f7751419b7c397e1e6951a8ad611980b8661cd50a03972"
+    },
+    "Source/Jacket/JacketCatalog.cs": {
+      "sourceSha256": "caa0ee3cb9202923e0543c594a716f8995a11ecc0e12aa0503bbfea0ab0b0e10",
+      "currentSha256": "caa0ee3cb9202923e0543c594a716f8995a11ecc0e12aa0503bbfea0ab0b0e10"
+    },
+    "Source/Jacket/JacketFactory.cs": {
+      "sourceSha256": "c1a4aac84d09694b3eb765fe0b53e8386a27dbbbc4611f8ef15e3626e04ca945",
+      "currentSha256": "c1a4aac84d09694b3eb765fe0b53e8386a27dbbbc4611f8ef15e3626e04ca945"
+    },
+    "Source/Jacket/Png.cs": {
+      "sourceSha256": "f7c5876094035543d070a85cd384fd33d7ec65298e8a38fe400a15bdd54794e9",
+      "currentSha256": "f7c5876094035543d070a85cd384fd33d7ec65298e8a38fe400a15bdd54794e9"
+    },
+    "Source/Mod/Entry.BepInEx.cs": {
+      "sourceSha256": "150b09c0d0909f94722c17324ac3077e29d29ac800bc6c022691ab46ca2c209e",
+      "currentSha256": "150b09c0d0909f94722c17324ac3077e29d29ac800bc6c022691ab46ca2c209e"
+    },
+    "Source/Mod/Entry.Melon.cs": {
+      "sourceSha256": "a41d9169a7e84744a34e5fb59db4b2d410eaf477dbb6d00b812f62445ad7f4ea",
+      "currentSha256": "a41d9169a7e84744a34e5fb59db4b2d410eaf477dbb6d00b812f62445ad7f4ea"
+    },
+    "Source/Mod/ModCore.cs": {
+      "sourceSha256": "0c5ed8d9fc44c1c4eb3b48bd21fda0add176f88f89a92c7424e8d60b9a091632",
+      "currentSha256": "3de4ff11bb3dbf664d959b511e5acb529972eb543896d391f3ca75a1d47dfee2"
+    },
+    "Source/Probe/JacketProbe.cs": {
+      "sourceSha256": "34d666f7aeff8d45ff37019c150c9d29af36748d3597824fbfb3ac2eb6fb2ef5",
+      "currentSha256": "34d666f7aeff8d45ff37019c150c9d29af36748d3597824fbfb3ac2eb6fb2ef5"
+    },
+    "Source/Probe/Probe.cs": {
+      "sourceSha256": "0c1203a35484c5abaa99b6befe02837e7be31b06100d8bc0a80446463df50321",
+      "currentSha256": "0c1203a35484c5abaa99b6befe02837e7be31b06100d8bc0a80446463df50321"
+    }
+  }
+}

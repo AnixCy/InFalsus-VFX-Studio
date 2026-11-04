@@ -7,7 +7,7 @@ from pathlib import Path
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--catalog', type=Path, required=True)
+    p.add_argument('--catalog', type=Path, help='Optional legacy independent-addon target list')
     p.add_argument('--runtime-info', type=Path, required=True)
     p.add_argument('--resource', type=Path, required=True)
     p.add_argument('--output', type=Path, required=True)
@@ -24,7 +24,8 @@ def main():
         for song in json.loads(args.songs.read_text('utf-8-sig'))['songs']:
             labels[song.get('songKey') or 'game:' + str(song['id'])] = song['title']
     targets = {}
-    for filename, identity in json.loads(args.catalog.read_text('utf-8-sig')).items():
+    catalog = json.loads(args.catalog.read_text('utf-8-sig')) if args.catalog else {}
+    for filename, identity in catalog.items():
         key, difficulty = identity['SongKey'], identity['Difficulty']
         fingerprint = identity.get('ChartFingerprint', '')
         if not key.startswith('game:') and not fingerprint:

@@ -94,6 +94,7 @@ public sealed partial class PreviewPlugin
             CheckCurveEditing(Assert,Path.GetDirectoryName(output)!);
             CheckBackgroundControls(Assert,Path.GetDirectoryName(output)!);
             CheckAddonExport(Assert,Path.GetDirectoryName(output)!);
+            CheckChartPackageExport(Assert,Path.GetDirectoryName(output)!);
             CheckBackgroundProject(Assert,hashes);
             CheckPreviewResolution(Assert);
             CheckEffectNotes(Assert);

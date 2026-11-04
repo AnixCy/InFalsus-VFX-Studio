@@ -2,6 +2,7 @@ param(
     [Parameter(Mandatory=$true)][string]$StudioPath,
     [Parameter(Mandatory=$true)][string]$UnityEditor,
     [string]$OutputDirectory,
+    [string]$ChartCompilerDirectory,
     [switch]$SkipShader
 )
 $ErrorActionPreference = 'Stop'
@@ -36,6 +37,14 @@ if (-not $SkipShader) {
     if ($taskProcess.ExitCode -ne 0) { throw 'Shader build failed; see shader-build.log.' }
 }
 if (-not (Test-Path -LiteralPath (Join-Path $taskOutput 'preview.bundle'))) { throw 'preview.bundle is missing.' }
+if($ChartCompilerDirectory){
+    foreach($taskName in @('python.exe','compiler.py','LICENSE.txt','build-manifest.json')){
+        if(-not(Test-Path -LiteralPath (Join-Path $ChartCompilerDirectory $taskName))){throw ('Compiler tool missing: '+$taskName)}
+    }
+    $taskCompilerOutput=Join-Path $taskOutput 'GameExport/ChartCompiler'
+    New-Item -ItemType Directory -Path $taskCompilerOutput -Force|Out-Null
+    Get-ChildItem -LiteralPath $ChartCompilerDirectory -File|ForEach-Object{Copy-Item -LiteralPath $_.FullName -Destination $taskCompilerOutput -Force}
+}
 Get-ChildItem -LiteralPath $taskOutput -File | Where-Object Extension -In '.dll','.bundle' | ForEach-Object {
     [pscustomobject]@{name=$_.Name;bytes=$_.Length;sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()}
 } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $taskOutput 'build-manifest.json') -Encoding utf8

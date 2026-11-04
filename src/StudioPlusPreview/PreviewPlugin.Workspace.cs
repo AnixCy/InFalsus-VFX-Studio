@@ -43,7 +43,7 @@ public sealed partial class PreviewPlugin
         GUI.enabled=enabled&&model.Session.CanRedo;
         if(theme.Button(R(578,10,54,32),"重做",false,false))Queue(model.Redo);GUI.enabled=enabled;
         bool compact=layout.Compact;float playX=compact?12:646,playY=compact?52:10,top=layout.Top;
-        if(theme.Button(R(w-116,compact?52:10,104,32),"导出 addon"))Queue(BeginAddonExport);
+        if(theme.Button(R(w-116,compact?52:10,104,32),"导出曲包"))Queue(BeginAddonExport);
         bool playing=Bridge.Snapshot().Transport==TransportState.Running;
         if(theme.Button(R(playX,playY,70,32),playing?"暂停":"播放",playing))Queue(ToggleWorkspacePlayback);
         theme.Label(R(playX+80,playY,115,32),CurrentSeconds.ToString("0.000",CI)+" s",20,"#d3edf0",true,2);

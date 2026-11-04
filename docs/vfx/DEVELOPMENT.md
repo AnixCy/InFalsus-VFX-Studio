@@ -13,7 +13,7 @@ InFalsus VFX Studio 是 Studio+ 的演出创作扩展。现已迁入共享求值
 | 原版编辑器宿主 | Studio Windows Mono 1.0.10；根目录 `Assets/`、`Packages/`、`ProjectSettings/` |
 | 增强插件源码 | Studio+ 内部 1.079；公开版本 1.0.7，绑定程序集 1.0.7.0 |
 | 本次运行基线 | 已有 Studio+ 1.0.7 build1030 完整应用；未重建完整 1.079 主插件 |
-| 本项目 | 演出编辑插件及最小 addon 玩家端 0.8.0 原型，尚无正式应用发行版本 |
+| 本项目 | 演出编辑插件及随谱演出玩家端 0.9.0 原型，尚无正式应用发行版本 |
 
 Studio+ 源码固定于提交 `2c8c63722948b8e739f0eef6ebd0478cdf8ddd3d`，快照在 [Mods/StudioPlusSnapshots/1.079-20261102](../../Mods/StudioPlusSnapshots/1.079-20261102/README.md)。历史快照用于溯源，不叠加安装。
 
@@ -24,6 +24,8 @@ Studio+ 源码固定于提交 `2c8c63722948b8e739f0eef6ebd0478cdf8ddd3d`，快�
 | [src/AudioReactive](../../src/AudioReactive/README.md) | 独立创作端频段分析、包络、参数调制与烘焙；未接入宿主或玩家依赖 |
 | [src/CreatorWorkspace](../../src/CreatorWorkspace/README.md) | 可搬迁资源、独立创作容器、recipe/人工源/派生结果关联；未接入应用层 |
 | [src/StudioPlusPreview](../../src/StudioPlusPreview/) | BepInEx/Harmony 适配、时钟、参数面板、项目文件和渲染资源生命周期 |
+| [src/ChartCompiler](../../src/ChartCompiler/README.md) | 制作端私有 ICP1/SPC2 编译协议，不进入玩家包 |
+| [src/ChartLoader](../../src/ChartLoader/README.md) | MIT 随包谱面组件，Melon/Bep IL2CPP 分别构建 |
 | [src/ShaderAssets](../../src/ShaderAssets/) | 独立 Unity Shader 资源工程，不使用上游根工程构建 |
 | [tests](../../tests/) | 67 项参数检查、129 项创作工程检查及通用契约夹具 |
 | [scripts](../../scripts/) | 插件与资源构建、独立副本生成、静音运行检查 |
@@ -53,6 +55,10 @@ Studio+ 源码固定于提交 `2c8c63722948b8e739f0eef6ebd0478cdf8ddd3d`，快�
 生成脚本复制完整运行依赖，排除原日志和常用缓存/用户数据，添加项目插件与 `Start-VFX.bat`；目标必须不存在，不覆盖原安装。启动入口设置副本自己的配置目录。该副本为本地测试用途，脚本不代表获得了重新分发全部依赖和素材的许可。
 
 只编译根 Unity 工程不会得到本项目插件。根宿主构建见保留的 [docs/BUILDING.md](../BUILDING.md)；完整增强主插件的构建仍参考快照中的 `Build.ps1`，本次没有重建它。
+
+0.9.0 整曲包链路见 [CHART_PACKAGES.md](CHART_PACKAGES.md)。制作端用 `Build-ChartCompiler.ps1 -PythonEmbedArchive '<已核对的官方 3.13.9 x64 ZIP>' -OutputDirectory '<新目录>'` 组装私有编译器，`Build-Preview.ps1 -ChartCompilerDirectory '<该目录>'` 将其带入 `GameExport/ChartCompiler`。`Prepare-GameExport.py` 的 `--catalog` 现为可选，仅旧独立 addon 选择器需要；完整曲包从自己的 if/SPC 建立身份。
+
+两种玩家运行包用 `Build-ChartPackRuntime.ps1 -GameReferenceRoot '<Melon 参考游戏>' -BepInExRoot '<Bep IL2CPP 解压根目录>' -OutputDirectory '<新目录>'` 构建。Bep 当前固定验证 be.791，不能混用 Studio 的 Mono 核心。脚本只读取参考依赖，输出两个解压式 ZIP，不安装到游戏。默认资源、DLL 与私有编译器准备齐后，`New-PreviewCopy.ps1` 将整套 GameExport 复制到新测试安装。
 
 ## 验证命令
 

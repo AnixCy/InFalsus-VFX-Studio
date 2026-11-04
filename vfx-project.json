@@ -38,10 +38,11 @@
     "previewGuide": "docs/vfx/PARAMETER_PREVIEW.md",
     "effectReference": "docs/vfx/reference/index.md",
     "validation": "docs/vfx/VALIDATION.md",
-    "previewBuild": "scripts/Build-Preview.ps1"
+    "previewBuild": "scripts/Build-Preview.ps1",
+    "chartPackages": "docs/vfx/CHART_PACKAGES.md"
   },
   "preview": {
-    "pluginVersion": "0.8.0",
+    "pluginVersion": "0.9.0",
     "testedStudioBinary": "1.0.7 build1030",
     "unityVersion": "6000.3.25f1",
     "coreChecks": 196,
@@ -73,7 +74,8 @@
     "hoverDragCursors": true,
     "sceneOpacityControls": 5,
     "sceneReferencePreview": true,
-    "optionalFixtureChecksLastVersion": "0.7.5"
+    "optionalFixtureChecksLastVersion": "0.7.5",
+    "chartPackRuntimeChecks": 324
   },
   "presentationCoreImported": true,
   "presentationUiImplemented": true,
@@ -112,19 +114,26 @@
     "installedStudioUpdated": false
   },
   "addonRuntime": {
-    "version": "0.8.0",
-    "loader": "MelonLoader IL2CPP",
+    "version": "0.9.0",
+    "loader": "MelonLoader IL2CPP / BepInEx Unity IL2CPP",
     "unityVersion": "6000.3.9f1",
     "platform": "StandaloneWindows64",
     "colorSpace": "Gamma",
     "exportChecks": 23,
-    "gameChecks": 51,
+    "gameChecks": 52,
     "realIl2Cpp": true,
     "syntheticTransport": true,
     "realSongAcceptance": "pending",
     "visualAcceptance": "pending",
     "postprocessExport": false,
     "sceneOpacityCapability": "scene.opacity.v1",
-    "nativeUiFrameChecked": true
+    "nativeUiFrameChecked": true,
+    "chartPackChecks": 23,
+    "compilerChecks": 13,
+    "wholeSongExport": true,
+    "studioSourceCompilation": true,
+    "colocatedDiscovery": true,
+    "playerInstall": "extract matching runtime ZIP once; songs into Charts",
+    "spc2": "verified community binary only"
   }
 }

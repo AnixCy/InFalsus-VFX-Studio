@@ -15,6 +15,9 @@
 | `src/Presentation` | 从本项目既有演出基础设施迁入的创作端源码，来源哈希见 `src/Presentation/ORIGIN.json`；不包含游戏资源、录制或媒体。 |
 | `src/StudioPlusPreview`、`src/ShaderAssets/Assets` | 本项目新增的适配代码与参数预览 Shader；系统字体回退，不捆绑字体或歌曲素材。 |
 | 参数预览构建依赖 | 引用用户本地 Studio+、BepInEx、Harmony、Unity 和 Newtonsoft.Json 程序集；不在新增源码目录中复制依赖二进制，不改变其许可。 |
+| `src/ChartLoader` | MagicNeko 的 [InFalsusChartLoader v0.2.2](https://github.com/Its-MagicNeko/InFalsusChartLoader/tree/v0.2.2)，MIT；从本地 compat2 快照迁入并补充 SPC2 边界、原生数组 stride 计算和失败提示。完整许可与逐文件来源见该目录 LICENSE、ORIGIN.json；玩家 ZIP 附许可和来源。 |
+| `src/ChartCompiler` | 复用本项目既有 ICP1/SPC2 编译器，移除本地研究命令行夹具，哈希见 ORIGIN.json；只进入创作端。 |
+| 创作端私有 Python | [Python 官方 Windows embeddable distribution](https://www.python.org/downloads/release/python-3139/)，固定 3.13.9 x64，核对 SHA-256 后组装；保留官方 LICENSE.txt，玩家包不含解释器。 |
 
 原游戏名称、素材及参考谱面仍属于各自权利人。本编辑器的社区维护和壳子扩展不表示官方背书。新增第三方代码、素材或数据时，记录作者、来源、许可证及必要的版权/署名信息；不要把其他项目的代码许可证套用到其素材上。
 

@@ -8,6 +8,8 @@
 
 基础设施审查和后续接入先查 [状态手册](docs/vfx/INFRASTRUCTURE.md)。区分源码验证、已部署安装与人工验收；用户暂不能反馈时，优先可独立验证的数据/文件/预算契约，不将底层接口描述为已上线的应用功能。
 
+完整曲包和玩家安装先查 [曲包契约](docs/vfx/CHART_PACKAGES.md)。默认从保存的 Studio 工程或可游玩 if 曲包导出到新位置；演出位于歌曲自己的 vfx/，玩家解压 Charts。编译器只在制作端，两种 Loader 共用曲包；SPC2 只能在已核对社区二进制启用，不把打包能力误写成任意 Shader 可导出。原生数组 stride 使用底层 Length，不能用 List.Count 推断备用容量。
+
 资源搬迁与 recipe 来源先查 [创作工程契约](docs/vfx/CREATOR_WORKSPACE.md)。`.vfxwork.json` 是独立制作端容器，不是 Studio `.vfx.json` 或 addon。始终从 ManualProject 重烘焙；保留稳定 TrackId 和原关键帧身份，不能将派生输出写回原动画。搬迁默认复制到新目录，不移动原件或递归收集整个素材目录。
 
 ## 项目身份与源码

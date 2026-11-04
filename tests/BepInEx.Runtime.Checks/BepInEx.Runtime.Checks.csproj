@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework><AssemblyName>InFalsus.Vfx.BepChecks</AssemblyName><LangVersion>latest</LangVersion><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DefineConstants>$(DefineConstants);BEPINEX</DefineConstants><CheckEolTargetFramework>false</CheckEolTargetFramework><NuGetAudit>false</NuGetAudit>
+    <InteropDir Condition="'$(InteropDir)' == ''">$(GameReferenceRoot)/MelonLoader/Il2CppAssemblies</InteropDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../Game.Runtime.Checks/Entry.cs" Link="Entry.cs" /><Compile Include="../Game.Runtime.Checks/SceneChecks.cs" Link="SceneChecks.cs" />
+    <ProjectReference Include="../../src/GameRuntime/InFalsus.Presentation.Game.csproj" />
+    <Reference Include="$(BepInExRoot)/BepInEx/core/BepInEx.Core.dll" Private="false" />
+    <Reference Include="$(BepInExRoot)/BepInEx/core/BepInEx.Unity.IL2CPP.dll" Private="false" />
+    <Reference Include="$(BepInExRoot)/BepInEx/core/Il2CppInterop.Runtime.dll" Private="false" />
+    <Reference Include="$(InteropDir)/UnityEngine.CoreModule.dll" Private="false" Aliases="UnityCore" />
+    <Reference Include="$(InteropDir)/UnityEngine.AudioModule.dll" Private="false" />
+    <Reference Include="$(InteropDir)/Il2Cppmscorlib.dll" Private="false" Aliases="Il2CppBase" />
+  </ItemGroup>
+</Project>

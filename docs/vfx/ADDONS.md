@@ -1,6 +1,6 @@
 # 可选游戏演出包
 
-Studio+ 导出独立文件夹，游戏 Mod 按谱面身份匹配。0.7.0 接通背景材质，0.8.0 增加可选轨道和四组游玩 UI 透明度。不安装或关闭 addon 时，谱面仍可独立游玩。
+0.9.0 默认导出随歌曲分发的完整 ZIP，玩家放入 Charts 即可，操作和安装见 [CHART_PACKAGES.md](CHART_PACKAGES.md)。旧独立 addon 导出继续保留；下文描述演出自身的契约与支持范围。0.7.0 接通背景材质，0.8.0 增加可选轨道和四组游玩 UI 透明度。不安装或关闭演出时，兼容谱面仍可独立游玩。
 
 ## 当前范围
 
@@ -10,11 +10,11 @@ Studio+ 导出独立文件夹，游戏 Mod 按谱面身份匹配。0.7.0 接通�
 
 导出器按 UTF-8 字节数检查 `runtime.json` 和 `addon.json`，分别不得超过玩家端既有的 4 MiB 限制；超限则拒绝发布并清理自有暂存目录。该保护涵盖所有合并曲线，不只单条音频驱动曲线；不自动降低精度或截断。0.8.0 安装包含此检查。
 
-游戏入口目前只有 MelonLoader IL2CPP，资源目标为 Unity 6000.3.9f1 / Windows x64。具体游戏二进制须有经过检查的适配配置；不宣称支持所有官方或社区版本。BepInEx 游戏入口未实现，Studio 的 Mono 插件不能直接装入 IL2CPP 游戏。
+游戏入口支持 MelonLoader IL2CPP 与 BepInEx Unity IL2CPP，资源目标为 Unity 6000.3.9f1 / Windows x64。已核对适配内置于运行库；其他游戏二进制须单独适配，不宣称支持所有官方或社区版本。Studio 的 Mono 插件不能直接装入 IL2CPP 游戏。
 
 ## 使用
 
-在演出视图点击“导出 addon”，选择目标谱面和输出父目录。每次创建新文件夹，不覆盖已有包。开发者预先准备插件的 `GameExport/` 目标目录与游戏资源。
+在演出视图点击“导出曲包”，默认完整歌曲输出。需要旧方式时点击“独立演出…”，选择目标谱面和输出父目录；每次创建新文件夹，不覆盖已有包。开发者预先准备插件的 `GameExport/` 游戏资源，独立演出模式另需目标清单。
 
 ```text
 ExampleAddon/
@@ -51,6 +51,8 @@ ExampleAddon/
 | `src/Addon.Export` | 编辑工程转换、基础效果融合与原子发布；不进入玩家包 |
 | `src/GameRuntime` | 已迁入的 IL2CPP 适配、包选择、材质资源与恢复 |
 | `src/GameLoader.Melon` | Loader 入口及练习定位观测 |
+| `src/GameLoader.BepInEx` | Bep IL2CPP 入口、原生 UI 与练习定位钩子 |
+| `src/ChartLoader` | 随运行包安装的 MIT 谱面加载组件 |
 | `templates/game-addon` | 自有背景 Shader 和资源构建器 |
 
 `Build-GameRuntime.ps1 -GameReferenceRoot '<匹配的参考游戏>'` 只构建 DLL，不安装到参考游戏。`Build-GameAddonAssets.ps1` 用匹配 Unity 构建资源；`Prepare-GameExport.py` 按实测 Unity/色彩空间准备制作端缓存。脚本不内置开发机路径。

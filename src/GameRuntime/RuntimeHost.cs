@@ -36,7 +36,7 @@ public sealed class RuntimeHost : IDisposable
     public RenderDiagnostics Diagnostics=>backend.Diagnostics;
 
     public RuntimeHost(string gameRoot,string dataRoot,Action<string> report)
-        :this(new NativeGameBridge(gameRoot,Path.Combine(dataRoot,"profiles.json"),Path.Combine(dataRoot,"catalog.json")),dataRoot,report) { }
+        :this(new NativeGameBridge(gameRoot,Path.Combine(dataRoot,"profiles.json"),Path.Combine(dataRoot,"catalog.json")),dataRoot,report) { RuntimeDefaults.EnsureConfig(dataRoot); }
     public RuntimeHost(IGameBindings bridge,string dataRoot,Action<string> report)
     {
         (Bridge,this.dataRoot,this.report)=(bridge,dataRoot,report);
@@ -103,9 +103,13 @@ public sealed class RuntimeHost : IDisposable
     void ReloadAddons()
     {
         var root=Path.Combine(dataRoot,"Addons");var next=new Dictionary<string,EffectPackage>(StringComparer.OrdinalIgnoreCase);
+        var manifests=new List<string>();
+        if(Bridge is IChartPackBindings packs)manifests.AddRange(packs.RefreshChartPacks(report));
         if(Directory.Exists(root))foreach(var directory in Directory.EnumerateDirectories(root).OrderBy(p=>p,StringComparer.OrdinalIgnoreCase)) {
             if((File.GetAttributes(directory)&FileAttributes.ReparsePoint)!=0)continue;
-            var file=Path.Combine(directory,"addon.json");if(!File.Exists(file))continue;
+            var file=Path.Combine(directory,"addon.json");if(File.Exists(file))manifests.Add(file);
+        }
+        foreach(var file in manifests.Distinct(StringComparer.OrdinalIgnoreCase)) {
             try {
                 var candidate=AddonPackage.Load(file,t=>JsonSerializer.Deserialize<AddonManifest>(t,Json)!,
                     t=>JsonSerializer.Deserialize<PackageDocument>(t,Json)!,backend.Capabilities);
@@ -113,7 +117,7 @@ public sealed class RuntimeHost : IDisposable
                     throw new InvalidDataException("Addon requires an exact chart identity.");
                 next.Add(file,candidate);
             } catch(Exception e) {
-                report("Addon skipped: "+Path.GetFileName(directory)+": "+e.Message);
+                report("Addon skipped: "+Path.GetFileName(Path.GetDirectoryName(file))+": "+e.Message);
                 // A failed edit keeps the previous valid revision. A removed directory does not.
                 if(addons.TryGetValue(file,out var previous))next.Add(file,previous);
             }

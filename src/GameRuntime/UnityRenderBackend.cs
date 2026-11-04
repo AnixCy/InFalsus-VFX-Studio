@@ -5,16 +5,11 @@ using InFalsus.Vfx.Addon;
 using UnityEngine;
 using UnityCore::UnityEngine;
 using UnityCore::UnityEngine.Rendering;
-using UnityEngine.Rendering;
-using UnityEngine.Rendering.RenderGraphModule;
-using UnityEngine.Rendering.Universal;
-using GraphUtils = UnityEngine.Rendering.RenderGraphModule.Util.RenderGraphUtils;
-using Hub = Il2Cpp.CommandBufferHubFeature.Hub;
 using Object = UnityCore::UnityEngine.Object;
 
 namespace InFalsus.Presentation.Game;
 
-/// <summary>Owns only its bundles, material instances and Hub handles; never clears global effects.</summary>
+/// <summary>Background/scene player owns only its bundles and material instances; never hooks the renderer graph.</summary>
 public sealed class UnityRenderBackend : IRenderBackend, IDisposable
 {
     public IReadOnlyCollection<string> Capabilities { get; }
@@ -23,8 +18,9 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
     private readonly Dictionary<string, BundleEntry> _bundles = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<(long Due, MaterialResource[] Resources, BundleEntry[] Bundles)> _retired = new();
     private long _frame;
-    private int _effects, _preparations, _materials, _registrations, _cleanupFailures, _images;
-    private long _postCallbacks, _passesRecorded, _backbufferSkips, _renderErrors;
+    private int _effects, _preparations, _materials, _images;
+    private readonly int _registrations=0, _cleanupFailures=0;
+    private readonly long _postCallbacks=0, _passesRecorded=0, _backbufferSkips=0, _renderErrors=0;
     public RenderDiagnostics Diagnostics
     {
         get
@@ -157,10 +153,10 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
 
     private sealed class Preparation : IEffectPreparation
     {
+        private readonly Camera? _camera;
         private readonly UnityRenderBackend _owner;
         private readonly EffectPackage _package;
         private readonly IntPtr _background;
-        private readonly Camera? _camera;
         private readonly Dictionary<string, BundleEntry> _owned = new();
         private readonly List<Material> _materials = new();
         private readonly List<Texture2D> _images = new();
@@ -257,17 +253,17 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
     }
     private sealed class MaterialEffect : IEffectNode
     {
+        private readonly Camera? _camera;
         private readonly UnityRenderBackend _owner;
         private readonly IntPtr _target;
         private readonly Component? _targetObject;
-        private readonly Camera? _camera;
         private readonly MaterialResource[] _resources;
         private readonly BundleEntry[] _bundles;
         private readonly (MaterialResource? Resource, int Id, ParameterKind Kind)[] _bindings;
         private readonly SceneOpacityPlan _scenePlan;
         private SceneOpacityValues _sceneValues=SceneOpacityValues.Visible;
         private readonly ParameterValue[] _last;
-        private bool _hasLast, _active, _disposed, _handoff, _warnedBackbuffer, _reportedBinding;
+        private bool _hasLast, _active, _disposed, _handoff, _reportedBinding;
         private long _bindingCheckFrame;
         private double _lastSeconds = double.NaN;
         private float _lastRate = float.NaN;
@@ -275,9 +271,6 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
         private ulong _lastRevision;
         private IntPtr _original, _assigned;
         private byte _originalOption;
-        private Il2Cpp.CommandBufferHubFeature.RecordGraphAction? _callback;
-        private Hub.Handle? _handle;
-        private readonly bool _hasPost;
         private static readonly int TimeId = Shader.PropertyToID("_PresentationTime");
         private static readonly int BeatId = Shader.PropertyToID("_PresentationBeat");
         private static readonly int TickId = Shader.PropertyToID("_PresentationTick");
@@ -290,7 +283,6 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
         {
             (_owner, _target, _camera, _resources, _bundles) = (owner, target, camera, resources, bundles);
             _targetObject = target == IntPtr.Zero ? null : new Component(target);
-            _hasPost = resources.Any(r => r.Target == "postprocess");
             _scenePlan=new SceneOpacityPlan(package.Document);
             _bindings = new (MaterialResource?, int, ParameterKind)[package.Timeline.Count];
             _last = new ParameterValue[_bindings.Length];
@@ -374,21 +366,12 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
             if (_disposed || _active) throw new InvalidOperationException("Effect cannot activate twice.");
             var bg = _resources.SingleOrDefault(r => r.Target == "background");
             if (bg != null && _targetObject == null) throw new InvalidOperationException("Background target destroyed.");
-            if (_hasPost && _camera == null) throw new InvalidOperationException("Game camera unavailable.");
             var old = previous as MaterialEffect;
             var beforeMaterial=_target!=IntPtr.Zero?_owner._bridge.RequestedMaterial(_target):IntPtr.Zero;
             var beforeOption=_target!=IntPtr.Zero?_owner._bridge.RequestedMaterialOption(_target):(byte)1;
             if(beforeMaterial==IntPtr.Zero&&_target!=IntPtr.Zero)beforeMaterial=_owner._bridge.CurrentMaterial(_target);
             try
             {
-                if (_hasPost)
-                {
-                    _callback = DelegateSupport.ConvertDelegate<Il2Cpp.CommandBufferHubFeature.RecordGraphAction>(
-                        (Action<RenderGraph, ContextContainer>)RecordGraph);
-                    _handle = Hub.AddRenderGraph(_camera!, RenderPassEvent.AfterRenderingPostProcessing, _callback);
-                    if (_handle == null) throw new InvalidOperationException("RenderGraph did not return a registration handle.");
-                    _owner._registrations++;
-                }
                 if (bg != null)
                 {
                     var requested = _owner._bridge.RequestedMaterial(_target);
@@ -409,46 +392,10 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
             }
             catch
             {
-                RemoveGraph();
                 if (OwnsBinding())
                     _owner._bridge.SetMaterial(_target, beforeMaterial, beforeOption);
                 if(_owner._bridge is ISceneOpacityBindings scene){scene.RestoreSceneOpacity();if(old!=null&&old._active)scene.ApplySceneOpacity(old._sceneValues);}
                 throw;
-            }
-        }
-        private void RecordGraph(RenderGraph graph, ContextContainer data)
-        {
-            if (_disposed || !_active) return;
-            try
-            {
-                _owner._postCallbacks++;
-                var resources = data.Get<UniversalResourceData>();
-                if (resources.isActiveTargetBackBuffer)
-                {
-                    _owner._backbufferSkips++;
-                    if (!_warnedBackbuffer) { _owner._report("Presentation PP skipped: camera has no readable intermediate color."); _warnedBackbuffer = true; }
-                    return;
-                }
-                foreach (var node in _resources)
-                {
-                    if (node.Target != "postprocess") continue;
-                    var source = resources.activeColorTexture;
-                    var desc = graph.GetTextureDesc(ref source); desc.name = node.PassName; desc.clearBuffer = false;
-                    var destination = graph.CreateTexture(ref desc);
-                    var parameters = new GraphUtils.BlitMaterialParameters(source, destination, node.Material, 0);
-                    GraphUtils.AddBlitPass(graph, parameters, desc.name);
-                    _owner._passesRecorded++;
-                    resources.cameraColor = destination;
-                }
-            }
-            catch (Exception e)
-            {
-                _owner._renderErrors++;
-                // Never let managed exceptions cross IL2CPP's renderer callback boundary.
-                if (!_warnedBackbuffer) _owner._report($"Presentation RenderGraph disabled: {e.Message}");
-                _warnedBackbuffer = true;
-                // This node remains disposable; remove only our registration on next disposal.
-                _active = false;
             }
         }
         public void Dispose()
@@ -458,7 +405,6 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
             try
             {
                 if(_active&&!_handoff&&_owner._bridge is ISceneOpacityBindings scene)scene.RestoreSceneOpacity();
-                RemoveGraph();
                 if (!_handoff && OwnsBinding())
                     _owner._bridge.SetMaterial(_target, _original, _originalOption);
             }
@@ -466,13 +412,6 @@ public sealed class UnityRenderBackend : IRenderBackend, IDisposable
             {
                 _owner.Retire(_resources, _bundles);
             }
-        }
-        private void RemoveGraph()
-        {
-            if (_callback == null) return;
-            try { if (_handle != null) { Hub.Remove(_handle); _owner._registrations--; } }
-            catch (Exception e) { _owner._cleanupFailures++; _owner._report($"Presentation render registration cleanup: {e.Message}"); }
-            finally { _callback = null; _handle = null; }
         }
         private bool OwnsBinding() => _assigned != IntPtr.Zero && _targetObject != null
             && (_owner._bridge.RequestedMaterial(_target) == _assigned

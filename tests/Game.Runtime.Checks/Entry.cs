@@ -8,11 +8,17 @@ using System.Text.Json.Serialization;
 using InFalsus.Presentation;
 using InFalsus.Presentation.Game;
 using InFalsus.Vfx.Addon;
+#if BEPINEX
+using MelonMod=InFalsus.Vfx.GameChecks.BepCheckMod;
+#else
 using MelonLoader;
+#endif
 using UnityCore::UnityEngine;
 using Object=UnityCore::UnityEngine.Object;
 
+#if !BEPINEX
 [assembly:MelonInfo(typeof(InFalsus.Vfx.GameChecks.Entry),"VFX isolated lifecycle checks","0.7.0","Local")]
+#endif
 namespace InFalsus.Vfx.GameChecks;
 
 /// <summary>Development-only assembly, copied exclusively to a marked sandbox. No keys, audio or gameplay actions.</summary>
@@ -32,6 +38,8 @@ public sealed partial class Entry:MelonMod
     bool playerLoaded,uiFrameChecked;
     string? failure;
     Material? original,foreign;
+    float expectedOne=.9f,expectedTwo=1.4f,expectedThree=.9f;
+    float expectedSceneOne=.5f;
     public override void OnLateInitializeMelon()
     {
         try {
@@ -39,9 +47,10 @@ public sealed partial class Entry:MelonMod
             if(!File.Exists(Path.Combine(root,".vfx-addon-sandbox.json"))||!Environment.GetCommandLineArgs().Contains("-vfx-addon-check"))
                 throw new InvalidOperationException("Checks require an explicitly marked isolated copy and command flag");
             data=Path.Combine(root,"UserData/InFalsusPresentation");output=Path.Combine(root,"addon-checks.json");
-            var player=MelonMod.RegisteredMelons.FirstOrDefault(m=>m.GetType().FullName=="InFalsus.Presentation.Melon.Entry");
+            var player=MelonMod.RegisteredMelons.FirstOrDefault(m=>m.GetType().FullName is "InFalsus.Presentation.Melon.Entry" or "InFalsus.Presentation.BepInEx.Entry");
             playerLoaded=player!=null;
-            var playerHost=player?.GetType().GetField("_host",BindingFlags.Instance|BindingFlags.NonPublic)?.GetValue(player) as RuntimeHost;
+            var playerHost=(player?.GetType().GetField("_host",BindingFlags.Instance|BindingFlags.NonPublic)?.GetValue(player)
+                ??player?.GetType().GetProperty("Host")?.GetValue(player)) as RuntimeHost;
             native=playerHost?.Bridge as NativeGameBridge??new(root,Path.Combine(data,"profiles.json"),Path.Combine(data,"catalog.json"));
             if(player!=null)Check(playerHost!=null&&native.HasExactSeekSerial,"actual player loader initialized and attached its seek observer");
             UnityEngine.AudioListener.volume=0;
@@ -49,6 +58,14 @@ public sealed partial class Entry:MelonMod
             File.WriteAllText(Path.Combine(root,"target-runtime.json"),JsonSerializer.Serialize(new{unityVersion=Application.unityVersion,
                 colorSpace=QualitySettings.activeColorSpace.ToString(),graphics=SystemInfo.graphicsDeviceType.ToString()},Json));
             fixture=Path.Combine(data,"Addons/Fixture");stored=Path.Combine(data,"StoredFixture");
+            var args=Environment.GetCommandLineArgs();int packAt=Array.IndexOf(args,"-vfx-chart-package");
+            if(packAt>=0)fixture=Path.Combine(root,"Charts",args[packAt+1],"vfx/FBD");
+            var expectedPackage=EffectPackage.FromDocument(JsonSerializer.Deserialize<PackageDocument>(File.ReadAllText(Path.Combine(fixture,"runtime.json")),Json)!,fixture,AddonPackage.Capabilities);
+            float Expected(double seconds){var v=new ParameterValue[expectedPackage.Timeline.Count];expectedPackage.Timeline.Sample(seconds+expectedPackage.Document.OffsetSeconds,v);
+                int i=Array.FindIndex(expectedPackage.Document.Channels,c=>c.Property=="_Brightness");return v[i].Number.X;}
+            expectedOne=Expected(1);expectedTwo=Expected(2);expectedThree=Expected(3);
+            double sceneSeconds=1+expectedPackage.Document.OffsetSeconds;
+            expectedSceneOne=sceneSeconds<0?1:Math.Clamp(1-(float)sceneSeconds*.5f,0,1);
             Check(Directory.Exists(fixture),"exported addon installed in isolated copy");Next();
         }catch(Exception e){Fail(e);}
     }
@@ -73,6 +90,15 @@ public sealed partial class Entry:MelonMod
                 if(!Wait(6))return;
                 Check(!native!.TrySample(out _),"real game transport remains outside gameplay; no song/audio started");
                 bindings=new(native,NativeType(native.BaseAddress,"Constrained2D"));
+                var packArgs=Environment.GetCommandLineArgs();int packIndex=Array.IndexOf(packArgs,"-vfx-chart-package");
+                if(packIndex>=0) {
+                    var song=ChartPack.ReadSong(Path.Combine(root,"Charts",packArgs[packIndex+1]),PackFieldsForChecks);
+                    var binding=ChartPack.ReadBindings(song,t=>JsonSerializer.Deserialize<ChartPackManifest>(t,Json)!)[0];
+                    bindings.SongKey=binding.SongKey;bindings.Difficulty=binding.Difficulty;bindings.Fingerprint=binding.Fingerprint;
+                    var importer=AppDomain.CurrentDomain.GetAssemblies().Single(a=>a.GetName().Name=="InFalsusChartLoader");
+                    var hash=importer.GetType("InFalsusChartLoader.ChartSession")!.GetMethod("HashOf")!.Invoke(null,new object[]{binding.LogicalName}) as string;
+                    Check(hash==binding.Fingerprint,"packaged SPC was decoded and imported by the real chart loader without a script");
+                }
                 var shader=Shader.Find("Hidden/InternalErrorShader");if(shader==null)throw new InvalidOperationException("Baseline shader missing");
                 original=new Material(shader);foreign=new Material(shader);
                 bindings.SetMaterial(bindings.Background,original.Pointer,1);Next();return;
@@ -99,16 +125,16 @@ public sealed partial class Entry:MelonMod
                     var arguments=Environment.GetCommandLineArgs();int expectedAt=Array.IndexOf(arguments,"-vfx-expected-shader");
                     string expectedShader=expectedAt>=0?arguments[expectedAt+1]:"InFalsusVFX/AddonBackground";
                     Check(active.shader.name==expectedShader,"actual IL2CPP component uses the exported shader");
-                    Check(Math.Abs(active.GetFloat("_Brightness")-.9)<.001,"actual material receives interpolated exported keys");
+                    Check(Math.Abs(active.GetFloat("_Brightness")-expectedOne)<.001,"actual material receives the exported value at the current clock");
                     Check(active.GetTexture("_MainTex")!=null&&host.Diagnostics.Images==1,"external addon image loaded and owned");
                     Check(host.Diagnostics.RenderRegistrations==0&&host.Diagnostics.PassesRecorded==0,"background addon registers no postprocess passes");
-                    Check(bindings.Opacity==new SceneOpacityValues(.5f,.5f,.5f,.5f,.5f),"game backend evaluates logical scene keys without a Shader pass");
+                    Check(bindings.Opacity==new SceneOpacityValues(expectedSceneOne,expectedSceneOne,expectedSceneOne,expectedSceneOne,expectedSceneOne),"game backend evaluates logical scene keys without a Shader pass");
                     bindings.Seconds=3;Next();break;
                 case 4:
-                    Check(Math.Abs(new Material(bindings!.CurrentMaterial(bindings.Background)).GetFloat("_Brightness")-.9)<.001,"random seek reevaluates current value without accumulated history");
+                    Check(Math.Abs(new Material(bindings!.CurrentMaterial(bindings.Background)).GetFloat("_Brightness")-expectedThree)<.001,"random seek reevaluates current value without accumulated history");
                     bindings.Paused=true;bindings.Seconds=2;Next();break;
                 case 5:
-                    Check(Math.Abs(new Material(bindings!.CurrentMaterial(bindings.Background)).GetFloat("_Brightness")-1.4)<.001,"paused transport samples requested position");
+                    Check(Math.Abs(new Material(bindings!.CurrentMaterial(bindings.Background)).GetFloat("_Brightness")-expectedTwo)<.001,"paused transport samples requested position");
                     Config(false);Next();break;
                 case 6:
                     if(host!.IsActive||!Wait(.8))return;
@@ -125,7 +151,7 @@ public sealed partial class Entry:MelonMod
                 case 80:
                     if(frames<5)return;
                     Check(host!.IsActive&&bindings!.CurrentMaterial(bindings.Background)!=original!.Pointer,"transport teardown retains the addon while the native background is visible");
-                    Check(Math.Abs(new Material(bindings!.CurrentMaterial(bindings.Background)).GetFloat("_Brightness")-1.4)<.001,"transition holds the last sampled frame without advancing its clock");
+                    Check(Math.Abs(new Material(bindings!.CurrentMaterial(bindings.Background)).GetFloat("_Brightness")-expectedTwo)<.001,"transition holds the last sampled frame without advancing its clock");
                     Config(false,1);Go(81);break;
                 case 81:
                     if(!Wait(.8))return;
@@ -234,10 +260,13 @@ public sealed partial class Entry:MelonMod
         }
         throw new TypeLoadException(name);
     }
-    sealed class ProbeBindings:IGameBindings,ISceneOpacityBindings
+    static string?[] PackFieldsForChecks(string text,string key){using var doc=JsonDocument.Parse(text);if(!doc.RootElement.TryGetProperty(key,out var v))return Array.Empty<string?>();string? Read(JsonElement e)=>e.ValueKind==JsonValueKind.Null?null:e.GetString();return v.ValueKind==JsonValueKind.Array?v.EnumerateArray().Select(Read).ToArray():new[]{Read(v)};}
+    sealed class ProbeBindings:IGameBindings,ISceneOpacityBindings,IChartPackBindings
     {
         readonly NativeGameBridge native;readonly GameObject root;
         public bool Valid=true,Paused,TransitionVisible;public double Seconds=1;
+        public string SongKey="game:2",Fingerprint="";public int Difficulty=3;
+        public IReadOnlyList<string> RefreshChartPacks(Action<string> report)=>native.RefreshChartPacks(report);
         public IntPtr Background{get;}
         public Camera? GameCamera=>null;
         public bool HasSpecialScene=>false;
@@ -265,7 +294,7 @@ public sealed partial class Entry:MelonMod
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]delegate void WriteBarrier(IntPtr obj,IntPtr field,IntPtr value);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]delegate void ResetCall(IntPtr self,IntPtr method);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]delegate void TypeCall(IntPtr self,byte type,IntPtr method);
-        public bool TrySample(out PlaybackSnapshot snapshot){snapshot=new(1,"game:2",3,"",Seconds,Seconds,0,1,
+        public bool TrySample(out PlaybackSnapshot snapshot){snapshot=new(1,SongKey,Difficulty,Fingerprint,Seconds,Seconds,0,1,
             Paused?TransportState.Frozen:TransportState.Running,Paused?PlaybackPhase.Paused:PlaybackPhase.Playing,
             Paused,false,false,(ulong)(Seconds*100),true,Stopwatch.GetTimestamp()/(double)Stopwatch.Frequency);return Valid;}
         public bool TargetAlive(IntPtr target)=>native.TargetAlive(target);

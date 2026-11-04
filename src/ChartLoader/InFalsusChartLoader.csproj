@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework><AssemblyName>InFalsusChartLoader</AssemblyName><LangVersion>latest</LangVersion><ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable><AllowUnsafeBlocks>true</AllowUnsafeBlocks><PlatformTarget>x64</PlatformTarget><CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <Loader Condition="'$(Loader)' == ''">MelonLoader</Loader>
+    <LoaderDir Condition="'$(LoaderDir)' == ''">$(GameReferenceRoot)/MelonLoader/net6</LoaderDir>
+    <InteropDir Condition="'$(InteropDir)' == ''">$(GameReferenceRoot)/MelonLoader/Il2CppAssemblies</InteropDir>
+    <DefineConstants Condition="'$(Loader)' == 'MelonLoader'">$(DefineConstants);MELONLOADER</DefineConstants>
+    <DefineConstants Condition="'$(Loader)' == 'BepInEx'">$(DefineConstants);BEPINEX</DefineConstants>
+    <DebugType>none</DebugType><DebugSymbols>false</DebugSymbols>
+    <OutputPath>bin/$(Loader)/$(Configuration)/</OutputPath><IntermediateOutputPath>obj/$(Loader)/$(Configuration)/</IntermediateOutputPath>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Source/**/*.cs" Exclude="Source/Probe/**/*.cs" />
+    <Compile Remove="Source/Mod/Entry.Melon.cs" Condition="'$(Loader)' != 'MelonLoader'" />
+    <Compile Remove="Source/Mod/Entry.BepInEx.cs" Condition="'$(Loader)' != 'BepInEx'" />
+    <Reference Include="$(GameReferenceRoot)/MelonLoader/net6/MelonLoader.dll" Condition="'$(Loader)' == 'MelonLoader'" Private="false" />
+    <Reference Include="$(LoaderDir)/Il2CppInterop.Runtime.dll" Private="false" />
+    <Reference Include="$(LoaderDir)/Il2CppInterop.Common.dll" Private="false" />
+    <Reference Include="$(InteropDir)/Il2Cppmscorlib.dll" Private="false" />
+    <Reference Include="$(InteropDir)/UnityEngine.CoreModule.dll" Private="false" Aliases="UnityEngineCore" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Loader)' == 'BepInEx'">
+    <Reference Include="$(LoaderDir)/BepInEx.Core.dll" Private="false" />
+    <Reference Include="$(LoaderDir)/BepInEx.Unity.Common.dll" Private="false" />
+    <Reference Include="$(LoaderDir)/BepInEx.Unity.IL2CPP.dll" Private="false" />
+    <Reference Include="$(LoaderDir)/SemanticVersioning.dll" Private="false" />
+  </ItemGroup>
+</Project>

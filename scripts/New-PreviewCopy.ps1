@@ -41,7 +41,7 @@ if(Test-Path -LiteralPath (Join-Path $taskRepo 'local/custom-effect-sample/effec
 $taskLauncher='@echo off'+"`r`n"+'setlocal'+"`r`n"+'cd /d "%~dp0"'+"`r`n"+'set "INFSTUDIO_CONFIG_ROOT=%~dp0UserData\studio"'+"`r`n"+'set "VFX_WORK_ROOT=%~dp0UserData\vfx"'+"`r`n"+'start "" "%~dp0InFalsusStudio.exe"'+"`r`n"
 [IO.File]::WriteAllText((Join-Path $taskDestination 'Start-VFX.bat'),$taskLauncher,[Text.Encoding]::ASCII)
 $taskGuide=@'
-VFX Addon 测试版 0.7.0
+VFX Addon 测试版 0.9.0
 
 双击 Start-VFX.bat，点击右上“演出视图”；左上“制谱视图”返回。
 演出编辑期间停止谱面编辑输入；可直接加载本地音频和 PNG/JPEG，不必打开谱面。
@@ -68,11 +68,12 @@ VFX Addon 测试版 0.7.0
 本版为独立测试副本，旧版保留。视觉、实际操作和听感由用户验收。
 效果库搜索“透明度”可加入轨道、分数、曲名资料、通关状态和判定文字控件；参数 1 保留原生显示，0 隐藏，可打关键帧。
 画布显示简化轨道/UI参照；游戏绑定真实对象，不影响note、光标或暂停菜单。
-“导出 addon”支持通用背景图片、一个“色彩与曝光”和上述透明度控件；其他启用效果会阻止导出。
+“导出曲包”支持通用背景图片、一个“色彩与曝光”和上述透明度控件；其他启用效果会阻止导出。
 包含透明度控件的addon需要0.8.0玩家端，旧玩家端会明确拒绝。
-选目标谱面、选择输出目录后生成独立 addon 文件夹，不包含 SPC 或音乐。
-将整个文件夹放进隔离游戏的 UserData/InFalsusPresentation/Addons，再重启测试游戏。
-游戏接入当前只验证了匹配配置的 Windows IL2CPP 社区壳；未复制原始演出的完整事件编排。
+默认选择已保存的 Studio 歌曲目录、难度和输出位置，生成含全部有效谱面、音频、曲绘和当前演出的完整 ZIP。
+需要配套 GameExport/ChartCompiler，谱师不必安装 Python；不改原工程。SPC2 仅用于适配社区壳。
+玩家首次安装对应 MelonLoader 或 BepInEx IL2CPP 的运行包；之后曲包 ZIP 解压到 Charts，重启游戏。
+“独立演出…”仍保留旧 addon 导出。适配与验证范围见源码 docs/vfx/CHART_PACKAGES.md。
 '@
 [IO.File]::WriteAllText((Join-Path $taskDestination '使用说明.txt'),$taskGuide,[Text.UTF8Encoding]::new($false))
 Write-Output $taskDestination

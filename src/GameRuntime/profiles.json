@@ -1,0 +1,26 @@
+[
+  {
+    "Sha256": "c7d0c835b88f8b2bde577107ace496a15913491588df85bbd30d756e2375f44d",
+    "UnityVersion": "6000.3.9f1",
+    "AudioClockRva": 4448448,
+    "AudioReadyRva": 4444976,
+    "MaterialGetRva": 5253264,
+    "MaterialSetRva": 5256304,
+    "PracticeStateRva": 59690656,
+    "PracticeSeekRva": 59693184,
+    "AudioClockPrefix": "48895c2410564883ec300f29",
+    "PracticeSeekPrefix": "53565741554883ec384c8d2d"
+  },
+  {
+    "Sha256": "0314adaedf482bb9c3d8d300b69e1fa47235aaf618033c03bd631ade567ab98f",
+    "UnityVersion": "6000.3.9f1",
+    "AudioClockRva": 4448448,
+    "AudioReadyRva": 4444976,
+    "MaterialGetRva": 5253264,
+    "MaterialSetRva": 5256304,
+    "PracticeStateRva": 0,
+    "PracticeSeekRva": 0,
+    "AudioClockPrefix": "48895c2410564883ec300f29",
+    "PracticeSeekPrefix": ""
+  }
+]

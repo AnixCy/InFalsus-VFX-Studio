@@ -1,0 +1,26 @@
+{
+  "source": "Existing project chart compilers",
+  "date": "2026-11-04",
+  "files": {
+    "icp_codec.py": {
+      "sourceSha256": "7519d26b198a058181c6d0486b61d1bc40698541c98354e6a0ca1bd70f17d388",
+      "importedSha256": "35343e310aee3868b834578902f5dafa7ce68d3aa42ae9a8ade0bea48add83cc",
+      "change": "Removed only local command-line reverse-engineering fixtures; compiler functions retained."
+    },
+    "icp_raw_codec.py": {
+      "sourceSha256": "a8ee6e0e6572873c92ef0da430dc77367d6fc33b4ff351fa36a62eb93bef6e31",
+      "importedSha256": "e425970f8f1af44dce7aa9af6268afc8a73f9e7626ce372f0bfb8bd41d51dc67",
+      "change": "Removed only local command-line reverse-engineering fixtures; compiler functions retained."
+    },
+    "spc_v2_codec.py": {
+      "sourceSha256": "5f5636b7ec50645df5e4546034817d6be5ef345119ba8b7ceec1921665de3b99",
+      "importedSha256": "a5f94e84d1ebb1046d252d9badb6c8b00a0e00670217ecd32e98803196dac1b1",
+      "change": "Removed only local command-line reverse-engineering fixtures; compiler functions retained."
+    },
+    "spc_v2_timing_codec.py": {
+      "sourceSha256": "43b1937f0d9036465a2f543185ecfac8df423ac1cbe714734a2cb783a07c41c8",
+      "importedSha256": "cb7a6c478eb3799709f54d3466ec72c6d1b977902394cacb7b26daba82dc8411",
+      "change": "Removed only local command-line reverse-engineering fixtures; compiler functions retained."
+    }
+  }
+}

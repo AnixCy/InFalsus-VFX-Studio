@@ -7,6 +7,7 @@ param(
     [string]$SourceFixture,
     [string]$BackgroundProject,
     [string]$AuthoringSpec,
+    [string]$ChartPackSource,
     [switch]$AuthoringFrames
 )
 $ErrorActionPreference='Stop'
@@ -29,6 +30,7 @@ try{
     if($SourceFixture){$taskArgs+=@('-vfx-source-fixture',('"'+[IO.Path]::GetFullPath($SourceFixture)+'"'))}
     if($BackgroundProject){$taskArgs+=@('-vfx-background-project',('"'+[IO.Path]::GetFullPath($BackgroundProject)+'"'))}
     if($AuthoringSpec){$taskArgs+=@('-vfx-author-spec',('"'+[IO.Path]::GetFullPath($AuthoringSpec)+'"'))}
+    if($ChartPackSource){$taskArgs+=@('-vfx-chart-package-source',('"'+[IO.Path]::GetFullPath($ChartPackSource)+'"'))}
     if($AuthoringFrames){if(-not $AuthoringSpec){throw 'AuthoringFrames requires AuthoringSpec.'};$taskArgs+='-vfx-author-frames'}
     $taskProcess=Start-Process -FilePath $taskExe -ArgumentList $taskArgs -WorkingDirectory $taskRoot -WindowStyle Hidden -PassThru
     if(-not $taskProcess.WaitForExit(45000)){Stop-Process -Id $taskProcess.Id;throw 'The owned check process exceeded 45 seconds.'}

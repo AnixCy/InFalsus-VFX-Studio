@@ -17,8 +17,13 @@ public sealed partial class PreviewPlugin
     {
         FinishText();Model!.Commit();StopHeldPreview();Bridge.Transport?.Pause();
         var file=Path.Combine(folder,"GameExport/targets.json");
-        if(!File.Exists(file))throw new FileNotFoundException("测试包未附目标谱面目录。",file);
-        addonTargets=JsonConvert.DeserializeObject<AddonTarget[]>(File.ReadAllText(file),Json)??Array.Empty<AddonTarget>();
+        addonTargets=File.Exists(file)?JsonConvert.DeserializeObject<AddonTarget[]>(File.ReadAllText(file),Json)??Array.Empty<AddonTarget>():Array.Empty<AddonTarget>();
+        if(addonSongDirectory.Length==0&&Bridge.Owner) {
+            var song=typeof(InFalsusStudio.StudioBootstrap).GetField("songProject",StudioBridge.Flags)?.GetValue(Bridge.Owner);
+            var root=song?.GetType().GetField("Root",StudioBridge.Flags)?.GetValue(song) as string;
+            if(root!=null&&StudioSongPackage.CanRead(root))addonSongDirectory=root;
+        }
+        if(Bridge.Owner){var value=typeof(InFalsusStudio.StudioBootstrap).GetField("guiSongIndex",StudioBridge.Flags)?.GetValue(Bridge.Owner);if(value is int i&&i>=0&&i<4)addonDifficulty=i;}
         if(addonTarget>=addonTargets.Length)addonTarget=-1;
         addonError="";addonDialog=true;
     }
@@ -33,7 +38,9 @@ public sealed partial class PreviewPlugin
     void DrawAddonWindow(int id)
     {
         float w=Mathf.Min(680, (Screen.width-24)/UiScale),h=Mathf.Min(550,(Screen.height-24)/UiScale);var theme=ui!;
-        theme.Panel(R(0,0,w,h));theme.Label(R(20,14,w-40,36),"导出游戏 addon",22,"#c9e9ee");
+        if(addonWholeSong){DrawSongPackageWindow(w,h);return;}
+        theme.Panel(R(0,0,w,h));theme.Label(R(20,14,w-40,36),"独立演出 · 已有谱面",22,"#c9e9ee");
+        if(theme.Button(R(w-180,16,160,30),"完整曲包",false,false,14)){addonWholeSong=true;return;}
         theme.Paragraph(R(20,58,w-40,52),"选择目标谱面。当前支持通用背景图片、底色和曝光等基础参数；不改写谱面和音频。",14);
         addonSearch=theme.Number(R(20,117,w-40,29),"vfx_addon_search",addonSearch);
         var view=R(20,158,w-40,h-292);var matches=addonTargets.Select((t,i)=>(Target:t,Index:i))
